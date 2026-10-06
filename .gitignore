@@ -17,83 +17,55 @@ out/
 .env.test.local
 .env.production.local
 
-# IDE & Editor
-.vscode/
+# IDE
 .idea/
+.vscode/
 *.swp
 *.swo
 *~
-.project
-.classpath
-.settings/
-*.sublime-project
-*.sublime-workspace
 
-# OS files
+# OS
 .DS_Store
 Thumbs.db
-ehthumbs.db
-Desktop.ini
 
 # Logs
+logs/
 *.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
-.pnpm-debug.log*
 
-# Testing & Coverage
+# Testing
 coverage/
 .nyc_output/
-*.lcov
 
-# Turbo / Build cache
-.turbo/
-.turbo-cache/
+# Database
+*.sqlite
+*.db
 
 # Prisma
-prisma/migrations/.migration_lock.toml
+prisma/migrations/
 
-# Misc
-*.docx
-*.pem
-.vercel
-.netlify
-
-# TypeScript cache
-*.tsbuildinfo
-
-# Next.js specific
-.next/
-out/
-
-# NestJS specific
-dist/
-
-# Package manager
-package-lock.json
-yarn.lock
-pnpm-lock.yaml
-
-# Local development
-*.local
-local/
+# Docker
+.docker/
 
 # Temporary files
 tmp/
 temp/
 *.tmp
-*.temp
 
-# Docker
-.docker/
+# IDE/Editor specific
+*.vscode/
+.idea/
+*.iml
 
-# OS specific
-*.lnk
+# Turbo
+.turbo/
 
-# VS Code specific (optional - uncomment if needed)
-# .vscode/settings.json
-# .vscode/launch.json
-# .vscode/tasks.json
+# Vercel
+.vercel/
+
+# TypeScript
+*.tsbuildinfo

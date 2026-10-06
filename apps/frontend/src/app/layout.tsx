@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
 import './styles/globals.css';
 import { Toaster } from 'sonner';
+import { Providers } from '@/components/Providers';
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 
@@ -72,7 +73,9 @@ export default function RootLayout({
         <a href="#main-content" className="skip-link">
           Skip to main content
         </a>
-        {children}
+        <Providers>
+          {children}
+        </Providers>
         <Toaster position="top-right" toastOptions={{ className: 'bg-white text-gray-900' }} />
       </body>
     </html>
