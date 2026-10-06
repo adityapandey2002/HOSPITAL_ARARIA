@@ -2,6 +2,7 @@ import { Injectable, NotFoundException, ConflictException } from '@nestjs/common
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { PaginationDto } from '../../common/dto/pagination.dto';
 import * as bcrypt from 'bcrypt';
+import { UserRole } from '@prisma/client';
 
 @Injectable()
 export class UsersService {
@@ -83,7 +84,7 @@ export class UsersService {
     });
   }
 
-  async update(id: string, data: { name?: string; phone?: string; role?: string; isActive?: boolean }) {
+  async update(id: string, data: { name?: string; phone?: string; role?: UserRole; isActive?: boolean }) {
     // Check if user exists
     await this.findById(id);
 

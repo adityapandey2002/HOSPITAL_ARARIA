@@ -1,17 +1,31 @@
 import { Controller, Get } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
-import { HealthCheck, HealthCheckService, HealthCheckResult, TypeOrmHealthIndicator, MemoryHealthIndicator, DiskHealthIndicator } from '@nestjs/terminus';
+import { HealthCheck, HealthCheckService, HealthCheckResult, HealthIndicator, HealthIndicatorResult } from '@nestjs/terminus';
 import { PrismaService } from '../../common/prisma/prisma.service';
+import { Injectable } from '@nestjs/common';
+
+@Injectable()
+class PrismaHealthIndicator extends HealthIndicator {
+  constructor(private prisma: PrismaService) {
+    super();
+  }
+
+  async pingCheck(key: string): Promise<HealthIndicatorResult> {
+    try {
+      await this.prisma.$queryRaw`SELECT 1`;
+      return this.getStatus(key, true);
+    } catch (error) {
+      return this.getStatus(key, false, { error: error.message });
+    }
+  }
+}
 
 @ApiTags('Health')
 @Controller('health')
 export class HealthController {
   constructor(
     private health: HealthCheckService,
-    private db: TypeOrmHealthIndicator,
-    private memory: MemoryHealthIndicator,
-    private disk: DiskHealthIndicator,
-    private prisma: PrismaService,
+    private prismaHealth: PrismaHealthIndicator,
   ) {}
 
   @Get()
@@ -21,10 +35,7 @@ export class HealthController {
   @ApiResponse({ status: 503, description: 'Service is unhealthy' })
   async check(): Promise<HealthCheckResult> {
     return this.health.check([
-      () => this.db.pingCheck('database', this.prisma),
-      () => this.memory.checkHeap('memory_heap', 150 * 1024 * 1024), // 150MB
-      () => this.memory.checkRSS('memory_rss', 150 * 1024 * 1024), // 150MB
-      () => this.disk.checkStorage('disk', { path: '/', thresholdPercent: 0.9 }),
+      () => this.prismaHealth.pingCheck('database'),
     ]);
   }
 
@@ -35,7 +46,7 @@ export class HealthController {
   @ApiResponse({ status: 503, description: 'Service is not ready' })
   async ready(): Promise<HealthCheckResult> {
     return this.health.check([
-      () => this.db.pingCheck('database', this.prisma),
+      () => this.prismaHealth.pingCheck('database'),
     ]);
   }
 

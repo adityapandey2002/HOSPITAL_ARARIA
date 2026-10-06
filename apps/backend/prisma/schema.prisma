@@ -102,10 +102,11 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  doctor       Doctor?
-  appointments Appointment[] @relation("PatientAppointments")
-  grievances   Grievance[]
-  notices      Notice[] @relation("NoticeAuthor")
+  doctor                Doctor?
+  appointments          Appointment[] @relation("PatientAppointments")
+  grievances            Grievance[]
+  notices               Notice[] @relation("NoticeAuthor")
+  assignedGrievances    Grievance[] @relation("AssignedGrievances")
 
   @@index([email])
   @@index([phone])
@@ -289,6 +290,8 @@ model AbhaProfile {
   photo         String?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+
+  careContexts  CareContext[]
 
   @@index([abhaId])
   @@index([healthId])

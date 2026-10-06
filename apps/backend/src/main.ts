@@ -1,11 +1,10 @@
 import { NestFactory } from '@nestjs/core';
-import { ValidationPipe, VersioningType } from '@nestjs/common';
+import { ValidationPipe, VersioningType, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import helmet from 'helmet';
 import compression from 'compression';
 import * as cors from 'cors';
-import pino from 'pino';
 
 import { AppModule } from './app.module';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
@@ -13,7 +12,7 @@ import { TransformInterceptor } from './common/interceptors/transform.intercepto
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
 
 async function bootstrap() {
-  const logger = pino({ level: process.env.LOG_LEVEL || 'info' });
+  const logger = new Logger('Bootstrap');
   
   const app = await NestFactory.create(AppModule, {
     bufferLogs: true,
@@ -97,8 +96,8 @@ async function bootstrap() {
   }
 
   await app.listen(port);
-  logger.info(`🚀 Application running on: http://localhost:${port}`);
-  logger.info(`📚 API Documentation: http://localhost:${port}/api/docs`);
+  logger.log(`🚀 Application running on: http://localhost:${port}`);
+  logger.log(`📚 API Documentation: http://localhost:${port}/api/docs`);
 }
 
 bootstrap();

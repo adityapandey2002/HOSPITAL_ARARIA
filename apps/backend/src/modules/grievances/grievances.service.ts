@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { PaginationDto } from '../../common/dto/pagination.dto';
-import { GrievanceStatus, GrievanceCategory } from '@dh-araria/shared/types';
+import { GrievanceStatus, GrievanceCategory } from '@prisma/client';
 
 @Injectable()
 export class GrievancesService {

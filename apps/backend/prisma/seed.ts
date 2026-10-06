@@ -91,7 +91,7 @@ async function main() {
   // Create doctors
   const doctorsData = [
     {
-      userId: admin.id, // Reuse admin for demo
+      userId: admin.id,
       name: 'Dr. Rajesh Kumar',
       specialization: 'Cardiology',
       qualification: 'MD, DM (Cardiology), FACC',
@@ -103,6 +103,7 @@ async function main() {
       bio: 'Senior Cardiologist with 15+ years experience in interventional cardiology.',
     },
     {
+      userId: admin.id,
       name: 'Dr. Priya Sharma',
       specialization: 'Gynecology & Obstetrics',
       qualification: 'MS (OBG), DNB, MRCOG',
@@ -114,6 +115,7 @@ async function main() {
       bio: 'Expert in high-risk pregnancies and minimally invasive gynecological surgeries.',
     },
     {
+      userId: admin.id,
       name: 'Dr. Amit Singh',
       specialization: 'Orthopedics',
       qualification: 'MS (Ortho), MCh (Joint Replacement)',
@@ -125,6 +127,7 @@ async function main() {
       bio: 'Specialist in joint replacement and complex trauma surgeries.',
     },
     {
+      userId: admin.id,
       name: 'Dr. Sunita Devi',
       specialization: 'Pediatrics',
       qualification: 'MD (Pediatrics), DNB',
@@ -136,6 +139,7 @@ async function main() {
       bio: 'Child specialist with expertise in neonatal care and vaccination.',
     },
     {
+      userId: admin.id,
       name: 'Dr. Vikash Patel',
       specialization: 'General Surgery',
       qualification: 'MS (General Surgery), FIAGES',
@@ -147,6 +151,7 @@ async function main() {
       bio: 'Laparoscopic surgeon with extensive experience in gastrointestinal surgeries.',
     },
     {
+      userId: admin.id,
       name: 'Dr. Anjali Verma',
       specialization: 'Dermatology',
       qualification: 'MD (Dermatology), DVD',

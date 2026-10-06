@@ -8,6 +8,7 @@ import {
   Body,
   Query,
   UseGuards,
+  ForbiddenException,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 
@@ -18,8 +19,7 @@ import { RolesGuard } from '../../common/auth/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { Public } from '../../common/decorators/public.decorator';
-import { UserRole } from '@dh-araria/shared/types';
-import { GrievanceStatus, GrievanceCategory } from '@dh-araria/shared/types';
+import { UserRole, GrievanceStatus, GrievanceCategory } from '@prisma/client';
 
 @ApiTags('Grievances')
 @Controller('grievances')

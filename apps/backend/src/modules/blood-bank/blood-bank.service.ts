@@ -1,7 +1,7 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { PaginationDto } from '../../common/dto/pagination.dto';
-import { BloodGroup, BloodComponentType } from '@dh-araria/shared/types';
+import { BloodGroup, BloodComponentType } from '@prisma/client';
 
 @Injectable()
 export class BloodBankService {

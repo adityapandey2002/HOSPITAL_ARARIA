@@ -16,7 +16,7 @@ import { JwtAuthGuard } from '../../modules/auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/auth/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
-import { UserRole } from '@dh-araria/shared/types';
+import { UserRole } from '@prisma/client';
 
 @ApiTags('Users')
 @Controller('users')
@@ -70,7 +70,7 @@ export class UsersController {
   @ApiResponse({ status: 404, description: 'User not found' })
   async update(
     @Param('id') id: string,
-    @Body() data: { name?: string; phone?: string; role?: string; isActive?: boolean },
+    @Body() data: { name?: string; phone?: string; role?: UserRole; isActive?: boolean },
   ) {
     return this.usersService.update(id, data);
   }

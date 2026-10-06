@@ -21,7 +21,7 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
 
     // Log queries in development
     if (process.env.NODE_ENV === 'development') {
-      this.$on('query', (e) => {
+      (this as any).$on('query', (e: any) => {
         this.logger.debug(`Query: ${e.query} - Params: ${e.params} - Duration: ${e.duration}ms`);
       });
     }
@@ -40,8 +40,9 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
       (key) => typeof key === 'string' && !key.startsWith('_') && !key.startsWith('$')
     );
     for (const model of models) {
-      if (typeof this[model as string]?.deleteMany === 'function') {
-        await this[model as string].deleteMany();
+      const modelKey = model as string;
+      if (typeof (this as any)[modelKey]?.deleteMany === 'function') {
+        await (this as any)[modelKey].deleteMany();
       }
     }
   }
