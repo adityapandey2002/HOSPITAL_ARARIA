@@ -1,0 +1,381 @@
+// Prisma Schema for DH Araria Hospital Portal
+// This schema supports all the core modules and ABDM integration readiness
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Enums
+enum UserRole {
+  PATIENT
+  DOCTOR
+  ADMIN
+  STAFF
+}
+
+enum AppointmentStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+  NO_SHOW
+  RESCHEDULED
+}
+
+enum AppointmentType {
+  OPD
+  TELECONSULTATION
+  EMERGENCY
+  FOLLOW_UP
+}
+
+enum BloodGroup {
+  A_POSITIVE
+  A_NEGATIVE
+  B_POSITIVE
+  B_NEGATIVE
+  AB_POSITIVE
+  AB_NEGATIVE
+  O_POSITIVE
+  O_NEGATIVE
+}
+
+enum BloodComponentType {
+  WHOLE_BLOOD
+  PACKED_RED_CELLS
+  PLATELETS
+  PLASMA
+  CRYOPRECIPITATE
+}
+
+enum GrievanceCategory {
+  MEDICAL_NEGLIGENCE
+  STAFF_BEHAVIOR
+  INFRASTRUCTURE
+  BILLING
+  APPOINTMENT
+  MEDICINE_AVAILABILITY
+  CLEANLINESS
+  OTHER
+}
+
+enum GrievanceStatus {
+  SUBMITTED
+  UNDER_REVIEW
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+  REJECTED
+}
+
+enum NoticeCategory {
+  GENERAL
+  RECRUITMENT
+  TENDER
+  PUBLIC_HEALTH
+  SCHEDULE_CHANGE
+  EMERGENCY
+}
+
+enum NoticePriority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+// Models
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String
+  phone     String?  @unique
+  role      UserRole @default(PATIENT)
+  isActive  Boolean  @default(true)
+  abhaId    String?  @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  doctor       Doctor?
+  appointments Appointment[] @relation("PatientAppointments")
+  grievances   Grievance[]
+  notices      Notice[] @relation("NoticeAuthor")
+
+  @@index([email])
+  @@index([phone])
+  @@index([role])
+  @@index([abhaId])
+  @@map("users")
+}
+
+model Doctor {
+  id                String   @id @default(cuid())
+  userId            String   @unique
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name              String
+  specialization    String
+  qualification     String
+  experience        Int
+  hprId             String?  @unique
+  departmentId      String
+  department        Department @relation(fields: [departmentId], references: [id], onDelete: Restrict)
+  consultationFee   Float    @default(0)
+  rating            Float    @default(0)
+  reviewCount       Int      @default(0)
+  languages         String[] @default(["English", "Hindi"])
+  bio               String?
+  imageUrl          String?
+  isActive          Boolean  @default(true)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  appointments Appointment[]
+  timeSlots    TimeSlot[]
+
+  @@index([userId])
+  @@index([departmentId])
+  @@index([specialization])
+  @@index([isActive])
+  @@index([hprId])
+  @@map("doctors")
+}
+
+model Department {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String
+  icon        String?
+  imageUrl    String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  doctors     Doctor[]
+  appointments Appointment[]
+
+  @@index([name])
+  @@index([isActive])
+  @@map("departments")
+}
+
+model TimeSlot {
+  id              String   @id @default(cuid())
+  doctorId        String
+  doctor          Doctor   @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+  dayOfWeek       Int      // 0-6 (Sunday-Saturday)
+  startTime       String   // HH:mm format
+  endTime         String   // HH:mm format
+  isAvailable     Boolean  @default(true)
+  maxAppointments Int      @default(1)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([doctorId, dayOfWeek, startTime])
+  @@index([doctorId])
+  @@index([dayOfWeek])
+  @@map("time_slots")
+}
+
+model Appointment {
+  id               String            @id @default(cuid())
+  patientId        String
+  patient          User              @relation("PatientAppointments", fields: [patientId], references: [id], onDelete: Restrict)
+  doctorId         String
+  doctor           Doctor            @relation(fields: [doctorId], references: [id], onDelete: Restrict)
+  departmentId     String
+  department       Department        @relation(fields: [departmentId], references: [id], onDelete: Restrict)
+  appointmentDate  DateTime
+  startTime        String            // HH:mm format
+  endTime          String            // HH:mm format
+  status           AppointmentStatus @default(PENDING)
+  type             AppointmentType   @default(OPD)
+  reason           String?
+  notes            String?
+  abhaId           String?
+  tokenNumber      Int?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+
+  @@index([patientId])
+  @@index([doctorId])
+  @@index([departmentId])
+  @@index([appointmentDate])
+  @@index([status])
+  @@index([abhaId])
+  @@map("appointments")
+}
+
+model BloodStock {
+  id              String             @id @default(cuid())
+  bloodGroup      BloodGroup
+  componentType   BloodComponentType
+  unitsAvailable  Int                @default(0)
+  lastUpdated     DateTime           @updatedAt
+  createdAt       DateTime           @default(now())
+
+  @@unique([bloodGroup, componentType])
+  @@index([bloodGroup])
+  @@index([componentType])
+  @@map("blood_stock")
+}
+
+model Grievance {
+  id           String             @id @default(cuid())
+  userId       String?
+  user         User?              @relation(fields: [userId], references: [id], onDelete: SetNull)
+  name         String
+  email        String
+  phone        String
+  category     GrievanceCategory
+  subject      String
+  description  String
+  status       GrievanceStatus    @default(SUBMITTED)
+  cpgramsId    String?            @unique
+  assignedTo   String?
+  assignee     User?              @relation("AssignedGrievances", fields: [assignedTo], references: [id], onDelete: SetNull)
+  resolution   String?
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+
+  @@index([userId])
+  @@index([status])
+  @@index([category])
+  @@index([assignedTo])
+  @@index([cpgramsId])
+  @@map("grievances")
+}
+
+model Notice {
+  id          String          @id @default(cuid())
+  title       String
+  content     String
+  category    NoticeCategory  @default(GENERAL)
+  priority    NoticePriority  @default(MEDIUM)
+  publishedAt DateTime?
+  expiresAt   DateTime?
+  isPublished Boolean         @default(false)
+  attachmentUrl String?
+  language    String          @default("en")
+  authorId    String
+  author      User            @relation("NoticeAuthor", fields: [authorId], references: [id], onDelete: Restrict)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  @@index([isPublished])
+  @@index([publishedAt])
+  @@index([category])
+  @@index([language])
+  @@map("notices")
+}
+
+// ABDM Integration Models (for future phases)
+model AbhaProfile {
+  id            String   @id @default(cuid())
+  abhaId        String   @unique
+  userId        String   @unique
+  healthId      String   @unique
+  name          String
+  gender        String
+  dateOfBirth   DateTime
+  phone         String?
+  email         String?
+  address       Json?
+  photo         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([abhaId])
+  @@index([healthId])
+  @@index([userId])
+  @@map("abha_profiles")
+}
+
+model CareContext {
+  id            String   @id @default(cuid())
+  abhaProfileId String
+  abhaProfile   AbhaProfile @relation(fields: [abhaProfileId], references: [id], onDelete: Cascade)
+  referenceNumber String @unique
+  displayName   String
+  facilityName  String
+  facilityId    String
+  careContextType String
+  startDate     DateTime
+  endDate       DateTime?
+  status        String   @default("ACTIVE")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([abhaProfileId])
+  @@index([referenceNumber])
+  @@index([facilityId])
+  @@map("care_contexts")
+}
+
+model FhirBundle {
+  id              String   @id @default(cuid())
+  bundleId        String   @unique
+  resourceType    String   @default("Bundle")
+  bundleType      String
+  patientId       String
+  careContextId   String?
+  fhirJson        Json
+  encryptedData   String?
+  encryptionKey   String?
+  status          String   @default("PENDING")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([bundleId])
+  @@index([patientId])
+  @@index([careContextId])
+  @@index([status])
+  @@map("fhir_bundles")
+}
+
+model ConsentArtefact {
+  id              String   @id @default(cuid())
+  consentId       String   @unique
+  patientId       String
+  hipId           String
+  hiuId           String
+  purpose         String
+  hiTypes         String[]
+  dateRangeStart  DateTime
+  dateRangeEnd    DateTime
+  dataEraseAt     DateTime
+  status          String   @default("PENDING")
+  consentJson     Json
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([consentId])
+  @@index([patientId])
+  @@index([hipId])
+  @@index([hiuId])
+  @@index([status])
+  @@map("consent_artefacts")
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String?
+  action    String
+  resource  String
+  resourceId String?
+  details   Json?
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([action])
+  @@index([resource])
+  @@index([createdAt])
+  @@map("audit_logs")
+}

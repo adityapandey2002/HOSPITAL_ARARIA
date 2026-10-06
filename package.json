@@ -1,0 +1,30 @@
+{
+  "name": "dh-araria",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev:frontend": "npm run dev --workspace=apps/frontend",
+    "dev:backend": "npm run start:dev --workspace=apps/backend",
+    "dev": "concurrently \"npm run dev:frontend\" \"npm run dev:backend\"",
+    "build": "npm run build --workspaces",
+    "build:frontend": "npm run build --workspace=apps/frontend",
+    "build:backend": "npm run build --workspace=apps/backend",
+    "lint": "npm run lint --workspaces",
+    "test": "npm run test --workspaces",
+    "db:generate": "npm run db:generate --workspace=apps/backend",
+    "db:push": "npm run db:push --workspace=apps/backend",
+    "db:studio": "npm run db:studio --workspace=apps/backend"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "typescript": "^5.4.5"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "packageManager": "npm@10.5.0"
+}
