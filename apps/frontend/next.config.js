@@ -1,9 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  transpilePackages: ['@dh-araria/ui', '@dh-araria/shared'],
   experimental: {
-    optimizePackageImports: ['@dh-araria/ui', 'lucide-react'],
+    optimizePackageImports: ['lucide-react'],
   },
   images: {
     domains: ['localhost'],

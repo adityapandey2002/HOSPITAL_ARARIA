@@ -5,8 +5,6 @@ import {
   Stethoscope, Award, Star, MapPin, Clock, 
   ChevronRight, User, HeartPulse
 } from 'lucide-react';
-import { cn } from '@dh-araria/shared/utils';
-import { Avatar } from '@dh-araria/ui/components';
 
 const doctors = [
   {
@@ -89,6 +87,33 @@ const doctors = [
   },
 ];
 
+function getInitials(name: string): string {
+  return name
+    .split(' ')
+    .map((n) => n[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 2);
+}
+
+function getAvatarColor(name: string): string {
+  const colors = [
+    'bg-red-500', 'bg-orange-500', 'bg-amber-500', 'bg-green-500',
+    'bg-emerald-500', 'bg-teal-500', 'bg-cyan-500', 'bg-sky-500',
+    'bg-blue-500', 'bg-indigo-500', 'bg-violet-500', 'bg-purple-500',
+    'bg-fuchsia-500', 'bg-pink-500', 'bg-rose-500',
+  ];
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) {
+    hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  return colors[Math.abs(hash) % colors.length];
+}
+
+function cn(...classes: (string | undefined | null | false)[]): string {
+  return classes.filter(Boolean).join(' ');
+}
+
 export function Doctors() {
   return (
     <section className="py-20 bg-white">
@@ -104,7 +129,7 @@ export function Doctors() {
           </div>
           <Link
             href="/doctors"
-            className="inline-flex items-center gap-2 text-primary-600 font-medium hover:text-primary-700 transition-colors"
+            className="inline-flex items-center gap-2 text-blue-600 font-medium hover:text-blue-700 transition-colors"
           >
             View All Doctors
             <ChevronRight className="w-4 h-4" />
@@ -115,25 +140,29 @@ export function Doctors() {
           {doctors.map((doctor, index) => (
             <article
               key={doctor.id}
-              className="group p-6 bg-gray-50 rounded-2xl border border-gray-100 hover:border-primary-200 hover:shadow-lg transition-all duration-300 animate-slide-up"
+              className="group p-6 bg-gray-50 rounded-2xl border border-gray-100 hover:border-blue-200 hover:shadow-lg transition-all duration-300 animate-slide-up"
               style={{ animationDelay: `${index * 100}ms` }}
             >
               <div className="flex items-start gap-4">
-                <Avatar 
-                  name={doctor.name} 
-                  src={doctor.imageUrl || undefined} 
-                  size="xl" 
-                  className="flex-shrink-0"
-                />
+                <div className={cn(
+                  'w-16 h-16 rounded-full flex items-center justify-center text-white text-xl font-bold flex-shrink-0',
+                  getAvatarColor(doctor.name)
+                )}>
+                  {doctor.imageUrl ? (
+                    <img src={doctor.imageUrl} alt={doctor.name} className="w-full h-full rounded-full object-cover" />
+                  ) : (
+                    getInitials(doctor.name)
+                  )}
+                </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-start justify-between gap-2">
                     <div>
-                      <h3 className="text-lg font-semibold text-gray-900 group-hover:text-primary-600 transition-colors">
+                      <h3 className="text-lg font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
                         {doctor.name}
                       </h3>
-                      <p className="text-sm text-primary-600 font-medium">{doctor.specialization}</p>
+                      <p className="text-sm text-blue-600 font-medium">{doctor.specialization}</p>
                     </div>
-                    <div className="flex items-center gap-1 text-warning-500">
+                    <div className="flex items-center gap-1 text-yellow-500">
                       <Star className="w-4 h-4 fill-current" />
                       <span className="font-semibold">{doctor.rating}</span>
                       <span className="text-gray-400">({doctor.reviewCount})</span>
@@ -162,7 +191,7 @@ export function Doctors() {
                     </span>
                     <Link
                       href={`/doctors/${doctor.id}`}
-                      className="text-sm font-medium text-primary-600 hover:text-primary-700 flex items-center gap-1 transition-colors"
+                      className="text-sm font-medium text-blue-600 hover:text-blue-700 flex items-center gap-1 transition-colors"
                     >
                       View Profile
                       <ChevronRight className="w-4 h-4" />
@@ -177,7 +206,7 @@ export function Doctors() {
         <div className="mt-12 text-center">
           <Link
             href="/doctors"
-            className="inline-flex items-center gap-2 px-8 py-3 border-2 border-primary-600 text-primary-600 text-lg font-medium rounded-xl hover:bg-primary-50 transition-all duration-200"
+            className="inline-flex items-center gap-2 px-8 py-3 border-2 border-blue-600 text-blue-600 text-lg font-medium rounded-xl hover:bg-blue-50 transition-all duration-200"
           >
             View All {doctors.length}+ Doctors
             <ChevronRight className="w-5 h-5" />

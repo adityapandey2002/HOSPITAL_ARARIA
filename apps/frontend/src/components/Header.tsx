@@ -1,9 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Menu, X, Hospital, Phone, MapPin, AlertCircle, User, Calendar, Droplet } from 'lucide-react';
-import { cn } from '@dh-araria/shared/utils';
 
 const navItems = [
   { href: '/', label: 'Home' },
@@ -22,15 +21,21 @@ const emergencyContacts = [
   { label: 'Blood Bank', number: '+91-6453-222102', icon: Droplet },
 ];
 
+function cn(...classes: (string | undefined | null | false)[]): string {
+  return classes.filter(Boolean).join(' ');
+}
+
 export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
 
-  if (typeof window !== 'undefined') {
-    window.addEventListener('scroll', () => {
+  useEffect(() => {
+    const handleScroll = () => {
       setIsScrolled(window.scrollY > 20);
-    }, { passive: true });
-  }
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   return (
     <header className={cn(
@@ -38,7 +43,7 @@ export function Header() {
       isScrolled ? 'bg-white/95 backdrop-blur-sm shadow-md' : 'bg-transparent'
     )}>
       {/* Top Bar */}
-      <div className="hidden md:flex items-center justify-between px-4 py-2 bg-primary-700 text-white text-sm">
+      <div className="hidden md:flex items-center justify-between px-4 py-2 bg-blue-700 text-white text-sm">
         <div className="flex items-center gap-6">
           <div className="flex items-center gap-2">
             <MapPin className="w-4 h-4" />
@@ -54,7 +59,7 @@ export function Header() {
           </div>
         </div>
         <div className="flex items-center gap-4">
-          <Link href="/appointments" className="hover:text-primary-100 transition-colors">
+          <Link href="/appointments" className="hover:text-blue-100 transition-colors">
             Book Appointment
           </Link>
           <Link href="/login" className="bg-white/10 px-4 py-1.5 rounded-lg hover:bg-white/20 transition-colors">
@@ -69,7 +74,7 @@ export function Header() {
           <div className="flex items-center justify-between h-16">
             {/* Logo */}
             <Link href="/" className="flex items-center gap-3" aria-label="District Hospital Araria Home">
-              <div className="p-2 bg-primary-600 rounded-lg">
+              <div className="p-2 bg-blue-600 rounded-lg">
                 <Hospital className="w-7 h-7 text-white" />
               </div>
               <div className="hidden sm:block">
@@ -84,7 +89,7 @@ export function Header() {
                 <Link
                   key={item.href}
                   href={item.href}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors"
+                  className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                 >
                   {item.label}
                 </Link>
@@ -95,14 +100,14 @@ export function Header() {
             <div className="hidden md:flex items-center gap-3">
               <Link
                 href="/appointments"
-                className="bg-primary-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-primary-700 transition-colors"
+                className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors"
               >
                 <Calendar className="w-4 h-4 mr-2 inline" />
                 Book Appointment
               </Link>
               <Link
                 href="/login"
-                className="text-gray-700 hover:text-primary-600 px-4 py-2 font-medium transition-colors"
+                className="text-gray-700 hover:text-blue-600 px-4 py-2 font-medium transition-colors"
               >
                 <User className="w-4 h-4 mr-2 inline" />
                 Login
@@ -134,7 +139,7 @@ export function Header() {
                 <Link
                   key={item.href}
                   href={item.href}
-                  className="block px-4 py-3 text-gray-700 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors"
+                  className="block px-4 py-3 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                   onClick={() => setIsMenuOpen(false)}
                 >
                   {item.label}
@@ -143,7 +148,7 @@ export function Header() {
               <div className="pt-4 border-t border-gray-100 space-y-2">
                 <Link
                   href="/appointments"
-                  className="block bg-primary-600 text-white text-center py-3 rounded-lg font-medium hover:bg-primary-700 transition-colors"
+                  className="block bg-blue-600 text-white text-center py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors"
                   onClick={() => setIsMenuOpen(false)}
                 >
                   <Calendar className="w-4 h-4 mr-2 inline" />
@@ -151,7 +156,7 @@ export function Header() {
                 </Link>
                 <Link
                   href="/login"
-                  className="block text-center text-gray-700 py-3 font-medium hover:text-primary-600 transition-colors"
+                  className="block text-center text-gray-700 py-3 font-medium hover:text-blue-600 transition-colors"
                   onClick={() => setIsMenuOpen(false)}
                 >
                   <User className="w-4 h-4 mr-2 inline" />
@@ -167,7 +172,7 @@ export function Header() {
                       href={`tel:${contact.number}`}
                       className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
                     >
-                      <contact.icon className="w-5 h-5 text-danger-500" />
+                      <contact.icon className="w-5 h-5 text-red-500" />
                       <div>
                         <p className="font-medium text-gray-900">{contact.label}</p>
                         <p className="text-sm text-gray-500">{contact.number}</p>

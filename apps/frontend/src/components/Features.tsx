@@ -6,7 +6,6 @@ import {
   CheckCircle, ArrowRight 
 } from 'lucide-react';
 import Link from 'next/link';
-import { cn } from '@dh-araria/shared/utils';
 
 const features = [
   {
@@ -54,12 +53,16 @@ const features = [
 ];
 
 const colorStyles = {
-  primary: 'bg-primary-100 text-primary-600 hover:bg-primary-200',
-  secondary: 'bg-secondary-100 text-secondary-600 hover:bg-secondary-200',
-  danger: 'bg-danger-100 text-danger-600 hover:bg-danger-200',
-  warning: 'bg-warning-100 text-warning-600 hover:bg-warning-200',
-  success: 'bg-success-100 text-success-600 hover:bg-success-200',
+  primary: 'bg-blue-100 text-blue-600 hover:bg-blue-200',
+  secondary: 'bg-purple-100 text-purple-600 hover:bg-purple-200',
+  danger: 'bg-red-100 text-red-600 hover:bg-red-200',
+  warning: 'bg-yellow-100 text-yellow-600 hover:bg-yellow-200',
+  success: 'bg-green-100 text-green-600 hover:bg-green-200',
 };
+
+function cn(...classes: (string | undefined | null | false)[]): string {
+  return classes.filter(Boolean).join(' ');
+}
 
 export function Features() {
   return (
@@ -79,7 +82,7 @@ export function Features() {
             <article
               key={feature.title}
               className={cn(
-                'group p-8 rounded-2xl bg-gray-50 border border-gray-100 hover:border-primary-200 hover:shadow-lg transition-all duration-300',
+                'group p-8 rounded-2xl bg-gray-50 border border-gray-100 hover:border-blue-200 hover:shadow-lg transition-all duration-300',
                 'animate-slide-up'
               )}
               style={{ animationDelay: `${index * 100}ms` }}
@@ -120,7 +123,7 @@ export function Features() {
               className="p-6 bg-gray-50 rounded-2xl border border-gray-100 animate-slide-up"
               style={{ animationDelay: `${index * 100}ms` }}
             >
-              <div className="w-12 h-12 bg-primary-100 text-primary-600 rounded-xl flex items-center justify-center mb-4">
+              <div className="w-12 h-12 bg-blue-100 text-blue-600 rounded-xl flex items-center justify-center mb-4">
                 <item.icon className="w-6 h-6" />
               </div>
               <h3 className="text-lg font-semibold text-gray-900 mb-2">{item.title}</h3>

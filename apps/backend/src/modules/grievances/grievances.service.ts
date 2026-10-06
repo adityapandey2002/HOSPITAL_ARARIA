@@ -1,54 +1,125 @@
 import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
-import { PrismaService } from '../../common/prisma/prisma.service';
+import { Inject } from '@nestjs/common';
 import { PaginationDto } from '../../common/dto/pagination.dto';
-import { GrievanceStatus, GrievanceCategory } from '@prisma/client';
+import { GrievanceStatus, GrievanceCategory } from '@dh-araria/shared/types';
+import { grievances, users } from '../../common/drizzle/schema';
+import { eq, and, desc, asc, sql, count, ilike } from 'drizzle-orm';
 
 @Injectable()
 export class GrievancesService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    @Inject('DRIZZLE') private db: any,
+  ) {}
 
-  async findAll(pagination: PaginationDto, filters?: any) {
+  async findAll(pagination: any, filters?: any) {
     const { page = 1, limit = 10, sortBy = 'createdAt', sortOrder = 'desc' } = pagination;
-    const skip = (page - 1) * limit;
+    const offset = (page - 1) * limit;
 
-    const where: any = {};
-    if (filters?.userId) where.userId = filters.userId;
-    if (filters?.status) where.status = filters.status;
-    if (filters?.category) where.category = filters.category;
-    if (filters?.assignedTo) where.assignedTo = filters.assignedTo;
+    const conditions: any[] = [];
 
-    const [grievances, total] = await Promise.all([
-      this.prisma.grievance.findMany({
-        where,
-        skip,
-        take: limit,
-        orderBy: { [sortBy]: sortOrder },
-        include: {
-          user: { select: { id: true, name: true, email: true, phone: true } },
-          assignee: { select: { id: true, name: true, email: true } },
-        },
-      }),
-      this.prisma.grievance.count({ where }),
+    if (filters?.userId) conditions.push(eq(grievances.userId, filters.userId));
+    if (filters?.status) conditions.push(eq(grievances.status, filters.status));
+    if (filters?.category) conditions.push(eq(grievances.category, filters.category));
+    if (filters?.assignedTo) conditions.push(eq(grievances.assignedTo, filters.assignedTo));
+
+    const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+
+    const sortColumn = grievances[sortBy as keyof typeof grievances];
+    const orderBy = sortOrder === 'asc' ? asc(sortColumn) : desc(sortColumn);
+
+    const [grievancesData, totalResult] = await Promise.all([
+      this.db
+        .select({
+          id: grievances.id,
+          userId: grievances.userId,
+          name: grievances.name,
+          email: grievances.email,
+          phone: grievances.phone,
+          category: grievances.category,
+          subject: grievances.subject,
+          description: grievances.description,
+          status: grievances.status,
+          cpgramsId: grievances.cpgramsId,
+          assignedTo: grievances.assignedTo,
+          resolution: grievances.resolution,
+          createdAt: grievances.createdAt,
+          updatedAt: grievances.updatedAt,
+          user: {
+            id: users.id,
+            name: users.name,
+            email: users.email,
+            phone: users.phone,
+          },
+          assignee: {
+            id: users.id,
+            name: users.name,
+            email: users.email,
+          },
+        })
+        .from(grievances)
+        .leftJoin(users, eq(grievances.userId, users.id))
+        .leftJoin(users, eq(grievances.assignedTo, users.id))
+        .where(whereClause)
+        .orderBy(sortOrder === 'asc' ? asc(sortColumn) : desc(sortColumn))
+        .limit(limit)
+        .offset(offset),
+      this.db
+        .select({ count: count() })
+        .from(grievances)
+        .where(whereClause),
     ]);
 
-    return { data: grievances, meta: { page, limit, total, totalPages: Math.ceil(total / limit) } };
+    const total = totalResult[0]?.count || 0;
+
+    return {
+      data: grievancesData,
+      meta: { page, limit, total, totalPages: Math.ceil(total / limit) },
+    };
   }
 
   async findById(id: string) {
-    const grievance = await this.prisma.grievance.findUnique({
-      where: { id },
-      include: {
-        user: { select: { id: true, name: true, email: true, phone: true } },
-        assignee: { select: { id: true, name: true, email: true } },
-      },
-    });
-    if (!grievance) throw new NotFoundException('Grievance not found');
-    return grievance;
+    const result = await this.db
+      .select({
+        id: grievances.id,
+        userId: grievances.userId,
+        name: grievances.name,
+        email: grievances.email,
+        phone: grievances.phone,
+        category: grievances.category,
+        subject: grievances.subject,
+        description: grievances.description,
+        status: grievances.status,
+        cpgramsId: grievances.cpgramsId,
+        assignedTo: grievances.assignedTo,
+        resolution: grievances.resolution,
+        createdAt: grievances.createdAt,
+        updatedAt: grievances.updatedAt,
+        user: {
+          id: users.id,
+          name: users.name,
+          email: users.email,
+          phone: users.phone,
+        },
+        assignee: {
+          id: users.id,
+          name: users.name,
+          email: users.email,
+        },
+      })
+      .from(grievances)
+      .leftJoin(users, eq(grievances.userId, users.id))
+      .leftJoin(users, eq(grievances.assignedTo, users.id))
+      .where(eq(grievances.id, id))
+      .limit(1);
+
+    if (!result[0]) throw new Error('Grievance not found');
+    return result[0];
   }
 
   async create(data: any, userId?: string) {
-    return this.prisma.grievance.create({
-      data: {
+    const result = await this.db
+      .insert(grievances)
+      .values({
         userId,
         name: data.name,
         email: data.email,
@@ -56,62 +127,75 @@ export class GrievancesService {
         category: data.category,
         subject: data.subject,
         description: data.description,
-        status: GrievanceStatus.SUBMITTED,
-      },
-      include: { user: { select: { id: true, name: true, email: true } } },
-    });
+        status: 'SUBMITTED',
+      })
+      .returning();
+
+    return result[0];
   }
 
   async update(id: string, data: any, userId: string, userRole: string) {
     const grievance = await this.findById(id);
-    
-    // Check permissions
+
     if (userRole !== 'ADMIN' && userRole !== 'STAFF' && grievance.userId !== userId) {
-      throw new ForbiddenException('Not authorized to update this grievance');
+      throw new Error('Not authorized to update this grievance');
     }
 
-    return this.prisma.grievance.update({
-      where: { id },
-      data,
-      include: { user: true, assignee: true },
-    });
+    const result = await this.db
+      .update(grievances)
+      .set(data)
+      .where(eq(grievances.id, id))
+      .returning();
+
+    return result[0];
   }
 
-  async updateStatus(id: string, status: GrievanceStatus, userId: string, userRole: string, resolution?: string) {
+  async updateStatus(id: string, status: string, userId: string, userRole: string, resolution?: string) {
     const grievance = await this.findById(id);
-    
+
     if (userRole !== 'ADMIN' && userRole !== 'STAFF') {
-      throw new ForbiddenException('Not authorized to update status');
+      throw new Error('Not authorized to update status');
     }
 
-    return this.prisma.grievance.update({
-      where: { id },
-      data: { status, resolution, assignedTo: userId },
-      include: { user: true, assignee: true },
-    });
+    const updateData: any = { status };
+    if (resolution) {
+      updateData.resolution = resolution;
+    }
+    updateData.assignedTo = userId;
+
+    const result = await this.db
+      .update(grievances)
+      .set(updateData)
+      .where(eq(grievances.id, id))
+      .returning();
+
+    return result[0];
   }
 
   async assign(id: string, assigneeId: string, userId: string, userRole: string) {
     if (userRole !== 'ADMIN' && userRole !== 'STAFF') {
-      throw new ForbiddenException('Not authorized to assign grievances');
+      throw new Error('Not authorized to assign grievances');
     }
 
-    return this.prisma.grievance.update({
-      where: { id },
-      data: { assignedTo: assigneeId, status: GrievanceStatus.IN_PROGRESS },
-      include: { user: true, assignee: true },
-    });
+    const result = await this.db
+      .update(grievances)
+      .set({ assignedTo: assigneeId, status: 'IN_PROGRESS' })
+      .where(eq(grievances.id, id))
+      .returning();
+
+    return result[0];
   }
 
   async delete(id: string, userId: string, userRole: string) {
     const grievance = await this.findById(id);
     if (userRole !== 'ADMIN' && grievance.userId !== userId) {
-      throw new ForbiddenException('Not authorized to delete this grievance');
+      throw new Error('Not authorized to delete this grievance');
     }
-    return this.prisma.grievance.delete({ where: { id } });
+    await this.db.delete(grievances).where(eq(grievances.id, id));
+    return { success: true };
   }
 
-  async getMyGrievances(userId: string, pagination: PaginationDto) {
+  async getMyGrievances(userId: string, pagination: any) {
     return this.findAll(pagination, { userId });
   }
 

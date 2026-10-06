@@ -28,8 +28,10 @@ export function formatDate(date: Date | string, options?: Intl.DateTimeFormatOpt
  */
 export function formatTime(time: string): string {
   // Input format: "HH:mm"
-  const [hours, minutes] = time.split(':');
-  const hour = parseInt(hours, 10);
+  const parts = time.split(':');
+  const hours = parseInt(parts[0] || '0', 10);
+  const minutes = parts[1] || '00';
+  const hour = hours;
   const ampm = hour >= 12 ? 'PM' : 'AM';
   const displayHour = hour % 12 || 12;
   return `${displayHour}:${minutes} ${ampm}`;
@@ -133,7 +135,12 @@ export function isValidAadhaar(aadhaar: string): boolean {
 
   let c = 0;
   for (let i = 0; i < cleaned.length; i++) {
-    c = verhoeffD[c][verhoeffP[i % 8][parseInt(cleaned[cleaned.length - 1 - i], 10)]];
+    const char = cleaned[cleaned.length - 1 - i];
+    const digit = char ? parseInt(char, 10) : 0;
+    const pRow = verhoeffP[i % 8];
+    const dRow = pRow && pRow[digit] !== undefined ? pRow[digit] : 0;
+    const dRow2 = verhoeffD[c];
+    c = dRow2 && dRow2[dRow] !== undefined ? dRow2[dRow] : 0;
   }
   return verhoeffInv[c] === 0;
 }
@@ -318,7 +325,8 @@ export function getAvatarColor(name: string): string {
   for (let i = 0; i < name.length; i++) {
     hash = name.charCodeAt(i) + ((hash << 5) - hash);
   }
-  return colors[Math.abs(hash) % colors.length];
+  const index = Math.abs(hash) % colors.length;
+  return colors[index] as string;
 }
 
 /**

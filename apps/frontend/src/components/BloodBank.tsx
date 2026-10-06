@@ -1,14 +1,10 @@
-'use client';
-
-import { Droplet, Heart, AlertCircle, CheckCircle, Clock, MapPin, Phone, ArrowRight } from 'lucide-react';
+import { Droplet, Heart, AlertCircle, CheckCircle, Clock, MapPin, Phone, ArrowRight, Info } from 'lucide-react';
 import Link from 'next/link';
-import { cn } from '@dh-araria/shared/utils';
-import { Badge } from '@dh-araria/ui/components';
 
 const bloodStock = [
   { group: 'A+', component: 'Whole Blood', units: 45, status: 'available' },
   { group: 'A-', component: 'Whole Blood', units: 12, status: 'low' },
-  { group: 'B+', component: 'Whole Blood', units: 38, units: 38, status: 'available' },
+  { group: 'B+', component: 'Whole Blood', units: 38, status: 'available' },
   { group: 'B-', component: 'Whole Blood', units: 8, status: 'critical' },
   { group: 'AB+', component: 'Whole Blood', units: 22, status: 'available' },
   { group: 'AB-', component: 'Whole Blood', units: 5, status: 'critical' },
@@ -28,9 +24,9 @@ const bloodGroups = [
 ];
 
 const statusStyles = {
-  available: 'bg-success-100 text-success-700',
-  low: 'bg-warning-100 text-warning-700',
-  critical: 'bg-danger-100 text-danger-700',
+  available: 'bg-green-100 text-green-700 border-green-300',
+  low: 'bg-yellow-100 text-yellow-700 border-yellow-300',
+  critical: 'bg-red-100 text-red-700 border-red-300',
 };
 
 const statusLabels = {
@@ -47,12 +43,12 @@ const statusIcons = {
 
 export function BloodBank() {
   return (
-    <section className="py-20 bg-danger-50">
+    <div className="py-20 bg-red-50">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between mb-12">
           <div>
             <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2 flex items-center gap-3">
-              <Droplet className="w-8 h-8 text-danger-600" />
+              <Droplet className="w-8 h-8 text-red-600" />
               Blood Bank Inventory
             </h2>
             <p className="text-lg text-gray-600">
@@ -61,7 +57,7 @@ export function BloodBank() {
           </div>
           <Link
             href="/blood-bank"
-            className="inline-flex items-center gap-2 text-danger-600 font-medium hover:text-danger-700 transition-colors"
+            className="inline-flex items-center gap-2 text-red-600 font-medium hover:text-red-700 transition-colors"
           >
             View Full Inventory
             <ArrowRight className="w-4 h-4" />
@@ -71,7 +67,7 @@ export function BloodBank() {
         {/* Blood Stock Table */}
         <div className="overflow-x-auto rounded-2xl bg-white border border-gray-100 shadow-sm">
           <table className="w-full">
-            <thead className="bg-danger-50">
+            <thead className="bg-red-50">
               <tr>
                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Blood Group</th>
                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Component</th>
@@ -85,9 +81,9 @@ export function BloodBank() {
                 <tr key={`${item.group}-${item.component}`} className={index % 2 === 0 ? 'bg-gray-50' : ''}>
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
-                      <div className={cn('w-10 h-10 rounded-lg flex items-center justify-center font-bold text-white', 
-                        item.group.includes('-') ? 'bg-danger-600' : 'bg-primary-600'
-                      )}>
+                      <div className={`w-10 h-10 rounded-lg flex items-center justify-center font-bold text-white ${
+                        item.group.includes('-') ? 'bg-red-600' : 'bg-blue-600'
+                      }`}>
                         {item.group}
                       </div>
                       <span className="font-medium text-gray-900">{item.group}</span>
@@ -98,15 +94,15 @@ export function BloodBank() {
                     <span className="font-semibold text-gray-900">{item.units} units</span>
                   </td>
                   <td className="px-6 py-4">
-                    <Badge variant="outline" className={cn(statusStyles[item.status as keyof typeof statusStyles])}>
+                    <span className={`inline-flex items-center gap-1.5 font-medium rounded-full px-2.5 py-1 text-sm border ${statusStyles[item.status as keyof typeof statusStyles]}`}>
                       <statusIcons[item.status as keyof typeof statusIcons] className="w-3 h-3" />
                       {statusLabels[item.status as keyof typeof statusLabels]}
-                    </Badge>
+                    </span>
                   </td>
                   <td className="px-6 py-4">
                     <Link
                       href="/blood-bank"
-                      className="text-sm font-medium text-danger-600 hover:text-danger-700 flex items-center gap-1 transition-colors"
+                      className="text-sm font-medium text-red-600 hover:text-red-700 flex items-center gap-1 transition-colors"
                     >
                       Request
                       <ArrowRight className="w-3 h-3" />
@@ -122,14 +118,14 @@ export function BloodBank() {
         <div className="mt-10 grid md:grid-cols-3 gap-6">
           <Link
             href="/blood-bank/donate"
-            className="group p-6 bg-white rounded-2xl border border-gray-100 hover:border-danger-200 hover:shadow-lg transition-all duration-300"
+            className="group p-6 bg-white rounded-2xl border border-gray-100 hover:border-red-200 hover:shadow-lg transition-all duration-300"
           >
-            <div className="w-12 h-12 bg-danger-100 text-danger-600 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+            <div className="w-12 h-12 bg-red-100 text-red-600 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
               <Heart className="w-6 h-6" />
             </div>
             <h3 className="text-lg font-semibold text-gray-900 mb-2">Donate Blood</h3>
             <p className="text-gray-600 mb-4">Register as a blood donor and save lives. Quick and easy process.</p>
-            <span className="inline-flex items-center gap-1 text-sm font-medium text-danger-600 group-hover:gap-2 transition-all">
+            <span className="inline-flex items-center gap-1 text-sm font-medium text-red-600 group-hover:gap-2 transition-all">
               Register Now
               <ArrowRight className="w-4 h-4" />
             </span>
@@ -137,26 +133,26 @@ export function BloodBank() {
 
           <Link
             href="/blood-bank/request"
-            className="group p-6 bg-white rounded-2xl border border-gray-100 hover:border-danger-200 hover:shadow-lg transition-all duration-300"
+            className="group p-6 bg-white rounded-2xl border border-gray-100 hover:border-red-200 hover:shadow-lg transition-all duration-300"
           >
-            <div className="w-12 h-12 bg-primary-100 text-primary-600 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+            <div className="w-12 h-12 bg-blue-100 text-blue-600 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
               <Droplet className="w-6 h-6" />
             </div>
             <h3 className="text-lg font-semibold text-gray-900 mb-2">Request Blood</h3>
             <p className="text-gray-600 mb-4">Submit a blood request for patients. Track status in real-time.</p>
-            <span className="inline-flex items-center gap-1 text-sm font-medium text-primary-600 group-hover:gap-2 transition-all">
+            <span className="inline-flex items-center gap-1 text-sm font-medium text-blue-600 group-hover:gap-2 transition-all">
               Request Blood
               <ArrowRight className="w-4 h-4" />
             </span>
           </Link>
 
-          <div className="group p-6 bg-white rounded-2xl border border-gray-100 hover:border-primary-200 hover:shadow-lg transition-all duration-300">
-            <div className="w-12 h-12 bg-secondary-100 text-secondary-600 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+          <div className="group p-6 bg-white rounded-2xl border border-gray-100 hover:border-blue-200 hover:shadow-lg transition-all duration-300">
+            <div className="w-12 h-12 bg-purple-100 text-purple-600 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
               <Phone className="w-6 h-6" />
             </div>
             <h3 className="text-lg font-semibold text-gray-900 mb-2">Contact Blood Bank</h3>
             <p className="text-gray-600 mb-4">Direct contact for urgent blood requirements and queries.</p>
-            <a href="tel:+91-6453-222102" className="text-sm font-medium text-secondary-600 hover:text-secondary-700 flex items-center gap-1 transition-colors">
+            <a href="tel:+91-6453-222102" className="text-sm font-medium text-purple-600 hover:text-purple-700 flex items-center gap-1 transition-colors">
               +91-6453-222102
               <ArrowRight className="w-4 h-4" />
             </a>
@@ -166,7 +162,7 @@ export function BloodBank() {
         {/* Blood Compatibility Info */}
         <div className="mt-16 p-6 bg-white rounded-2xl border border-gray-100">
           <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-            <Info className="w-5 h-5 text-primary-600" />
+            <Info className="w-5 h-5 text-blue-600" />
             Blood Group Compatibility Quick Reference
           </h3>
           <div className="overflow-x-auto">
@@ -182,9 +178,9 @@ export function BloodBank() {
                 {bloodGroups.map((bg) => (
                   <tr key={bg.group} className="border-b border-gray-100 hover:bg-gray-50">
                     <td className="px-4 py-3">
-                      <span className={cn('px-3 py-1 rounded-full font-bold text-white text-sm',
-                        bg.group.includes('-') ? 'bg-danger-600' : 'bg-primary-600'
-                      )}>
+                      <span className={`px-3 py-1 rounded-full font-bold text-white text-sm ${
+                        bg.group.includes('-') ? 'bg-red-600' : 'bg-blue-600'
+                      }`}>
                         {bg.group}
                       </span>
                     </td>
@@ -197,9 +193,6 @@ export function BloodBank() {
           </div>
         </div>
       </div>
-    </section>
+    </div>
   );
 }
-
-// Need to import Info icon
-import { Info } from 'lucide-react';

@@ -4,8 +4,7 @@ import Link from 'next/link';
 import { 
   Hospital, MapPin, Phone, Mail, Clock, 
   Facebook, Twitter, Instagram, Youtube,
-  ArrowUpRight, Shield, Award, Heart,
-  Facebook as FacebookIcon, Twitter as TwitterIcon, Instagram as InstagramIcon, Youtube as YoutubeIcon
+  ArrowUpRight, Shield, Award, Heart
 } from 'lucide-react';
 
 const footerLinks = {
@@ -50,10 +49,10 @@ const footerLinks = {
 };
 
 const socialLinks = [
-  { icon: FacebookIcon, label: 'Facebook', href: 'https://facebook.com/dhararia' },
-  { icon: TwitterIcon, label: 'Twitter', href: 'https://twitter.com/dhararia' },
-  { icon: InstagramIcon, label: 'Instagram', href: 'https://instagram.com/dhararia' },
-  { icon: YoutubeIcon, label: 'YouTube', href: 'https://youtube.com/dhararia' },
+  { icon: Facebook, label: 'Facebook', href: 'https://facebook.com/dhararia' },
+  { icon: Twitter, label: 'Twitter', href: 'https://twitter.com/dhararia' },
+  { icon: Instagram, label: 'Instagram', href: 'https://instagram.com/dhararia' },
+  { icon: Youtube, label: 'YouTube', href: 'https://youtube.com/dhararia' },
 ];
 
 export function Footer() {

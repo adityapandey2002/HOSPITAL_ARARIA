@@ -3,11 +3,8 @@
 import Link from 'next/link';
 import { 
   FileText, AlertTriangle, Megaphone, Calendar, 
-  Clock, ExternalLink, ChevronRight, Bell, Shield
+  Clock, ExternalLink, ChevronRight, Bell, Shield, Heart
 } from 'lucide-react';
-import { formatDate } from '@dh-araria/shared/utils';
-import { cn } from '@dh-araria/shared/utils';
-import { Badge } from '@dh-araria/ui/components';
 
 const notices = [
   {
@@ -64,11 +61,11 @@ const notices = [
 
 const categoryStyles = {
   GENERAL: 'bg-gray-100 text-gray-700',
-  RECRUITMENT: 'bg-primary-100 text-primary-700',
-  TENDER: 'bg-secondary-100 text-secondary-700',
-  PUBLIC_HEALTH: 'bg-danger-100 text-danger-700',
-  SCHEDULE_CHANGE: 'bg-warning-100 text-warning-700',
-  EMERGENCY: 'bg-danger-100 text-danger-700',
+  RECRUITMENT: 'bg-blue-100 text-blue-700',
+  TENDER: 'bg-purple-100 text-purple-700',
+  PUBLIC_HEALTH: 'bg-red-100 text-red-700',
+  SCHEDULE_CHANGE: 'bg-yellow-100 text-yellow-700',
+  EMERGENCY: 'bg-red-100 text-red-700',
 };
 
 const categoryIcons = {
@@ -82,10 +79,19 @@ const categoryIcons = {
 
 const priorityStyles = {
   LOW: 'bg-gray-100 text-gray-700',
-  MEDIUM: 'bg-warning-100 text-warning-700',
-  HIGH: 'bg-danger-100 text-danger-700',
-  CRITICAL: 'bg-danger-100 text-danger-700',
+  MEDIUM: 'bg-yellow-100 text-yellow-700',
+  HIGH: 'bg-red-100 text-red-700',
+  CRITICAL: 'bg-red-100 text-red-700',
 };
+
+function formatDate(dateString: string): string {
+  const date = new Date(dateString);
+  return date.toLocaleDateString('en-IN', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+  });
+}
 
 export function Notices() {
   return (
@@ -94,7 +100,7 @@ export function Notices() {
         <div className="flex items-center justify-between mb-12">
           <div>
             <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2 flex items-center gap-3">
-              <Bell className="w-8 h-8 text-primary-600" />
+              <Bell className="w-8 h-8 text-blue-600" />
               Latest Notices & Announcements
             </h2>
             <p className="text-lg text-gray-600">
@@ -103,7 +109,7 @@ export function Notices() {
           </div>
           <Link
             href="/notices"
-            className="inline-flex items-center gap-2 text-primary-600 font-medium hover:text-primary-700 transition-colors"
+            className="inline-flex items-center gap-2 text-blue-600 font-medium hover:text-blue-700 transition-colors"
           >
             View All Notices
             <ChevronRight className="w-4 h-4" />
@@ -114,24 +120,24 @@ export function Notices() {
           {notices.slice(0, 6).map((notice, index) => (
             <article
               key={notice.id}
-              className="group p-6 bg-gray-50 rounded-2xl border border-gray-100 hover:border-primary-200 hover:shadow-lg transition-all duration-300 animate-slide-up"
+              className="group p-6 bg-gray-50 rounded-2xl border border-gray-100 hover:border-blue-200 hover:shadow-lg transition-all duration-300 animate-slide-up"
               style={{ animationDelay: `${index * 100}ms` }}
             >
               <div className="flex items-start justify-between gap-2 mb-3">
                 <div className="flex items-center gap-2">
                   <categoryIcons[notice.category as keyof typeof categoryIcons] 
-                    className={cn('w-5 h-5', categoryStyles[notice.category as keyof typeof categoryStyles])} 
+                    className={`w-5 h-5 ${categoryStyles[notice.category as keyof typeof categoryStyles]}`} 
                   />
-                  <Badge variant="outline" className={cn(categoryStyles[notice.category as keyof typeof categoryStyles])}>
+                  <span className={`inline-flex items-center gap-1.5 font-medium rounded-full px-2.5 py-1 text-sm border ${categoryStyles[notice.category as keyof typeof categoryStyles]}`}>
                     {notice.category.replace('_', ' ')}
-                  </Badge>
+                  </span>
                 </div>
-                <Badge variant="outline" className={cn(priorityStyles[notice.priority as keyof typeof priorityStyles])}>
+                <span className={`inline-flex items-center gap-1.5 font-medium rounded-full px-2.5 py-1 text-sm border ${priorityStyles[notice.priority as keyof typeof priorityStyles]}`}>
                   {notice.priority}
-                </Badge>
+                </span>
               </div>
 
-              <h3 className="text-lg font-semibold text-gray-900 mb-3 line-clamp-2 group-hover:text-primary-600 transition-colors">
+              <h3 className="text-lg font-semibold text-gray-900 mb-3 line-clamp-2 group-hover:text-blue-600 transition-colors">
                 {notice.title}
               </h3>
 
@@ -154,7 +160,7 @@ export function Notices() {
 
               <Link
                 href={`/notices/${notice.id}`}
-                className="inline-flex items-center gap-1 text-sm font-medium text-primary-600 hover:text-primary-700 transition-colors"
+                className="inline-flex items-center gap-1 text-sm font-medium text-blue-600 hover:text-blue-700 transition-colors"
               >
                 Read More
                 <ChevronRight className="w-4 h-4" />
@@ -166,7 +172,7 @@ export function Notices() {
         <div className="mt-12 text-center">
           <Link
             href="/notices"
-            className="inline-flex items-center gap-2 px-8 py-3 border-2 border-primary-600 text-primary-600 text-lg font-medium rounded-xl hover:bg-primary-50 transition-all duration-200"
+            className="inline-flex items-center gap-2 px-8 py-3 border-2 border-blue-600 text-blue-600 text-lg font-medium rounded-xl hover:bg-blue-50 transition-all duration-200"
           >
             View All Notices
             <ChevronRight className="w-5 h-5" />
@@ -184,9 +190,9 @@ export function Notices() {
             <Link
               key={item.title}
               href={item.href}
-              className="group p-5 bg-gray-50 rounded-2xl border border-gray-100 hover:border-primary-200 hover:shadow-lg transition-all duration-300"
+              className="group p-5 bg-gray-50 rounded-2xl border border-gray-100 hover:border-blue-200 hover:shadow-lg transition-all duration-300"
             >
-              <div className="w-10 h-10 bg-primary-100 text-primary-600 rounded-xl flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+              <div className="w-10 h-10 bg-blue-100 text-blue-600 rounded-xl flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
                 <item.icon className="w-5 h-5" />
               </div>
               <h3 className="font-semibold text-gray-900 mb-1">{item.title}</h3>

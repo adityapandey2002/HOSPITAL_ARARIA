@@ -6,7 +6,6 @@ import {
   Scan, Microscope, Droplet, Ambulance, Tooth, Activity,
   ArrowRight, ChevronRight
 } from 'lucide-react';
-import { cn } from '@dh-araria/shared/utils';
 
 const departments = [
   { id: 'general-medicine', name: 'General Medicine', icon: Stethoscope, color: 'primary', description: 'Comprehensive medical care for adults' },
@@ -27,12 +26,16 @@ const departments = [
 ];
 
 const colorStyles = {
-  primary: 'bg-primary-100 text-primary-600',
-  secondary: 'bg-secondary-100 text-secondary-600',
-  danger: 'bg-danger-100 text-danger-600',
-  warning: 'bg-warning-100 text-warning-600',
-  success: 'bg-success-100 text-success-600',
+  primary: 'bg-blue-100 text-blue-600',
+  secondary: 'bg-purple-100 text-purple-600',
+  danger: 'bg-red-100 text-red-600',
+  warning: 'bg-yellow-100 text-yellow-600',
+  success: 'bg-green-100 text-green-600',
 };
+
+function cn(...classes: (string | undefined | null | false)[]): string {
+  return classes.filter(Boolean).join(' ');
+}
 
 export function Departments() {
   return (
@@ -49,7 +52,7 @@ export function Departments() {
           </div>
           <Link
             href="/services"
-            className="inline-flex items-center gap-2 text-primary-600 font-medium hover:text-primary-700 transition-colors"
+            className="inline-flex items-center gap-2 text-blue-600 font-medium hover:text-blue-700 transition-colors"
           >
             View All Departments
             <ChevronRight className="w-4 h-4" />
@@ -62,7 +65,7 @@ export function Departments() {
               key={dept.id}
               href={`/services/${dept.id}`}
               className={cn(
-                'group p-5 rounded-2xl bg-white border border-gray-100 hover:border-primary-200 hover:shadow-lg transition-all duration-300',
+                'group p-5 rounded-2xl bg-white border border-gray-100 hover:border-blue-200 hover:shadow-lg transition-all duration-300',
                 'animate-slide-up'
               )}
               style={{ animationDelay: `${index * 50}ms` }}
@@ -78,7 +81,7 @@ export function Departments() {
               <p className="text-sm text-gray-500 line-clamp-2">{dept.description}</p>
               
               <div className="mt-4 pt-3 border-t border-gray-100">
-                <span className="inline-flex items-center gap-1 text-sm font-medium text-primary-600 group-hover:gap-2 transition-all">
+                <span className="inline-flex items-center gap-1 text-sm font-medium text-blue-600 group-hover:gap-2 transition-all">
                   View Details
                   <ArrowRight className="w-3 h-3" />
                 </span>
