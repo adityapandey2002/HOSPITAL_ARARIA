@@ -1,18 +1,24 @@
-import { Controller, Get, Post, Put, Body, Query, UseGuards, Param } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
+import { Body, Controller, Get, Post, Put, Query, UseGuards } from '@nestjs/common';
+import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { UserRole } from '@dh-araria/shared/types';
 
-import { BloodBankService } from './blood-bank.service';
-import { PaginationDto } from '../../common/dto/pagination.dto';
-import { JwtAuthGuard } from '../../modules/auth/guards/jwt-auth.guard';
-import { RolesGuard } from '../../common/auth/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { Public } from '../../common/decorators/public.decorator';
-import { UserRole, BloodGroup, BloodComponentType } from '@dh-araria/shared/types';
+import { PaginationDto } from '../../common/dto/pagination.dto';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+
+import {
+  BLOOD_COMPONENT_TYPES,
+  BLOOD_GROUPS,
+  BloodBankService,
+  type BloodComponentTypeValue,
+  type BloodGroupValue,
+} from './blood-bank.service';
 
 @ApiTags('Blood Bank')
 @Controller('blood-bank')
 export class BloodBankController {
-  constructor(private bloodBankService: BloodBankService) {}
+  constructor(private readonly bloodBankService: BloodBankService) {}
 
   @Get()
   @Public()
@@ -32,37 +38,39 @@ export class BloodBankController {
 
   @Get('blood-groups')
   @Public()
-  @ApiOperation({ summary: 'Get available blood groups' })
-  @ApiResponse({ status: 200, description: 'Blood groups retrieved successfully' })
+  @ApiOperation({ summary: 'Get supported blood groups' })
   async getBloodGroups() {
     return this.bloodBankService.getBloodGroups();
   }
 
   @Get('component-types')
   @Public()
-  @ApiOperation({ summary: 'Get available blood component types' })
-  @ApiResponse({ status: 200, description: 'Component types retrieved successfully' })
+  @ApiOperation({ summary: 'Get supported blood component types' })
   async getComponentTypes() {
     return this.bloodBankService.getComponentTypes();
   }
 
   @Post('stock')
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(JwtAuthGuard)
   @Roles(UserRole.ADMIN, UserRole.STAFF)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Update blood stock (Admin/Staff only)' })
-  @ApiResponse({ status: 200, description: 'Stock updated successfully' })
-  async updateStock(@Body() data: { bloodGroup: BloodGroup; componentType: BloodComponentType; units: number }) {
+  @ApiOperation({ summary: 'Adjust blood stock by a relative amount (Admin/Staff only)' })
+  async updateStock(
+    @Body() data: { bloodGroup: BloodGroupValue; componentType: BloodComponentTypeValue; units: number },
+  ) {
     return this.bloodBankService.updateStock(data.bloodGroup, data.componentType, data.units);
   }
 
   @Put('stock')
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(JwtAuthGuard)
   @Roles(UserRole.ADMIN, UserRole.STAFF)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Set blood stock to specific quantity (Admin/Staff only)' })
-  @ApiResponse({ status: 200, description: 'Stock set successfully' })
-  async setStock(@Body() data: { bloodGroup: BloodGroup; componentType: BloodComponentType; units: number }) {
+  @ApiOperation({ summary: 'Set blood stock to an absolute quantity (Admin/Staff only)' })
+  async setStock(
+    @Body() data: { bloodGroup: BloodGroupValue; componentType: BloodComponentTypeValue; units: number },
+  ) {
     return this.bloodBankService.setStock(data.bloodGroup, data.componentType, data.units);
   }
 }
+
+export { BLOOD_GROUPS, BLOOD_COMPONENT_TYPES };

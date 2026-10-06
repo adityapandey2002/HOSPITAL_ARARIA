@@ -727,19 +727,18 @@ import { appointments, doctors, timeSlots } from '../common/drizzle/schema';
 
 @Injectable()
 export class PublicAppointmentService {
-  constructor(@Inject('DRIZZLE') private db: DrizzleDb) {}
+  constructor(@Inject(DRIZZLE) private readonly db: DrizzleDb) {}
 
   async findAvailableSlots(doctorId: string, date: Date) {
-    const dayOfWeek = date.getDay();
     return this.db
       .select()
       .from(timeSlots)
       .where(
         and(
           eq(timeSlots.doctorId, doctorId),
-          eq(timeSlots.dayOfWeek, dayOfWeek),
-          eq(timeSlots.isAvailable, true)
-        )
+          eq(timeSlots.dayOfWeek, date.getDay()),
+          eq(timeSlots.isAvailable, true),
+        ),
       );
   }
 }
@@ -749,136 +748,118 @@ export class PublicAppointmentService {
 
 #### MikroORM (Clinical & ABDM Services)
 
-**Location**: `apps/backend/src/common/mikro/`
+**Location**: `apps/backend/src/common/mikro/` (module + config),
+`apps/backend/src/modules/abdm/entities/` (entities)
 
 ```typescript
 // mikro.module.ts
-import { Module, Global } from '@nestjs/common';
-import { MikroORM } from '@mikro-orm/postgresql';
-import { EntityGenerator } from '@mikro-orm/entity-generator';
+import { Global, Module, Provider } from '@nestjs/common';
+import { MikroORM } from '@mikro-orm/core';
+import { createMikroOrmConfig } from './mikro.config';
+
+export const MIKRO_ORM = 'MIKRO_ORM';
+export const ENTITY_MANAGER = 'ENTITY_MANAGER';
+
+const mikroOrmProvider: Provider = {
+  provide: MIKRO_ORM,
+  useFactory: async () => MikroORM.init(createMikroOrmConfig()),
+};
 
 @Global()
 @Module({
   providers: [
-    {
-      provide: 'MIKRO_ORM',
-      useFactory: async () => {
-        return await MikroORM.init({
-          entities: ['dist/**/*.entity.js'],
-          entitiesTs: ['src/**/*.entity.ts'],
-          dbName: process.env.DB_NAME,
-          host: process.env.DB_HOST,
-          port: parseInt(process.env.DB_PORT || '5432'),
-          user: process.env.DB_USERNAME,
-          password: process.env.DB_PASSWORD,
-          debug: process.env.NODE_ENV === 'development',
-          extensions: [EntityGenerator],
-        });
-      },
-    },
+    mikroOrmProvider,
+    { provide: ENTITY_MANAGER, useFactory: (orm) => orm.em.fork(), inject: [MIKRO_ORM] },
   ],
-  exports: ['MIKRO_ORM'],
+  exports: [MIKRO_ORM, ENTITY_MANAGER],
 })
 export class MikroModule {}
 ```
 
+Entities are plain and carry no lifecycle hooks — auditing happens in the
+service, inside the same Unit of Work, so the audit row and the clinical change
+commit or roll back together:
+
 ```typescript
-// Clinical Entity with Lifecycle Hooks for CERT-In Audit Logging
 // apps/backend/src/modules/abdm/entities/fhir-bundle.entity.ts
-import { Entity, Property, PrimaryKey, Index, EntityRepositoryType, OnCreate, OnUpdate, OnDelete } from '@mikro-orm/core';
-import { EntityManager } from '@mikro-orm/core';
-import { AuditLogService } from '../../common/audit/audit-log.service';
+import { Entity, Index, PrimaryKey, Property, Unique } from '@mikro-orm/core';
+import { newId } from '../../../common/drizzle/id';
 
 @Entity({ tableName: 'fhir_bundles' })
 export class FhirBundle {
   @PrimaryKey()
-  id: string;
-
-  @Property({ unique: true })
-  bundleId: string;
+  id: string = newId();
 
   @Property()
+  @Unique()
+  @Index({ name: 'fhir_bundles_bundleId_idx' })
+  bundleId: string;
+
+  @Property({ default: 'Bundle' })
   resourceType: string = 'Bundle';
 
   @Property()
   bundleType: string;
 
   @Property()
+  @Index({ name: 'fhir_bundles_patientId_idx' })
   patientId: string;
 
   @Property({ nullable: true })
   careContextId?: string;
 
+  /** The FHIR R4 resource graph, in a native JSONB column. */
   @Property({ type: 'jsonb' })
-  fhirJson: any;
+  fhirJson: Record<string, unknown>;
 
-  @Property({ nullable: true })
+  /** Fidelius ciphertext; the only form allowed to leave the hospital. */
+  @Property({ type: 'text', nullable: true })
   encryptedData?: string;
 
   @Property({ nullable: true })
   encryptionKey?: string;
 
   @Property({ default: 'PENDING' })
-  status: string;
+  @Index({ name: 'fhir_bundles_status_idx' })
+  status: FhirBundleStatus = 'PENDING';
 
-  @Property()
+  @Property({ onCreate: () => new Date() })
   createdAt: Date = new Date();
 
   @Property({ onUpdate: () => new Date() })
   updatedAt: Date = new Date();
-
-  @Index()
-  patientIdIdx: string;
-
-  @Index()
-  careContextIdIdx: string;
-
-  @Index()
-  statusIdx: string;
-
-  // MikroORM Lifecycle Hooks for CERT-In Audit Compliance
-  @OnCreate()
-  async onCreate(em: EntityManager) {
-    await AuditLogService.log({
-      action: 'FHIR_BUNDLE_CREATE',
-      resource: 'FhirBundle',
-      resourceId: this.id,
-      details: { bundleId: this.bundleId, patientId: this.patientId },
-    });
-  }
-
-  @OnUpdate()
-  async onUpdate(em: EntityManager) {
-    await AuditLogService.log({
-      action: 'FHIR_BUNDLE_UPDATE',
-      resource: 'FhirBundle',
-      resourceId: this.id,
-      details: { bundleId: this.bundleId, status: this.status },
-    });
-  }
-
-  @OnDelete()
-  async onDelete(em: EntityManager) {
-    await AuditLogService.log({
-      action: 'FHIR_BUNDLE_DELETE',
-      resource: 'FhirBundle',
-      resourceId: this.id,
-      details: { bundleId: this.bundleId },
-    });
-  }
-
-  [EntityRepositoryType]?: EntityRepository<FhirBundle>;
 }
 ```
 
-**Key Benefits**: Unit of Work (atomic transactions), Identity Map, Lifecycle Hooks (CERT-In audit logging), Change Tracking, Explicit Transaction Control.
+The matching audit write lives in `AbdmService.recordBundle()`:
+
+```typescript
+return this.em.transactional(async (em) => {
+  const bundle = em.create(FhirBundle, { /* … */ } as any);
+  await em.persistAndFlush(bundle);
+
+  await this.audit.logWith(em, {
+    action: 'FHIR_BUNDLE_CREATE',
+    resource: 'FhirBundle',
+    resourceId: bundle.id,
+    details: { bundleId: bundle.bundleId },   // metadata only, no clinical content
+  });
+
+  return bundle;
+});
+```
+
+**Key Benefits**: Unit of Work (atomic transactions), Identity Map, Change
+Tracking, Explicit Transaction Control, and an audit trail that cannot commit
+without its data change.
 
 #### ORM Selection Guide
 
-| Module / Service | ORM | Reason |
-|------------------|-----|--------|
+| Module / Service | Client | Reason |
+|------------------|--------|--------|
+| Auth, Users, Health | Prisma | Identity/session logic; owns the schema |
 | Homepage / Landing Page | Drizzle | High traffic, simple queries |
-| Doctor Directory | Drizzle | Read-heavy, public access |
+| Doctor Directory, Departments | Drizzle | Read-heavy, public access |
 | Basic Appointment Booking | Drizzle | High concurrency, simple CRUD |
 | Grievance Submission | Drizzle | Public-facing, moderate traffic |
 | Blood Bank Inventory | Drizzle | Real-time polling, simple reads |
@@ -886,71 +867,106 @@ export class FhirBundle {
 | **ABDM M2 (HIP)** | **MikroORM** | FHIR bundles, Fidelius encryption, atomic transactions |
 | **ABDM M3 (HIU)** | **MikroORM** | Consent management, audit trails |
 | **Clinical Records** | **MikroORM** | Complex transactions, audit logging |
-| **FHIR Bundle Encryption** | **MikroORM** | ECDH + AES-GCM, lifecycle hooks |
+| **Audit Logging** | **MikroORM** | Append-only trail inside the same Unit of Work |
 
 #### Database Commands
 
-```bash
-# Drizzle migrations
-cd apps/backend
-npm run db:generate     # Generate Drizzle migrations
-npm run db:migrate      # Run Drizzle migrations
-npm run db:push         # Push schema directly (dev only)
-npm run db:studio       # Open Drizzle Studio
+Prisma owns all DDL. Drizzle and MikroORM are query layers over the tables it
+creates, so their migration commands are deliberately absent.
 
-# MikroORM
-npm run mikro:generate  # Generate entities
-npm run mikro:migrate   # Run MikroORM migrations
-npm run mikro:schema    # Update schema
+```bash
+cd apps/backend
+
+npm run db:generate       # Regenerate the Prisma client
+npm run db:migrate        # Create + apply a migration (dev)
+npm run db:migrate:prod   # Apply pending migrations (prod, idempotent)
+npm run db:push           # Push schema without a migration file (dev only)
+npm run db:studio         # Prisma Studio
+npm run db:seed           # Seed reference data
+
+# Validate the Prisma schema (no database needed)
+npm run prisma:validate
+
+# Validate the MikroORM entities against the live database (read-only)
+npm run mikro:schema:update
+
+# Both at once
+npm run schema:check
 
 # Shared PostgreSQL (docker-compose)
 docker-compose up -d postgres
 ```
 
+> `drizzle-kit` is not installed in this project, and there is no MikroORM
+> migration command. Prisma is the only tool that may change DDL.
+
 #### Query Examples
 
-**Drizzle (Citizen-Facing)**:
-```typescript
-// Complex query with relations
-const appointments = await db
-  .select()
-  .from(appointments)
-  .where(
-    and(
-      eq(appointments.doctorId, doctorId),
-      gte(appointments.appointmentDate, new Date()),
-      inArray(appointments.status, ['PENDING', 'CONFIRMED'])
-    )
-  )
-  .leftJoin(patients, eq(appointments.patientId, patients.id))
-  .leftJoin(doctors, eq(appointments.doctorId, doctors.id))
-  .orderBy(asc(appointments.appointmentDate))
-  .limit(20);
+**Drizzle (Citizen-Facing)** — injected as `DRIZZLE`:
 
-// Transaction
-await db.transaction(async (tx) => {
-  const appointment = await tx.insert(appointments).values(appointmentData).returning();
-  await tx.insert(auditLogs).values({ action: 'CREATE', resource: 'Appointment', resourceId: appointment[0].id });
-});
+```typescript
+// Read with a join and pagination
+const rows = await this.db
+  .select({
+    id: departments.id,
+    name: departments.name,
+    doctorCount: count(doctors.id),
+  })
+  .from(departments)
+  .leftJoin(doctors, and(eq(doctors.departmentId, departments.id), eq(doctors.isActive, true)))
+  .where(eq(departments.isActive, true))
+  .groupBy(departments.id)
+  .orderBy(asc(departments.name))
+  .limit(limit)
+  .offset((page - 1) * limit);
+
+// Two joins onto the same table need an alias
+const author = alias(users, 'author');
+const assignee = alias(users, 'assignee');
+await this.db
+  .select({ id: grievances.id, user: { name: author.name } })
+  .from(grievances)
+  .leftJoin(author, eq(grievances.userId, author.id))
+  .leftJoin(assignee, eq(grievances.assignedTo, assignee.id));
+
+// Atomic upsert on a composite unique key
+await this.db
+  .insert(bloodStock)
+  .values({ id: newId(), bloodGroup, componentType, unitsAvailable: units })
+  .onConflictDoUpdate({
+    target: [bloodStock.bloodGroup, bloodStock.componentType],
+    set: { unitsAvailable: units, lastUpdated: new Date() },
+  })
+  .returning();
 ```
 
-**MikroORM (Clinical/ABDM)**:
-```typescript
-// Using Unit of Work for atomic ABDM transactions
-const em = mikroORM.em.fork();
-const bundle = em.create(FhirBundle, {
-  bundleId: generateBundleId(),
-  patientId: patient.id,
-  fhirJson: fhirBundle,
-  encryptedData: await fidelius.encrypt(fhirBundle),
-});
-await em.persistAndFlush(bundle); // Atomic with audit hooks
+For transactional work, inject `DrizzleService` and use its `transaction()` —
+that gives the transaction-scoped instance.
 
-// Explicit transaction for ABDM M3 consent flow
-await em.transactional(async (em) => {
-  const consent = em.create(ConsentArtefact, consentData);
-  await em.persistAndFlush(consent);
-  await em.getRepository(FhirBundle).update({ careContextId }, { status: 'CONSENTED' });
+**MikroORM (Clinical/ABDM)** — every write is a Unit of Work:
+
+```typescript
+// The audit row commits with the clinical change, or neither happens.
+return this.em.transactional(async (em) => {
+  const bundle = em.create(FhirBundle, {
+    id: newId(),
+    bundleId: input.bundleId,
+    bundleType: input.bundleType,
+    patientId: input.patientId,
+    fhirJson: input.fhirJson,
+    status: input.encryptedData ? 'ENCRYPTED' : 'PENDING',
+  } as any);
+
+  await em.persistAndFlush(bundle);
+
+  await this.audit.logWith(em, {
+    action: 'FHIR_BUNDLE_CREATE',
+    resource: 'FhirBundle',
+    resourceId: bundle.id,
+    details: { bundleId: bundle.bundleId },   // metadata only, never clinical content
+  });
+
+  return bundle;
 });
 ```
 
@@ -994,79 +1010,75 @@ npm run test:e2e
 npm run test:cov
 ```
 
+Test the query builder, not the driver. Each top-level call (`select`,
+`insert`, …) gets its own chainable stub so the two concurrent queries in a
+paginated read resolve to their own result set:
+
 ```typescript
-// Unit test example (Drizzle ORM - Citizen-Facing Services)
-import { Test, TestingModule } from '@nestjs/testing';
-import { DoctorsService } from './doctors.service';
-import { DrizzleDb } from '../../common/drizzle/drizzle.module';
+// apps/backend/src/modules/blood-bank/blood-bank.service.spec.ts
+type LooseMock = jest.Mock<any, any[]>;
 
-describe('DoctorsService', () => {
-  let service: DoctorsService;
-  let db: DrizzleDb;
+function createQueryBuilderMock(rows: unknown[]) {
+  const builder: Record<string, jest.Mock> = {};
 
-  const mockDb = {
-    select: jest.fn().mockReturnThis(),
-    from: jest.fn().mockReturnThis(),
-    where: jest.fn().mockReturnThis(),
-    limit: jest.fn().mockResolvedValue([{ id: '1', name: 'Dr. Test' }]),
-  };
+  // Non-terminal builder methods return the builder itself, like Drizzle's.
+  for (const method of ['from', 'where', 'values', 'set', 'onConflictDoUpdate', 'limit', 'offset', 'orderBy']) {
+    builder[method] = jest.fn(() => builder);
+  }
+
+  builder.returning = jest.fn(() => rows);
+  builder.then = (resolve: (r: unknown[]) => unknown) => Promise.resolve(rows).then(resolve);
+
+  return builder;
+}
+
+describe('BloodBankService', () => {
+  let service: BloodBankService;
+  let db: { select: jest.Mock; insert: jest.Mock; update: jest.Mock };
 
   beforeEach(async () => {
-    const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        DoctorsService,
-        { provide: 'DRIZZLE', useValue: mockDb },
-      ],
+    db = { select: jest.fn(), insert: jest.fn(), update: jest.fn(), delete: jest.fn() } as never;
+
+    const module = await Test.createTestingModule({
+      providers: [BloodBankService, { provide: DRIZZLE, useValue: db }],
     }).compile();
 
-    service = module.get<DoctorsService>(DoctorsService);
-    db = module.get<DrizzleDb>('DRIZZLE');
+    service = module.get(BloodBankService);
   });
 
-  it('should find doctor by ID', async () => {
-    const result = await service.findById('1');
-    expect(result).toEqual({ id: '1', name: 'Dr. Test' });
+  it('rejects an issue that would drive stock negative', async () => {
+    db.select.mockReturnValue(createQueryBuilderMock([{ id: 's1', unitsAvailable: 1 }]));
+
+    await expect(
+      service.updateStock('O_NEGATIVE', 'WHOLE_BLOOD', -5),
+    ).rejects.toThrow(/Insufficient stock/);
+
+    expect(db.update).not.toHaveBeenCalled();
   });
 });
 ```
 
+For MikroORM services, stub the EntityManager and drive the consent/audit
+branches — that is where the compliance risk lives:
+
 ```typescript
-// Unit test example (MikroORM - Clinical/ABDM Services)
-import { Test, TestingModule } from '@nestjs/testing';
-import { FhirBundleService } from './fhir-bundle.service';
-import { MikroORM, EntityManager } from '@mikro-orm/core';
+// apps/backend/src/modules/abdm/abdm.service.spec.ts
+import { AuditLogService } from '../../common/audit/audit-log.service';
+import { ENTITY_MANAGER } from '../../common/mikro/mikro.module';
 
-describe('FhirBundleService', () => {
-  let service: FhirBundleService;
-  let orm: MikroORM;
-  let em: EntityManager;
+describe('AbdmService consent gating', () => {
+  it.each(['PENDING', 'DENIED', 'REVOKED', 'EXPIRED'])(
+    'refuses disclosure when consent is %s',
+    async (status) => {
+      em.findOne.mockResolvedValue(grant({ status }));
 
-  const mockEm = {
-    persistAndFlush: jest.fn(),
-    findOne: jest.fn(),
-    create: jest.fn(),
-  };
+      await expect(
+        service.getRecordsForConsent('patient-1', 'CONSENT-1'),
+      ).rejects.toThrow(new RegExp(`Consent is ${status}`));
 
-  beforeEach(async () => {
-    const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        FhirBundleService,
-        { provide: 'MIKRO_ORM', useValue: { em: { fork: () => mockEm } } },
-      ],
-    }).compile();
-
-    service = module.get<FhirBundleService>(FhirBundleService);
-    orm = module.get<MikroORM>('MIKRO_ORM');
-    em = orm.em.fork();
-  });
-
-  it('should create FHIR bundle with audit logging', async () => {
-    const bundleData = { bundleId: 'test-bundle', patientId: 'patient-1' };
-    await service.create(bundleData);
-
-    expect(mockEm.create).toHaveBeenCalled();
-    expect(mockEm.persistAndFlush).toHaveBeenCalled();
-  });
+      expect(em.find).not.toHaveBeenCalled();
+    },
+  );
 });
 ```
 
@@ -1182,101 +1194,93 @@ export * from './utils';
 
 ---
 
-## Database Migrations (Dual-ORM)
+## Database Migrations
 
-### Drizzle ORM Migrations (Citizen-Facing)
+`prisma/schema.prisma` is the single source of truth for DDL. Drizzle and
+MikroORM are query layers that mirror the physical schema; neither owns
+migrations, and their migration commands are absent from `package.json` on
+purpose.
+
+### Changing a citizen-facing table
 
 ```bash
-# 1. Modify drizzle/schema.ts
-# 2. Generate migration
-npm run db:generate
+cd apps/backend
 
-# 3. Apply migration
+# 1. Edit prisma/schema.prisma
+# 2. Mirror the change into src/common/drizzle/schema.ts
+#    (same column names, same enum type names)
+# 3. Create + apply the migration
 npm run db:migrate
-
-# 4. Or push directly (development only)
-npm run db:push
-
-# 4. Open Drizzle Studio
-npm run db:studio
+# 4. Regenerate the Prisma client
+npm run db:generate
 ```
 
-### MikroORM Migrations (Clinical/ABDM)
+### Changing a clinical / ABDM table
 
 ```bash
-# 1. Modify entity files
-# 2. Generate migration
-npm run mikro:migration:create descriptive_name
+cd apps/backend
 
-# 3. Run migration
-npm run mikro:migrate
-
-# 4. Or update schema directly (development only)
-npm run mikro:schema
+# 1. Edit prisma/schema.prisma (the DDL source of truth)
+# 2. Mirror the change into src/modules/abdm/entities/*.entity.ts
+# 3. Confirm the entities agree with the database (read-only)
+npm run mikro:schema:update
+# 4. Apply
+npm run db:migrate
 ```
 
 ### Migration Best Practices
 
 1. **Always review generated SQL** before applying
-2. **Use descriptive names** - `add_user_abha_id`, `create_blood_stock_table`, `add_fhir_bundle_encryption`
-3. **Test on staging** before production
-4. **Backup before migration** in production
-5. **Use transactions** for multi-step migrations
-5. **Coordinate Dual-ORM migrations** - ensure Drizzle and MikroORM migrations don't conflict
+2. **Use descriptive names** — `add_user_abha_id`, `add_audit_correlation_id`
+3. **Mirror, don't duplicate** — change `schema.prisma` first, then the query layer
+4. **Test on staging** before production
+5. **Backup before migration** in production
+6. **Never** hand-write DDL; there is no tool in this repo that will let you
 
-### Seeding (Dual-ORM)
+### Seeding
+
+Seeding uses the Prisma client — one tool, one code path, no dual-ORM ceremony.
 
 ```typescript
-// Drizzle Seed (Citizen-Facing)
-import { drizzle } from 'drizzle-orm/node-postgres';
-import { Pool } from 'pg';
-import * as schema from './drizzle/schema';
+// apps/backend/prisma/seed.ts
+import { PrismaClient } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 
-async function seedDrizzle() {
-  const pool = new Pool({ connectionString: process.env.DATABASE_URL });
-  const db = drizzle(pool, { schema });
+const prisma = new PrismaClient();
 
+async function main() {
   const adminPassword = await bcrypt.hash('Admin@123', 12);
-  await db.insert(schema.users).values({
-    email: 'admin@dhararia.gov.in',
-    password: adminPassword,
-    name: 'System Administrator',
-    phone: '+91-6453-222123',
-    role: 'ADMIN',
-    isActive: true,
+
+  await prisma.user.upsert({
+    where: { email: 'admin@dhararia.gov.in' },
+    update: {},
+    create: {
+      email: 'admin@dhararia.gov.in',
+      password: adminPassword,
+      name: 'System Administrator',
+      phone: '+91-6453-222123',
+      role: 'ADMIN',
+      isActive: true,
+    },
   });
 
-  // Seed departments, doctors, blood stock, etc.
-}
-
-// MikroORM Seed (Clinical/ABDM)
-import { MikroORM } from '@mikro-orm/postgresql';
-import { FhirBundle, CareContext, AbhaProfile } from './entities';
-
-async function seedMikro(orm: MikroORM) {
-  const em = orm.em.fork();
-
-  // Seed ABDM-related entities if needed
-  // Clinical reference data, FHIR profiles, etc.
+  // Departments, doctors, blood stock, …
 }
 ```
 
 ### Migration Commands Summary
 
 ```bash
-# Drizzle (Citizen-Facing)
-npm run db:generate     # Generate migrations
-npm run db:migrate      # Run migrations
-npm run db:push         # Push schema directly (dev only)
-npm run db:studio       # Open Drizzle Studio
+npm run db:generate        # Regenerate the Prisma client
+npm run db:migrate         # Create + apply a migration (dev)
+npm run db:migrate:prod    # Apply pending migrations (prod, idempotent)
+npm run db:push            # Push schema without a migration file (dev only)
+npm run db:studio          # Prisma Studio
+npm run db:seed            # Seed reference data
+npm run prisma:validate    # Validate prisma/schema.prisma (no DB required)
+npm run mikro:schema:update # Read-only MikroORM ↔ database drift check
+npm run schema:check       # Both of the above
 
-# MikroORM (Clinical/ABDM)
-npm run mikro:generate  # Generate entities
-npm run mikro:migrate   # Run migrations
-npm run mikro:schema    # Update schema directly (dev only)
-
-# Shared PostgreSQL (docker-compose)
 docker-compose up -d postgres
 ```
 

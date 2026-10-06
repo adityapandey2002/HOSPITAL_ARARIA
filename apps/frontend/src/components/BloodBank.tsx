@@ -77,7 +77,10 @@ export function BloodBank() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {bloodStock.map((item, index) => (
+              {bloodStock.map((item, index) => {
+                const StatusIcon = statusIcons[item.status as keyof typeof statusIcons];
+
+                return (
                 <tr key={`${item.group}-${item.component}`} className={index % 2 === 0 ? 'bg-gray-50' : ''}>
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
@@ -95,7 +98,7 @@ export function BloodBank() {
                   </td>
                   <td className="px-6 py-4">
                     <span className={`inline-flex items-center gap-1.5 font-medium rounded-full px-2.5 py-1 text-sm border ${statusStyles[item.status as keyof typeof statusStyles]}`}>
-                      <statusIcons[item.status as keyof typeof statusIcons] className="w-3 h-3" />
+                      <StatusIcon className="w-3 h-3" />
                       {statusLabels[item.status as keyof typeof statusLabels]}
                     </span>
                   </td>
@@ -109,7 +112,8 @@ export function BloodBank() {
                     </Link>
                   </td>
                 </tr>
-              ))}
+                );
+              })}
             </tbody>
           </table>
         </div>

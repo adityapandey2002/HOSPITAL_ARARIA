@@ -2,8 +2,8 @@
 
 import Link from 'next/link';
 import { 
-  Stethoscope, Baby, Heart, Bone, Scalpel, Eye, Ear, Sparkles, Brain, 
-  Scan, Microscope, Droplet, Ambulance, Tooth, Activity,
+  Stethoscope, Baby, Heart, Bone, Scissors, Eye, Ear, Sparkles, Brain, 
+  Scan, Microscope, Droplet, Ambulance, SmilePlus, Activity,
   ArrowRight, ChevronRight, Users, Building2, Clock
 } from 'lucide-react';
 import { cn } from '@dh-araria/shared/utils';
@@ -13,7 +13,7 @@ const departments = [
   { id: 'pediatrics', name: 'Pediatrics', icon: Baby, color: 'secondary', description: 'Child healthcare, immunization, growth monitoring, and neonatal care', doctors: 6, beds: 30 },
   { id: 'obstetrics-gynecology', name: 'Obstetrics & Gynecology', icon: Heart, color: 'danger', description: 'Women\'s health, maternity care, high-risk pregnancies, and gynecological surgeries', doctors: 5, beds: 40 },
   { id: 'orthopedics', name: 'Orthopedics', icon: Bone, color: 'warning', description: 'Bone, joint, and muscle disorders including joint replacement and trauma', doctors: 4, beds: 25 },
-  { id: 'surgery', name: 'General Surgery', icon: Scalpel, color: 'primary', description: 'Surgical procedures including laparoscopic, gastrointestinal, and breast surgery', doctors: 4, beds: 20 },
+  { id: 'surgery', name: 'General Surgery', icon: Scissors, color: 'primary', description: 'Surgical procedures including laparoscopic, gastrointestinal, and breast surgery', doctors: 4, beds: 20 },
   { id: 'ophthalmology', name: 'Ophthalmology', icon: Eye, color: 'secondary', description: 'Eye care, cataract surgery, glaucoma treatment, and vision correction', doctors: 3, beds: 10 },
   { id: 'ent', name: 'ENT', icon: Ear, color: 'success', description: 'Ear, nose, and throat disorders including endoscopic sinus surgery', doctors: 3, beds: 10 },
   { id: 'dermatology', name: 'Dermatology', icon: Sparkles, color: 'warning', description: 'Skin, hair, and nail conditions with laser and cosmetic procedures', doctors: 2, beds: 5 },
@@ -22,7 +22,7 @@ const departments = [
   { id: 'pathology', name: 'Pathology', icon: Microscope, color: 'danger', description: 'Clinical pathology, biochemistry, microbiology, and blood bank', doctors: 4, beds: 0 },
   { id: 'anesthesiology', name: 'Anesthesiology', icon: Droplet, color: 'secondary', description: 'Anesthesia, pain management, and critical care support', doctors: 5, beds: 0 },
   { id: 'emergency', name: 'Emergency Medicine', icon: Ambulance, color: 'danger', description: '24/7 emergency and trauma care with resuscitation facilities', doctors: 6, beds: 20 },
-  { id: 'dental', name: 'Dental Surgery', icon: Tooth, color: 'success', description: 'Oral health, dental implants, orthodontics, and maxillofacial surgery', doctors: 2, beds: 0 },
+  { id: 'dental', name: 'Dental Surgery', icon: SmilePlus, color: 'success', description: 'Oral health, dental implants, orthodontics, and maxillofacial surgery', doctors: 2, beds: 0 },
   { id: 'physiotherapy', name: 'Physiotherapy', icon: Activity, color: 'warning', description: 'Rehabilitation, electrotherapy, exercise therapy, and sports injury', doctors: 3, beds: 0 },
 ];
 

@@ -81,21 +81,31 @@ C4Component
     Component(grievances, "Grievances Module", "NestJS Module", "Submission, tracking, CPGRAMS integration")
     Component(notices, "Notices Module", "NestJS Module", "CRUD, publishing, categories")
     Component(health, "Health Module", "NestJS Module", "Liveness/readiness probes")
-    Component(common, "Common Module", "NestJS Module", "Prisma, Guards, Interceptors, Filters, Decorators")
-    
-    ComponentDb(prisma, "Prisma Client", "ORM", "Type-safe database access")
-    ComponentDb(postgres, "PostgreSQL", "Database", "Primary data store")
-    Component(cache, "Redis Client", "Cache", "Sessions, rate limiting")
-    
+    Component(common, "Common Module", "NestJS Module", "PrismaService, DrizzleModule, MikroModule, AuditModule, Guards, Filters")
+    Component(abdm, "ABDM Module", "NestJS Module", "M2 HIP / M3 HIU, consent gating, audit trail")
+
+    ComponentDb(prisma, "Prisma", "ORM", "Auth, Users, Health; owns DDL")
+    ComponentDb(drizzle, "Drizzle", "ORM", "Citizen-facing modules, SQL-first")
+    ComponentDb(mikro, "MikroORM", "ORM", "Clinical/ABDM, Unit of Work")
+    ComponentDb(postgres, "PostgreSQL", "Database", "Single engine; JSONB for FHIR R4")
+    ComponentDb(cache, "Redis Client", "Cache", "Sessions, rate limiting")
+
     Rel(auth, prisma, "Uses")
     Rel(users, prisma, "Uses")
-    Rel(doctors, prisma, "Uses")
-    Rel(departments, prisma, "Uses")
-    Rel(appointments, prisma, "Uses")
-    Rel(bloodBank, prisma, "Uses")
-    Rel(grievances, prisma, "Uses")
-    Rel(notices, prisma, "Uses")
-    
+    Rel(health, prisma, "Uses")
+    Rel(doctors, drizzle, "Uses")
+    Rel(departments, drizzle, "Uses")
+    Rel(appointments, drizzle, "Uses")
+    Rel(bloodBank, drizzle, "Uses")
+    Rel(grievances, drizzle, "Uses")
+    Rel(notices, drizzle, "Uses")
+    Rel(abdm, mikro, "Uses")
+    Rel(abdm, common, "Uses AuditLogService")
+
+    Rel(prisma, postgres, "Reads/writes")
+    Rel(drizzle, postgres, "Reads/writes")
+    Rel(mikro, postgres, "Reads/writes")
+
     Rel(auth, cache, "Uses for rate limiting")
     Rel(appointments, cache, "Uses for locking")
 ```
@@ -110,16 +120,16 @@ We use PostgreSQL as our single database engine for the entire project. For stan
 
 The `FhirBundle` entity uses a `JSONB` column to store complete FHIR R4 bundles:
 
-```typescript
-// Prisma Schema Example
+```prisma
+// prisma/schema.prisma — source of truth for all DDL
 model FhirBundle {
-  id              String   @id @default(cuid())
+  id              String   @id @default(uuid())
   bundleId        String   @unique
   resourceType    String   @default("Bundle")
   bundleType      String
   patientId       String
   careContextId   String?
-  fhirJson        Json     // JSONB column for full FHIR R4 bundle
+  fhirJson        Json     // JSONB column for the full FHIR R4 bundle
   encryptedData   String?
   encryptionKey   String?
   status          String   @default("PENDING")
@@ -140,213 +150,188 @@ This approach provides:
 - **ACID Compliance**: Full transactional support for health data operations
 - **Simplified Infrastructure**: No separate MongoDB/NoSQL cluster needed
 
-### Dual-ORM Strategy (Data Access Layer)
+### Data Access Strategy
 
-We implement two different Object-Relational Mappers based on the specific needs of our service domains:
+PostgreSQL is the **single** database engine. Three clients talk to it, each
+with its own connection pool:
 
-| ORM | Use Case | Rationale |
-|-----|----------|-----------|
-| **Drizzle ORM** | Citizen-Facing Services | Lightweight, "SQL-first", zero abstraction overhead, extreme performance for high-traffic public endpoints |
-| **MikroORM** | Clinical & ABDM Services | Strict "Unit of Work" architecture, atomic transactions for health data, lifecycle hooks for CERT-In audit logs |
+| Client | Owns | Rationale |
+|--------|------|-----------|
+| **Prisma** (`PrismaService`) | Auth, Users, Health | Retained for identity/session logic; also the **only** tool allowed to emit DDL |
+| **Drizzle ORM** | Citizen-facing modules (departments, notices, blood bank, grievances, doctors, appointments) | SQL-first, near-zero abstraction overhead for high-traffic public endpoints |
+| **MikroORM** | Clinical / ABDM (ABDM M2 HIP, M3 HIU) | Strict Unit of Work so a FHIR bundle, its consent artefact and its audit rows commit atomically |
+
+#### One schema, three clients: how drift is prevented
+
+`prisma/schema.prisma` is the single source of truth for **DDL**. Drizzle and
+MikroORM are *query* layers over tables Prisma created. Concretely:
+
+- `prisma/schema.prisma` → the only file `npm run db:migrate` acts on.
+- `src/common/drizzle/schema.ts` mirrors the *physical* schema (Prisma field
+  names, `@@map` table names, Prisma's enum type names like `BloodGroup`).
+- `src/modules/abdm/entities/*.entity.ts` mirror the clinical tables.
+- `drizzle-kit` is not a dependency at all, and MikroORM migration commands are
+  **deliberately not** exposed as npm scripts. Running either would fork the
+  schema away from `schema.prisma`.
+- `npm run mikro:schema:update` is a read-only drift check: it introspects the
+  live database and prints the DDL the entities expect, writing nothing.
+  `npm run prisma:validate` checks the schema file itself. `npm run schema:check`
+  runs both.
+
+Primary keys are `String @default(uuid())`. Prisma generates the value in its
+query engine, so Drizzle and MikroORM mint their own with Node's built-in
+`crypto.randomUUID()` via `src/common/drizzle/id.ts`.
 
 #### Drizzle ORM (Citizen-Facing Services)
 
-**Used for**: Homepage, basic appointment booking, grievance routing, doctor directory, blood bank inventory, notices
+`DrizzleModule` publishes the raw Drizzle instance under the `DRIZZLE` token and
+owns the pool lifecycle:
 
 ```typescript
 // apps/backend/src/common/drizzle/drizzle.module.ts
-import { Module, Global } from '@nestjs/common';
-import { drizzle } from 'drizzle-orm/node-postgres';
-import { Pool } from 'pg';
-import * as schema from './schema';
+import { Global, Module } from '@nestjs/common';
+import { DrizzleService } from './drizzle.service';
+
+export const DRIZZLE = 'DRIZZLE';
 
 @Global()
 @Module({
   providers: [
-    {
-      provide: 'DRIZZLE',
-      useFactory: () => {
-        const pool = new Pool({
-          connectionString: process.env.DATABASE_URL,
-        });
-        return drizzle(pool, { schema });
-      },
-    },
+    DrizzleService,                                    // owns the pg.Pool
+    { provide: DRIZZLE, useFactory: (s) => s.db, inject: [DrizzleService] },
   ],
-  exports: ['DRIZZLE'],
+  exports: [DrizzleService, DRIZZLE],
 })
 export class DrizzleModule {}
 ```
 
+The pool is built in `DrizzleService`'s **constructor** (not `onModuleInit`) so
+the `DRIZZLE` factory always sees a ready handle:
+
 ```typescript
-// Usage in Citizen-Facing Services (e.g., Appointments)
-import { Inject, Injectable } from '@nestjs/common';
-import { eq, and, gte, lte } from 'drizzle-orm';
-import { appointments, doctors, timeSlots } from '../common/drizzle/schema';
-
+// apps/backend/src/common/drizzle/drizzle.service.ts
 @Injectable()
-export class PublicAppointmentService {
-  constructor(@Inject('DRIZZLE') private db: DrizzleDb) {}
+export class DrizzleService implements OnModuleDestroy {
+  readonly pool: Pool;
+  readonly db: DrizzleDb;
 
-  async findAvailableSlots(doctorId: string, date: Date) {
-    const dayOfWeek = date.getDay();
+  constructor(config: ConfigService) {
+    this.pool = new Pool({ /* host/port/creds from validated config */ });
+    this.db = drizzle(this.pool, { schema });
+  }
+
+  async onModuleDestroy() { await this.pool.end(); }
+}
+```
+
+Consuming it:
+
+```typescript
+// apps/backend/src/modules/notices/notices.service.ts
+@Injectable()
+export class NoticesService {
+  constructor(@Inject(DRIZZLE) private readonly db: DrizzleDb) {}
+
+  async findPublished(pagination: PaginationDto, language?: string) {
     return this.db
       .select()
-      .from(timeSlots)
+      .from(notices)
       .where(
         and(
-          eq(timeSlots.doctorId, doctorId),
-          eq(timeSlots.dayOfWeek, dayOfWeek),
-          eq(timeSlots.isAvailable, true)
-        )
-      );
+          eq(notices.isPublished, true),
+          or(isNull(notices.expiresAt), gte(notices.expiresAt, new Date())),
+        ),
+      )
+      .orderBy(desc(notices.publishedAt))
+      .limit(pagination.limit ?? 10);
   }
 }
 ```
 
 **Key Benefits**:
 - **Zero Abstraction Overhead**: Near-raw SQL performance
-- **Type-Safe SQL**: Full TypeScript inference
+- **Type-Safe SQL**: Full TypeScript inference from the schema
 - **Lightweight**: ~10KB bundle size
-- **Connection Pooling**: Native pg pool integration
+- **Connection Pooling**: Native `pg` pool integration
 
 #### MikroORM (Clinical & ABDM Services)
 
-**Used for**: ABDM M2 (HIP - FHIR bundle generation), ABDM M3 (HIU - Consent management), Clinical records, FHIR bundle encryption/decryption
+**Used for**: ABDM M2 (HIP — FHIR bundle generation), ABDM M3 (HIU — consent
+management), clinical records, and the CERT-In audit trail.
 
 ```typescript
 // apps/backend/src/common/mikro/mikro.module.ts
-import { Module, Global } from '@nestjs/common';
-import { MikroORM } from '@mikro-orm/postgresql';
-import { EntityGenerator } from '@mikro-orm/entity-generator';
+import { Global, Module, Provider } from '@nestjs/common';
+import { MikroORM } from '@mikro-orm/core';
+import { createMikroOrmConfig } from './mikro.config';
+
+export const MIKRO_ORM = 'MIKRO_ORM';
+export const ENTITY_MANAGER = 'ENTITY_MANAGER';
+
+const mikroOrmProvider: Provider = {
+  provide: MIKRO_ORM,
+  useFactory: async () => MikroORM.init(createMikroOrmConfig()),
+};
 
 @Global()
 @Module({
   providers: [
-    {
-      provide: 'MIKRO_ORM',
-      useFactory: async () => {
-        return await MikroORM.init({
-          entities: ['dist/**/*.entity.js'],
-          entitiesTs: ['src/**/*.entity.ts'],
-          dbName: process.env.DB_NAME,
-          host: process.env.DB_HOST,
-          port: parseInt(process.env.DB_PORT || '5432'),
-          user: process.env.DB_USERNAME,
-          password: process.env.DB_PASSWORD,
-          debug: process.env.NODE_ENV === 'development',
-          extensions: [EntityGenerator],
-        });
-      },
-    },
+    mikroOrmProvider,
+    { provide: ENTITY_MANAGER, useFactory: (orm) => orm.em.fork(), inject: [MIKRO_ORM] },
   ],
-  exports: ['MIKRO_ORM'],
+  exports: [MIKRO_ORM, ENTITY_MANAGER],
 })
 export class MikroModule {}
 ```
 
+Services inject `ENTITY_MANAGER` and wrap writes in `em.transactional(...)` so
+the clinical change and its audit rows land together:
+
 ```typescript
-// Clinical Entity with Lifecycle Hooks for CERT-In Audit Logging
-// apps/backend/src/modules/abdm/entities/fhir-bundle.entity.ts
-import { Entity, Property, PrimaryKey, Index, EntityRepositoryType, OnInit, OnCreate, OnUpdate, OnDelete } from '@mikro-orm/core';
-import { Repository } from '@mikro-orm/core';
-import { AuditLogService } from '../../common/audit/audit-log.service';
+// apps/backend/src/modules/abdm/abdm.service.ts
+@Injectable()
+export class AbdmService {
+  constructor(
+    @Inject(ENTITY_MANAGER) private readonly em: EntityManager,
+    private readonly audit: AuditLogService,
+  ) {}
 
-@Entity({ tableName: 'fhir_bundles' })
-export class FhirBundle {
-  @PrimaryKey()
-  id: string;
+  async recordBundle(input: RecordBundleInput): Promise<FhirBundle> {
+    return this.em.transactional(async (em) => {
+      const bundle = em.create(FhirBundle, { /* … */ } as any);
+      await em.persistAndFlush(bundle);
 
-  @Property({ unique: true })
-  bundleId: string;
+      await this.audit.logWith(em, {
+        action: 'FHIR_BUNDLE_CREATE',
+        resource: 'FhirBundle',
+        resourceId: bundle.id,
+        details: { bundleId: bundle.bundleId, entryCount: /* … */ },
+      });
 
-  @Property()
-  resourceType: string = 'Bundle';
-
-  @Property()
-  bundleType: string;
-
-  @Property()
-  patientId: string;
-
-  @Property({ nullable: true })
-  careContextId?: string;
-
-  @Property({ type: 'jsonb' })
-  fhirJson: any;
-
-  @Property({ nullable: true })
-  encryptedData?: string;
-
-  @Property({ nullable: true })
-  encryptionKey?: string;
-
-  @Property({ default: 'PENDING' })
-  status: string;
-
-  @Property()
-  createdAt: Date = new Date();
-
-  @Property({ onUpdate: () => new Date() })
-  updatedAt: Date = new Date();
-
-  @Index()
-  patientIdIdx: string;
-
-  @Index()
-  careContextIdIdx: string;
-
-  @Index()
-  statusIdx: string;
-
-  // MikroORM Lifecycle Hooks for CERT-In Audit Compliance
-  @OnCreate()
-  async onCreate(em: EntityManager) {
-    await AuditLogService.log({
-      action: 'FHIR_BUNDLE_CREATE',
-      resource: 'FhirBundle',
-      resourceId: this.id,
-      details: { bundleId: this.bundleId, patientId: this.patientId },
+      return bundle;
     });
   }
-
-  @OnUpdate()
-  async onUpdate(em: EntityManager) {
-    await AuditLogService.log({
-      action: 'FHIR_BUNDLE_UPDATE',
-      resource: 'FhirBundle',
-      resourceId: this.id,
-      details: { bundleId: this.bundleId, status: this.status },
-    });
-  }
-
-  @OnDelete()
-  async onDelete(em: EntityManager) {
-    await AuditLogService.log({
-      action: 'FHIR_BUNDLE_DELETE',
-      resource: 'FhirBundle',
-      resourceId: this.id,
-      details: { bundleId: this.bundleId },
-    });
-  }
-
-  [EntityRepositoryType]?: EntityRepository<FhirBundle>;
 }
 ```
+
+Audit rows are written through `AuditLogService.logWith(em, …)`, which uses the
+*same* EntityManager as the business change — that is what makes the audit trail
+impossible to bypass, and it is why the audit write is transactional rather than
+a best-effort side effect.
 
 **Key Benefits**:
 - **Unit of Work**: Guarantees atomic transactions for complex health data operations
 - **Identity Map**: Prevents duplicate entities in memory
-- **Lifecycle Hooks**: Automatic CERT-In audit logging on create/update/delete
 - **Change Tracking**: Only modified fields are persisted
 - **Transaction Boundaries**: Explicit transaction control for ABDM flows
 
 ### ORM Selection Guide for Developers
 
-| Module / Service | ORM to Use | Reason |
-|------------------|------------|--------|
+| Module / Service | Client | Reason |
+|------------------|--------|--------|
+| Auth, Users, Health | Prisma | Identity/session logic; owns the schema |
 | Homepage / Landing Page | Drizzle | High traffic, simple queries |
-| Doctor Directory | Drizzle | Read-heavy, public access |
+| Doctor Directory, Departments | Drizzle | Read-heavy, public access |
 | Basic Appointment Booking | Drizzle | High concurrency, simple CRUD |
 | Grievance Submission | Drizzle | Public-facing, moderate traffic |
 | Blood Bank Inventory | Drizzle | Real-time polling, simple reads |
@@ -354,37 +339,44 @@ export class FhirBundle {
 | **ABDM M2 (HIP)** | **MikroORM** | **FHIR bundles, Fidelius encryption, atomic transactions** |
 | **ABDM M3 (HIU)** | **MikroORM** | **Consent management, audit trails** |
 | **Clinical Records** | **MikroORM** | **Complex transactions, audit logging** |
-| **FHIR Bundle Encryption** | **MikroORM** | **ECDH + AES-GCM, lifecycle hooks** |
+| **Audit Logging** | **MikroORM** | **Append-only trail inside the same Unit of Work** |
 
-### Shared Database Connection
+### Shared Database Connection & Pool Budget
 
-Both ORMs connect to the same PostgreSQL instance but use different connection pools:
+All three clients hit the same PostgreSQL instance with separate pools, so their
+sizes must sum below the server's `max_connections`:
 
-```typescript
-// docker-compose.yml (shared postgres)
+| Client | Default pool | Env var |
+|--------|--------------|---------|
+| Prisma | 10 | `DB_POOL_SIZE` |
+| Drizzle | 20 | `DRIZZLE_POOL_SIZE` |
+| MikroORM | 20 | `MIKRO_POOL_SIZE` |
+| **Total** | **50** | (headroom to 200 for migrations and `psql`) |
+
+```yaml
+# docker-compose.yml (shared postgres)
 services:
   postgres:
     image: postgres:15-alpine
     environment:
-      POSTGRES_DB: dh_araria
-      POSTGRES_USER: ${DB_USER}
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME:-dh_araria}
+      POSTGRES_USER: ${DB_USERNAME:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
-      - "5432:5432"
-    command: >
-      postgres
-      -c max_connections=200
-      -c shared_buffers=256MB
-      -c effective_cache_size=1GB
-      -c maintenance_work_mem=64MB
-      -c checkpoint_completion_target=0.9
-      -c wal_buffers=16MB
-      -c default_statistics_target=100
-      -c random_page_cost=1.1
-      -c effective_io_concurrency=200
+      - "${DB_PORT:-5432}:5432"
+    command:
+      - postgres
+      - -c
+      - max_connections=200
+      - -c
+      - log_min_duration_statement=500
 ```
+
+`GET /api/v1/health` reports Prisma and Drizzle reachability plus live Drizzle
+pool stats, so a saturated pool surfaces as an unhealthy pod rather than a
+stream of 500s.
 
 ---
 

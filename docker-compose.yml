@@ -14,6 +14,14 @@ services:
       - ./init-scripts:/docker-entrypoint-initdb.d
     ports:
       - "${DB_PORT:-5432}:5432"
+    # The backend opens three pools against this instance (Prisma 10, Drizzle 20,
+    # MikroORM 20 = 50). 200 leaves room for migrations, psql and PgBouncer.
+    command:
+      - postgres
+      - -c
+      - max_connections=200
+      - -c
+      - log_min_duration_statement=500
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-postgres} -d ${DB_NAME:-dh_araria}"]
       interval: 10s
@@ -51,6 +59,15 @@ services:
       PORT: 3001
       FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
       DATABASE_URL: postgresql://${DB_USERNAME:-postgres}:${DB_PASSWORD:-postgres}@postgres:5432/${DB_NAME:-dh_araria}?schema=public
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USERNAME: ${DB_USERNAME:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-postgres}
+      DB_NAME: ${DB_NAME:-dh_araria}
+      DB_POOL_SIZE: ${DB_POOL_SIZE:-10}
+      DRIZZLE_POOL_SIZE: ${DRIZZLE_POOL_SIZE:-20}
+      MIKRO_POOL_SIZE: ${MIKRO_POOL_SIZE:-20}
+      MIKRO_DEBUG: ${MIKRO_DEBUG:-false}
       JWT_SECRET: ${JWT_SECRET:-your-super-secret-jwt-key-change-in-production-min-32-chars}
       JWT_ACCESS_EXPIRY: ${JWT_ACCESS_EXPIRY:-15m}
       JWT_REFRESH_EXPIRY: ${JWT_REFRESH_EXPIRY:-7d}

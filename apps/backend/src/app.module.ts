@@ -14,6 +14,7 @@ import { BloodBankModule } from './modules/blood-bank/blood-bank.module';
 import { GrievancesModule } from './modules/grievances/grievances.module';
 import { NoticesModule } from './modules/notices/notices.module';
 import { HealthModule } from './modules/health/health.module';
+import { AbdmModule } from './modules/abdm/abdm.module';
 import { CommonModule } from './common/common.module';
 
 import configuration from './config/configuration';
@@ -49,7 +50,7 @@ import { validationSchema } from './config/validation';
     // Health checks
     TerminusModule,
 
-    // Common module
+    // Common module (Prisma + Drizzle + MikroORM + audit)
     CommonModule,
 
     // Feature modules
@@ -62,6 +63,9 @@ import { validationSchema } from './config/validation';
     GrievancesModule,
     NoticesModule,
     HealthModule,
+
+    // ABDM (clinical / MikroORM-backed)
+    AbdmModule,
   ],
   providers: [
     {

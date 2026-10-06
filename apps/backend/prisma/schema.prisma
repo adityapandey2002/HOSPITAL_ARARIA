@@ -91,7 +91,7 @@ enum NoticePriority {
 
 // Models
 model User {
-  id        String   @id @default(cuid())
+  id        String   @id @default(uuid())
   email     String   @unique
   password  String
   name      String
@@ -102,11 +102,11 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  doctor                Doctor?
-  appointments          Appointment[] @relation("PatientAppointments")
-  grievances            Grievance[]
-  notices               Notice[] @relation("NoticeAuthor")
-  assignedGrievances    Grievance[] @relation("AssignedGrievances")
+  doctor             Doctor?
+  appointments       Appointment[] @relation("PatientAppointments")
+  grievances         Grievance[]
+  notices            Notice[]      @relation("NoticeAuthor")
+  assignedGrievances Grievance[]   @relation("AssignedGrievances")
 
   @@index([email])
   @@index([phone])
@@ -116,25 +116,25 @@ model User {
 }
 
 model Doctor {
-  id                String   @id @default(cuid())
-  userId            String   @unique
-  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  name              String
-  specialization    String
-  qualification     String
-  experience        Int
-  hprId             String?  @unique
-  departmentId      String
-  department        Department @relation(fields: [departmentId], references: [id], onDelete: Restrict)
-  consultationFee   Float    @default(0)
-  rating            Float    @default(0)
-  reviewCount       Int      @default(0)
-  languages         String[] @default(["English", "Hindi"])
-  bio               String?
-  imageUrl          String?
-  isActive          Boolean  @default(true)
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  id              String     @id @default(uuid())
+  userId          String     @unique
+  user            User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name            String
+  specialization  String
+  qualification   String
+  experience      Int
+  hprId           String?    @unique
+  departmentId    String
+  department      Department @relation(fields: [departmentId], references: [id], onDelete: Restrict)
+  consultationFee Float      @default(0)
+  rating          Float      @default(0)
+  reviewCount     Int        @default(0)
+  languages       String[]   @default(["English", "Hindi"])
+  bio             String?
+  imageUrl        String?
+  isActive        Boolean    @default(true)
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
 
   appointments Appointment[]
   timeSlots    TimeSlot[]
@@ -148,7 +148,7 @@ model Doctor {
 }
 
 model Department {
-  id          String   @id @default(cuid())
+  id          String   @id @default(uuid())
   name        String   @unique
   description String
   icon        String?
@@ -157,7 +157,7 @@ model Department {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  doctors     Doctor[]
+  doctors      Doctor[]
   appointments Appointment[]
 
   @@index([name])
@@ -166,12 +166,12 @@ model Department {
 }
 
 model TimeSlot {
-  id              String   @id @default(cuid())
+  id              String   @id @default(uuid())
   doctorId        String
   doctor          Doctor   @relation(fields: [doctorId], references: [id], onDelete: Cascade)
-  dayOfWeek       Int      // 0-6 (Sunday-Saturday)
-  startTime       String   // HH:mm format
-  endTime         String   // HH:mm format
+  dayOfWeek       Int // 0-6 (Sunday-Saturday)
+  startTime       String // HH:mm format
+  endTime         String // HH:mm format
   isAvailable     Boolean  @default(true)
   maxAppointments Int      @default(1)
   createdAt       DateTime @default(now())
@@ -184,24 +184,24 @@ model TimeSlot {
 }
 
 model Appointment {
-  id               String            @id @default(cuid())
-  patientId        String
-  patient          User              @relation("PatientAppointments", fields: [patientId], references: [id], onDelete: Restrict)
-  doctorId         String
-  doctor           Doctor            @relation(fields: [doctorId], references: [id], onDelete: Restrict)
-  departmentId     String
-  department       Department        @relation(fields: [departmentId], references: [id], onDelete: Restrict)
-  appointmentDate  DateTime
-  startTime        String            // HH:mm format
-  endTime          String            // HH:mm format
-  status           AppointmentStatus @default(PENDING)
-  type             AppointmentType   @default(OPD)
-  reason           String?
-  notes            String?
-  abhaId           String?
-  tokenNumber      Int?
-  createdAt        DateTime          @default(now())
-  updatedAt        DateTime          @updatedAt
+  id              String            @id @default(uuid())
+  patientId       String
+  patient         User              @relation("PatientAppointments", fields: [patientId], references: [id], onDelete: Restrict)
+  doctorId        String
+  doctor          Doctor            @relation(fields: [doctorId], references: [id], onDelete: Restrict)
+  departmentId    String
+  department      Department        @relation(fields: [departmentId], references: [id], onDelete: Restrict)
+  appointmentDate DateTime
+  startTime       String // HH:mm format
+  endTime         String // HH:mm format
+  status          AppointmentStatus @default(PENDING)
+  type            AppointmentType   @default(OPD)
+  reason          String?
+  notes           String?
+  abhaId          String?
+  tokenNumber     Int?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
 
   @@index([patientId])
   @@index([doctorId])
@@ -213,12 +213,12 @@ model Appointment {
 }
 
 model BloodStock {
-  id              String             @id @default(cuid())
-  bloodGroup      BloodGroup
-  componentType   BloodComponentType
-  unitsAvailable  Int                @default(0)
-  lastUpdated     DateTime           @updatedAt
-  createdAt       DateTime           @default(now())
+  id             String             @id @default(uuid())
+  bloodGroup     BloodGroup
+  componentType  BloodComponentType
+  unitsAvailable Int                @default(0)
+  lastUpdated    DateTime           @updatedAt
+  createdAt      DateTime           @default(now())
 
   @@unique([bloodGroup, componentType])
   @@index([bloodGroup])
@@ -227,22 +227,22 @@ model BloodStock {
 }
 
 model Grievance {
-  id           String             @id @default(cuid())
-  userId       String?
-  user         User?              @relation(fields: [userId], references: [id], onDelete: SetNull)
-  name         String
-  email        String
-  phone        String
-  category     GrievanceCategory
-  subject      String
-  description  String
-  status       GrievanceStatus    @default(SUBMITTED)
-  cpgramsId    String?            @unique
-  assignedTo   String?
-  assignee     User?              @relation("AssignedGrievances", fields: [assignedTo], references: [id], onDelete: SetNull)
-  resolution   String?
-  createdAt    DateTime           @default(now())
-  updatedAt    DateTime           @updatedAt
+  id          String            @id @default(uuid())
+  userId      String?
+  user        User?             @relation(fields: [userId], references: [id], onDelete: SetNull)
+  name        String
+  email       String
+  phone       String
+  category    GrievanceCategory
+  subject     String
+  description String
+  status      GrievanceStatus   @default(SUBMITTED)
+  cpgramsId   String?           @unique
+  assignedTo  String?
+  assignee    User?             @relation("AssignedGrievances", fields: [assignedTo], references: [id], onDelete: SetNull)
+  resolution  String?
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
 
   @@index([userId])
   @@index([status])
@@ -253,20 +253,20 @@ model Grievance {
 }
 
 model Notice {
-  id          String          @id @default(cuid())
-  title       String
-  content     String
-  category    NoticeCategory  @default(GENERAL)
-  priority    NoticePriority  @default(MEDIUM)
-  publishedAt DateTime?
-  expiresAt   DateTime?
-  isPublished Boolean         @default(false)
+  id            String         @id @default(uuid())
+  title         String
+  content       String
+  category      NoticeCategory @default(GENERAL)
+  priority      NoticePriority @default(MEDIUM)
+  publishedAt   DateTime?
+  expiresAt     DateTime?
+  isPublished   Boolean        @default(false)
   attachmentUrl String?
-  language    String          @default("en")
-  authorId    String
-  author      User            @relation("NoticeAuthor", fields: [authorId], references: [id], onDelete: Restrict)
-  createdAt   DateTime        @default(now())
-  updatedAt   DateTime        @updatedAt
+  language      String         @default("en")
+  authorId      String
+  author        User           @relation("NoticeAuthor", fields: [authorId], references: [id], onDelete: Restrict)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
 
   @@index([isPublished])
   @@index([publishedAt])
@@ -277,21 +277,21 @@ model Notice {
 
 // ABDM Integration Models (for future phases)
 model AbhaProfile {
-  id            String   @id @default(cuid())
-  abhaId        String   @unique
-  userId        String   @unique
-  healthId      String   @unique
-  name          String
-  gender        String
-  dateOfBirth   DateTime
-  phone         String?
-  email         String?
-  address       Json?
-  photo         String?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id          String   @id @default(uuid())
+  abhaId      String   @unique
+  userId      String   @unique
+  healthId    String   @unique
+  name        String
+  gender      String
+  dateOfBirth DateTime
+  phone       String?
+  email       String?
+  address     Json?
+  photo       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
-  careContexts  CareContext[]
+  careContexts CareContext[]
 
   @@index([abhaId])
   @@index([healthId])
@@ -300,19 +300,19 @@ model AbhaProfile {
 }
 
 model CareContext {
-  id            String   @id @default(cuid())
-  abhaProfileId String
-  abhaProfile   AbhaProfile @relation(fields: [abhaProfileId], references: [id], onDelete: Cascade)
-  referenceNumber String @unique
-  displayName   String
-  facilityName  String
-  facilityId    String
+  id              String      @id @default(uuid())
+  abhaProfileId   String
+  abhaProfile     AbhaProfile @relation(fields: [abhaProfileId], references: [id], onDelete: Cascade)
+  referenceNumber String      @unique
+  displayName     String
+  facilityName    String
+  facilityId      String
   careContextType String
-  startDate     DateTime
-  endDate       DateTime?
-  status        String   @default("ACTIVE")
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  startDate       DateTime
+  endDate         DateTime?
+  status          String      @default("ACTIVE")
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
 
   @@index([abhaProfileId])
   @@index([referenceNumber])
@@ -321,18 +321,18 @@ model CareContext {
 }
 
 model FhirBundle {
-  id              String   @id @default(cuid())
-  bundleId        String   @unique
-  resourceType    String   @default("Bundle")
-  bundleType      String
-  patientId       String
-  careContextId   String?
-  fhirJson        Json
-  encryptedData   String?
-  encryptionKey   String?
-  status          String   @default("PENDING")
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id            String   @id @default(uuid())
+  bundleId      String   @unique
+  resourceType  String   @default("Bundle")
+  bundleType    String
+  patientId     String
+  careContextId String?
+  fhirJson      Json
+  encryptedData String?
+  encryptionKey String?
+  status        String   @default("PENDING")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
   @@index([bundleId])
   @@index([patientId])
@@ -342,20 +342,20 @@ model FhirBundle {
 }
 
 model ConsentArtefact {
-  id              String   @id @default(cuid())
-  consentId       String   @unique
-  patientId       String
-  hipId           String
-  hiuId           String
-  purpose         String
-  hiTypes         String[]
-  dateRangeStart  DateTime
-  dateRangeEnd    DateTime
-  dataEraseAt     DateTime
-  status          String   @default("PENDING")
-  consentJson     Json
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id             String   @id @default(uuid())
+  consentId      String   @unique
+  patientId      String
+  hipId          String
+  hiuId          String
+  purpose        String
+  hiTypes        String[]
+  dateRangeStart DateTime
+  dateRangeEnd   DateTime
+  dataEraseAt    DateTime
+  status         String   @default("PENDING")
+  consentJson    Json
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   @@index([consentId])
   @@index([patientId])
@@ -366,19 +366,22 @@ model ConsentArtefact {
 }
 
 model AuditLog {
-  id        String   @id @default(cuid())
-  userId    String?
-  action    String
-  resource  String
-  resourceId String?
-  details   Json?
-  ipAddress String?
-  userAgent String?
-  createdAt DateTime @default(now())
+  id            String   @id @default(uuid())
+  userId        String?
+  action        String
+  resource      String
+  resourceId    String?
+  details       Json?
+  ipAddress     String?
+  userAgent     String?
+  // Ties every audit row produced by one request together (CERT-In evidence chain).
+  correlationId String?
+  createdAt     DateTime @default(now())
 
   @@index([userId])
   @@index([action])
   @@index([resource])
   @@index([createdAt])
+  @@index([correlationId])
   @@map("audit_logs")
 }

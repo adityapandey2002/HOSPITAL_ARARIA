@@ -54,7 +54,12 @@ export default function RegisterPage() {
   const onSubmit = async (data: RegisterFormData) => {
     setIsLoading(true);
     try {
-      await registerUser(data.name, data.email, data.password, data.phone);
+      await registerUser({
+        name: data.name,
+        email: data.email,
+        password: data.password,
+        phone: data.phone,
+      });
       toast.success('Account created successfully!', {
         description: 'Welcome to District Hospital Araria portal.',
       });

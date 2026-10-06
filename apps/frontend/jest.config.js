@@ -23,7 +23,9 @@ module.exports = {
   verbose: true,
   transform: {
     '^.+\\.(ts|tsx)$': ['ts-jest', {
-      tsconfig: 'tsconfig.json',
+      // tsconfig.jest.json flips `jsx` to "react-jsx" so ts-jest emits runnable
+      // JS; the app tsconfig uses "preserve" because Next.js compiles JSX.
+      tsconfig: 'tsconfig.jest.json',
     }],
   },
 };

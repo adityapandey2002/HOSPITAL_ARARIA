@@ -9,6 +9,7 @@ import {
   Ambulance, Droplet, MessageSquare, Send,
   AlertCircle, CheckCircle, Info, Navigation
 } from 'lucide-react';
+import Link from 'next/link';
 import { cn } from '@dh-araria/shared/utils';
 import { Button, Input, Textarea, Select } from '@dh-araria/ui/components';
 import { toast } from 'sonner';

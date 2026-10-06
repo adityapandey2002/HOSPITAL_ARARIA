@@ -1,5 +1,6 @@
 // Test setup file for frontend
 import '@testing-library/jest-dom';
+import { createElement } from 'react';
 
 // Mock next/navigation
 jest.mock('next/navigation', () => ({
@@ -13,10 +14,12 @@ jest.mock('next/navigation', () => ({
   useSearchParams: () => new URLSearchParams(),
 }));
 
-// Mock next/image
+// Mock next/image.
+// This file is a `.ts` module, so the replacement element is built with
+// `createElement` rather than JSX.
 jest.mock('next/image', () => ({
   __esModule: true,
-  default: (props: any) => <img {...props} />,
+  default: (props: Record<string, unknown>) => createElement('img', props),
 }));
 
 // Mock sonner

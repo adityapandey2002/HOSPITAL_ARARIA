@@ -137,7 +137,10 @@ export function useIntersectionObserver(
   useEffect(() => {
     if (!ref.current || typeof IntersectionObserver === 'undefined') return;
 
-    const observer = new IntersectionObserver(([entry]) => setEntry(entry), options);
+    const observer = new IntersectionObserver(
+      ([firstEntry]) => setEntry(firstEntry ?? null),
+      options,
+    );
     observer.observe(ref.current);
 
     return () => observer.disconnect();

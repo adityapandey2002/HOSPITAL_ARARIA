@@ -2,7 +2,6 @@
 
 import * as React from 'react';
 import { cn } from '@dh-araria/shared/utils';
-import { forwardRef } from 'react';
 
 interface Column<T> {
   key: string;

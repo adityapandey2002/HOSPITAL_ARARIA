@@ -18,6 +18,15 @@ export default () => ({
     poolSize: parseInt(process.env.DB_POOL_SIZE || '10', 10),
   },
 
+  // ORM layer (dual-ORM over a single PostgreSQL engine — see docs/ARCHITECTURE.md).
+  // Keep the sum of the three pool sizes below the server's max_connections
+  // (200 in docker-compose.yml), leaving headroom for migrations and psql.
+  orm: {
+    drizzlePoolSize: parseInt(process.env.DRIZZLE_POOL_SIZE || '20', 10),
+    mikroPoolSize: parseInt(process.env.MIKRO_POOL_SIZE || '20', 10),
+    mikroDebug: process.env.MIKRO_DEBUG === 'true',
+  },
+
   // JWT
   jwt: {
     secret: process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-in-production',

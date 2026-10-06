@@ -25,8 +25,10 @@
     "noPropertyAccessFromIndexSignature": true,
     "baseUrl": ".",
     "paths": {
-      "@dh-araria/shared": ["../shared/src"],
-      "@dh-araria/ui": ["../ui/src"]
+      "@dh-araria/shared": ["../shared/dist/index.d.ts"],
+      "@dh-araria/shared/*": ["../shared/dist/*"],
+      "@dh-araria/ui": ["../ui/src"],
+      "@dh-araria/ui/*": ["../ui/src/*"]
     }
   },
   "include": ["src/**/*"],

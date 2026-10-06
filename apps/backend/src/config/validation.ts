@@ -15,6 +15,11 @@ export const validationSchema = Joi.object({
   DB_NAME: Joi.string().default('dh_araria'),
   DB_POOL_SIZE: Joi.number().default(10),
 
+  // Dual-ORM pools (must sum to < the server's max_connections)
+  DRIZZLE_POOL_SIZE: Joi.number().default(20),
+  MIKRO_POOL_SIZE: Joi.number().default(20),
+  MIKRO_DEBUG: Joi.boolean().truthy('true').falsy('false').default(false),
+
   // JWT
   JWT_SECRET: Joi.string().min(32).required(),
   JWT_ACCESS_EXPIRY: Joi.string().default('15m'),

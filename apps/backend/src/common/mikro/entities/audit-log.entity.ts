@@ -1,36 +1,58 @@
-// AuditLog Entity - CERT-In compliant audit trail
-import { Entity, Property, PrimaryKey, Index } from '@mikro-orm/core';
-import { v4 as uuidv4 } from 'uuid';
+/**
+ * AuditLog — immutable CERT-In audit trail.
+ *
+ * CERT-In (Directions of 28 April 2022) requires that user-level actions are
+ * logged with timestamps and retained for 180 days within Indian jurisdiction.
+ * Rows here are append-only: no service updates or deletes them, and
+ * `AuditLogService.purgeOlderThan()` performs the single scheduled retention cut.
+ *
+ * The physical column names mirror `prisma/schema.prisma` (camelCase columns,
+ * snake_case table) because Prisma owns the DDL migrations.
+ */
+import { Entity, Index, PrimaryKey, Property } from '@mikro-orm/core';
+
+import { newId } from '../../drizzle/id';
 
 @Entity({ tableName: 'audit_logs' })
 export class AuditLog {
-  @PrimaryKey({ type: 'uuid' })
-  id: string = uuidv4();
+  @PrimaryKey()
+  id: string = newId();
 
-  @Property({ length: 100 })
-  action: string; // e.g., 'FHIR_BUNDLE_CREATE', 'LOGIN_FAILED', 'APPOINTMENT_CREATE'
+  /** e.g. `FHIR_BUNDLE_CREATE`, `LOGIN_FAILED`, `APPOINTMENT_CANCEL`. */
+  @Property()
+  @Index({ name: 'audit_logs_action_idx' })
+  action: string;
 
-  @Property({ length: 100 })
-  resource: string; // e.g., 'FhirBundle', 'Appointment', 'User'
+  /** e.g. `FhirBundle`, `ConsentArtefact`, `User`. */
+  @Property()
+  @Index({ name: 'audit_logs_resource_idx' })
+  resource: string;
 
-  @Property({ length: 100 })
-  resourceId: string;
+  @Property({ nullable: true })
+  @Index({ name: 'audit_logs_resourceId_idx' })
+  resourceId?: string;
 
-  @Property({ type: 'jsonb' })
-  details: Record<string, any> = {};
+  /** Structured, non-PII payload describing what changed. */
+  @Property({ type: 'jsonb', nullable: true })
+  details?: Record<string, unknown>;
 
-  @Property({ length: 36, nullable: true })
+  /** Acting user, when the action was authenticated. */
+  @Property({ nullable: true })
+  @Index({ name: 'audit_logs_userId_idx' })
   userId?: string;
 
-  @Property({ length: 45, nullable: true })
+  @Property({ nullable: true })
   ipAddress?: string;
 
-  @Property({ length: 500, nullable: true })
+  @Property({ nullable: true })
   userAgent?: string;
 
-  @Property({ length: 36, nullable: true })
+  /** Ties every audit row produced by one request together. */
+  @Property({ nullable: true })
+  @Index({ name: 'audit_logs_correlationId_idx' })
   correlationId?: string;
 
   @Property({ onCreate: () => new Date() })
+  @Index({ name: 'audit_logs_createdAt_idx' })
   createdAt: Date = new Date();
 }

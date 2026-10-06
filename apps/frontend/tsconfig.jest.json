@@ -1,0 +1,14 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    // The app tsconfig uses "preserve" because Next.js compiles JSX itself.
+    // ts-jest has no such step, so it needs to emit runnable JS.
+    "jsx": "react-jsx",
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "noEmit": false,
+    "isolatedModules": false,
+    "incremental": false
+  },
+  "include": ["next-env.d.ts", "src/**/*.ts", "src/**/*.tsx"]
+}

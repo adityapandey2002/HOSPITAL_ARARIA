@@ -1,8 +1,17 @@
-// Base Drizzle Repository - Generic base repository with common CRUD, pagination, filtering patterns
-import { Injectable, Inject } from '@nestjs/common';
-import { DrizzleDb, DRIZZLE_TOKEN } from '../drizzle/drizzle.module';
-import { SQL, sql, and, or, eq, ne, gt, gte, lt, lte, like, ilike, inArray, desc, asc, count } from 'drizzle-orm';
-import { AnyPgTable, AnyPgColumn } from 'drizzle-orm/pg-core';
+/**
+ * BaseDrizzleRepository
+ * ---------------------
+ * Thin generic CRUD/pagination helper for citizen-facing tables.
+ *
+ * The Drizzle query builder is deliberately kept in the services (they own the
+ * joins/filters that make each endpoint special); this base class only removes
+ * the repetitive find/create/update/delete boilerplate.
+ */
+import { Inject } from '@nestjs/common';
+import { and, asc, count, desc, eq, SQL } from 'drizzle-orm';
+import { AnyPgColumn, AnyPgTable } from 'drizzle-orm/pg-core';
+
+import { DrizzleDb, DRIZZLE } from './drizzle.module';
 
 export interface PaginationParams {
   page?: number;
@@ -11,214 +20,124 @@ export interface PaginationParams {
   sortOrder?: 'asc' | 'desc';
 }
 
+export interface PaginatedMeta {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+}
+
 export interface PaginatedResult<T> {
   data: T[];
-  meta: {
-    page: number;
-    limit: number;
-    total: number;
-    totalPages: number;
-  };
+  meta: PaginatedMeta;
 }
 
-export interface FilterCondition {
-  field: string;
-  operator: 'eq' | 'ne' | 'gt' | 'gte' | 'lt' | 'lte' | 'like' | 'ilike' | 'in';
-  value: any;
-}
+export type SortOrder = 'asc' | 'desc';
 
-export abstract class BaseDrizzleRepository<TTable extends AnyPgTable, TSelect, TInsert> {
-  protected abstract table: TTable;
-  protected abstract idColumn: AnyPgColumn;
+export abstract class BaseDrizzleRepository<
+  TTable extends AnyPgTable,
+  TSelect = Record<string, unknown>,
+  TInsert = Record<string, unknown>,
+> {
+  protected abstract readonly table: TTable;
+  protected abstract readonly idColumn: AnyPgColumn;
 
-  constructor(
-    @Inject(DRIZZLE_TOKEN) protected readonly db: DrizzleDb,
-  ) {}
+  constructor(@Inject(DRIZZLE) protected readonly db: DrizzleDb) {}
 
-  /**
-   * Find by ID
-   */
-  async findById(id: string): Promise<TSelect | null> {
-    const result = await this.db
-      .select()
-      .from(this.table)
-      .where(eq(this.idColumn, id))
-      .limit(1);
-    return result[0] || null;
+  /** Resolve a camelCase API field name to a real column, or `undefined`. */
+  protected column(field: string): AnyPgColumn | undefined {
+    return (this.table as Record<string, unknown>)[field] as AnyPgColumn | undefined;
   }
 
-  /**
-   * Find all with pagination, sorting, and filtering
-   */
+  protected orderBy(field: string, order: SortOrder = 'desc'): SQL<unknown> {
+    const column = this.column(field) ?? this.idColumn;
+    return order === 'asc' ? asc(column) : desc(column);
+  }
+
+  async findById(id: string): Promise<TSelect | null> {
+    const rows = await this.db.select().from(this.table).where(eq(this.idColumn, id)).limit(1);
+    return (rows[0] as unknown as TSelect) ?? null;
+  }
+
+  async findOne(where: SQL<unknown>): Promise<TSelect | null> {
+    const rows = await this.db.select().from(this.table).where(where).limit(1);
+    return (rows[0] as unknown as TSelect) ?? null;
+  }
+
+  async findMany(where?: SQL<unknown>): Promise<TSelect[]> {
+    const rows = await this.db.select().from(this.table).where(where);
+    return rows as unknown as TSelect[];
+  }
+
   async findAll(
     pagination: PaginationParams = {},
-    filters: FilterCondition[] = [],
-    extraWhere?: SQL<unknown>
+    where?: SQL<unknown>,
   ): Promise<PaginatedResult<TSelect>> {
-    const { page = 1, limit = 10, sortBy = 'createdAt', sortOrder = 'desc' } = pagination;
+    const page = Math.max(1, pagination.page ?? 1);
+    const limit = Math.min(100, Math.max(1, pagination.limit ?? 20));
     const offset = (page - 1) * limit;
 
-    // Build where conditions
-    const conditions: SQL<unknown>[] = [];
+    const orderBy = this.orderBy(pagination.sortBy ?? 'createdAt', pagination.sortOrder ?? 'desc');
 
-    for (const filter of filters) {
-      const column = this.table[filter.field as keyof TTable] as AnyPgColumn;
-      if (!column) continue;
-
-      switch (filter.operator) {
-        case 'eq':
-          conditions.push(eq(column, filter.value));
-          break;
-        case 'ne':
-          conditions.push(ne(column, filter.value));
-          break;
-        case 'gt':
-          conditions.push(gt(column, filter.value));
-          break;
-        case 'gte':
-          conditions.push(gte(column, filter.value));
-          break;
-        case 'lt':
-          conditions.push(lt(column, filter.value));
-          break;
-        case 'lte':
-          conditions.push(lte(column, filter.value));
-          break;
-        case 'like':
-          conditions.push(like(column, `%${filter.value}%`));
-          break;
-        case 'ilike':
-          conditions.push(ilike(column, `%${filter.value}%`));
-          break;
-        case 'in':
-          conditions.push(inArray(column, filter.value));
-          break;
-      }
-    }
-
-    if (extraWhere) {
-      conditions.push(extraWhere);
-    }
-
-    const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
-
-    // Build order by
-    const sortColumn = this.table[sortBy as keyof TTable] as AnyPgColumn;
-    const orderBy = sortOrder === 'asc' ? asc(sortColumn) : desc(sortColumn);
-
-    // Execute queries
-    const [data, totalResult] = await Promise.all([
-      this.db
-        .select()
-        .from(this.table)
-        .where(whereClause)
-        .orderBy(orderBy)
-        .limit(limit)
-        .offset(offset),
-      this.db
-        .select({ count: count() })
-        .from(this.table)
-        .where(whereClause),
+    const [rows, totals] = await Promise.all([
+      this.db.select().from(this.table).where(where).orderBy(orderBy).limit(limit).offset(offset),
+      this.db.select({ value: count() }).from(this.table).where(where),
     ]);
 
-    const total = totalResult[0]?.count || 0;
+    const total = totals[0]?.value ?? 0;
 
     return {
-      data: data as TSelect[],
-      meta: {
-        page,
-        limit,
-        total,
-        totalPages: Math.ceil(total / limit),
-      },
+      data: rows as unknown as TSelect[],
+      meta: { page, limit, total, totalPages: Math.ceil(total / limit) },
     };
   }
 
-  /**
-   * Find one by arbitrary where condition
-   */
-  async findOne(where: SQL<unknown>): Promise<TSelect | null> {
-    const result = await this.db
-      .select()
-      .from(this.table)
-      .where(where)
-      .limit(1);
-    return result[0] || null;
-  }
-
-  /**
-   * Create new record
-   */
   async create(data: TInsert): Promise<TSelect> {
-    const result = await this.db
-      .insert(this.table)
-      .values(data)
-      .returning();
-    return result[0] as TSelect;
+    const rows = await this.db.insert(this.table).values(data as any).returning();
+    return rows[0] as unknown as TSelect;
   }
 
-  /**
-   * Create multiple records
-   */
   async createMany(data: TInsert[]): Promise<TSelect[]> {
     if (data.length === 0) return [];
-    const result = await this.db
-      .insert(this.table)
-      .values(data)
-      .returning();
-    return result as TSelect[];
+    const rows = await this.db.insert(this.table).values(data as any).returning();
+    return rows as unknown as TSelect[];
   }
 
-  /**
-   * Update by ID
-   */
   async update(id: string, data: Partial<TInsert>): Promise<TSelect | null> {
-    const result = await this.db
+    const rows = await this.db
       .update(this.table)
-      .set(data)
+      .set(data as any)
       .where(eq(this.idColumn, id))
       .returning();
-    return result[0] || null;
+    return (rows[0] as unknown as TSelect) ?? null;
   }
 
-  /**
-   * Delete by ID
-   */
   async delete(id: string): Promise<boolean> {
-    const result = await this.db
-      .delete(this.table)
-      .where(eq(this.idColumn, id));
-    return (result.rowCount ?? 0) > 0;
+    const rows = await this.db.delete(this.table).where(eq(this.idColumn, id)).returning();
+    return rows.length > 0;
   }
 
-  /**
-   * Execute transaction
-   */
-  async transaction<T>(fn: (tx: any) => Promise<T>): Promise<T> {
-    // This will be implemented by the concrete service with access to DrizzleService
-    throw new Error('Transaction must be called via DrizzleService.transaction()');
-  }
-
-  /**
-   * Count total records
-   */
   async count(where?: SQL<unknown>): Promise<number> {
-    const result = await this.db
-      .select({ count: count() })
-      .from(this.table)
-      .where(where);
-    return result[0]?.count || 0;
+    const rows = await this.db.select({ value: count() }).from(this.table).where(where);
+    return rows[0]?.value ?? 0;
   }
 
-  /**
-   * Check if record exists
-   */
   async exists(where: SQL<unknown>): Promise<boolean> {
-    const result = await this.db
+    const rows = await this.db
       .select({ id: this.idColumn })
       .from(this.table)
       .where(where)
       .limit(1);
-    return result.length > 0;
+    return rows.length > 0;
+  }
+
+  /**
+   * Escape hatch: run `fn` inside a transaction. Prefer injecting
+   * `DrizzleService` directly for transactional work.
+   */
+  protected async inTransaction<T>(fn: (tx: DrizzleDb) => Promise<T>): Promise<T> {
+    return this.db.transaction(fn as any) as Promise<T>;
   }
 }
+
+export { and };

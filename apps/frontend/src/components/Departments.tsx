@@ -2,8 +2,8 @@
 
 import Link from 'next/link';
 import { 
-  Stethoscope, Baby, Heart, Bone, Scalpel, Eye, Ear, Sparkles, Brain, 
-  Scan, Microscope, Droplet, Ambulance, Tooth, Activity,
+  Stethoscope, Baby, Heart, Bone, Scissors, Eye, Ear, Sparkles, Brain, 
+  Scan, Microscope, Droplet, Ambulance, SmilePlus, Activity,
   ArrowRight, ChevronRight
 } from 'lucide-react';
 
@@ -12,7 +12,7 @@ const departments = [
   { id: 'pediatrics', name: 'Pediatrics', icon: Baby, color: 'secondary', description: 'Child healthcare and immunization' },
   { id: 'obstetrics-gynecology', name: 'Obstetrics & Gynecology', icon: Heart, color: 'danger', description: 'Women\'s health and maternity care' },
   { id: 'orthopedics', name: 'Orthopedics', icon: Bone, color: 'warning', description: 'Bone, joint, and muscle disorders' },
-  { id: 'surgery', name: 'General Surgery', icon: Scalpel, color: 'primary', description: 'Surgical procedures and operations' },
+  { id: 'surgery', name: 'General Surgery', icon: Scissors, color: 'primary', description: 'Surgical procedures and operations' },
   { id: 'ophthalmology', name: 'Ophthalmology', icon: Eye, color: 'secondary', description: 'Eye care and vision treatment' },
   { id: 'ent', name: 'ENT', icon: Ear, color: 'success', description: 'Ear, nose, and throat disorders' },
   { id: 'dermatology', name: 'Dermatology', icon: Sparkles, color: 'warning', description: 'Skin, hair, and nail conditions' },
@@ -21,7 +21,7 @@ const departments = [
   { id: 'pathology', name: 'Pathology', icon: Microscope, color: 'danger', description: 'Laboratory and diagnostic testing' },
   { id: 'anesthesiology', name: 'Anesthesiology', icon: Droplet, color: 'secondary', description: 'Anesthesia and pain management' },
   { id: 'emergency', name: 'Emergency Medicine', icon: Ambulance, color: 'danger', description: '24/7 emergency and trauma care' },
-  { id: 'dental', name: 'Dental Surgery', icon: Tooth, color: 'success', description: 'Oral health and dental procedures' },
+  { id: 'dental', name: 'Dental Surgery', icon: SmilePlus, color: 'success', description: 'Oral health and dental procedures' },
   { id: 'physiotherapy', name: 'Physiotherapy', icon: Activity, color: 'warning', description: 'Rehabilitation and physical therapy' },
 ];
 

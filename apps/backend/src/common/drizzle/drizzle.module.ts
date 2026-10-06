@@ -1,31 +1,30 @@
-// Drizzle Module - Global NestJS module providing Drizzle ORM instance
-import { Module, Global, DynamicModule, Provider } from '@nestjs/common';
+/**
+ * DrizzleModule
+ * -------------
+ * Global module that publishes two things:
+ *
+ *  - `DRIZZLE`   — the raw Drizzle database instance (what services inject).
+ *  - `DrizzleService` — the lifecycle owner (pool create/close, health checks).
+ */
+import { Global, Module } from '@nestjs/common';
+
 import { DrizzleService } from './drizzle.service';
 
-export const DRIZZLE_TOKEN = 'DRIZZLE';
+export type { DrizzleDb } from './drizzle.service';
 
-export type DrizzleDb = ReturnType<typeof import('drizzle-orm/node-postgres').drizzle>;
-
-export interface DrizzleModuleOptions {
-  isGlobal?: boolean;
-}
+/** Injection token carrying the Drizzle database instance. */
+export const DRIZZLE = 'DRIZZLE';
 
 @Global()
-@Module({})
-export class DrizzleModule {
-  static forRoot(options: any = {}): DynamicModule {
-    const providers: Provider[] = [
-      {
-        provide: DRIZZLE_TOKEN,
-        useClass: DrizzleService,
-      },
-    ];
-
-    return {
-      module: DrizzleModule,
-      providers,
-      exports: [DRIZZLE_TOKEN],
-      global: options.isGlobal ?? true,
-    };
-  }
-}
+@Module({
+  providers: [
+    DrizzleService,
+    {
+      provide: DRIZZLE,
+      useFactory: (service: DrizzleService) => service.db,
+      inject: [DrizzleService],
+    },
+  ],
+  exports: [DrizzleService, DRIZZLE],
+})
+export class DrizzleModule {}

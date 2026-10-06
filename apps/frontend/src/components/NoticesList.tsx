@@ -122,6 +122,20 @@ const priorityStyles = {
   CRITICAL: 'bg-danger-100 text-danger-700',
 };
 
+/**
+ * Icon tiles for the "Browse by Category" grid.
+ *
+ * Tailwind scans source files for literal class names, so `bg-${color}-100`
+ * would be purged in production and the tiles would render unstyled. The palette
+ * therefore has to be spelled out per variant.
+ */
+const categoryAccentStyles: Record<string, string> = {
+  gray: 'bg-gray-100 text-gray-600',
+  primary: 'bg-primary-100 text-primary-600',
+  secondary: 'bg-secondary-100 text-secondary-600',
+  danger: 'bg-danger-100 text-danger-600',
+};
+
 const allCategories = ['All', 'GENERAL', 'RECRUITMENT', 'TENDER', 'PUBLIC_HEALTH', 'SCHEDULE_CHANGE', 'EMERGENCY'];
 
 export function NoticesList() {
@@ -173,7 +187,10 @@ export function NoticesList() {
 
         {/* Notices Grid */}
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
-          {filteredNotices.map((notice, index) => (
+          {filteredNotices.map((notice, index) => {
+            const CategoryIcon = categoryIcons[notice.category as keyof typeof categoryIcons];
+
+            return (
             <article
               key={notice.id}
               className="group p-6 bg-gray-50 rounded-2xl border border-gray-100 hover:border-primary-200 hover:shadow-xl transition-all duration-300 animate-slide-up"
@@ -181,8 +198,8 @@ export function NoticesList() {
             >
               <div className="flex items-start justify-between gap-2 mb-3">
                 <div className="flex items-center gap-2">
-                  <categoryIcons[notice.category as keyof typeof categoryIcons] 
-                    className={cn('w-5 h-5', categoryStyles[notice.category as keyof typeof categoryStyles])} 
+                  <CategoryIcon
+                    className={cn('w-5 h-5', categoryStyles[notice.category as keyof typeof categoryStyles])}
                   />
                   <Badge variant="outline" className={cn(categoryStyles[notice.category as keyof typeof categoryStyles])}>
                     {notice.category.replace('_', ' ')}
@@ -235,7 +252,8 @@ export function NoticesList() {
                 )}
               </div>
             </article>
-          ))}
+            );
+          })}
 
           {filteredNotices.length === 0 && (
             <div className="col-span-full text-center py-16">
@@ -255,22 +273,31 @@ export function NoticesList() {
               { icon: Shield, title: 'Recruitment', desc: 'Job openings & applications', category: 'RECRUITMENT', color: 'primary' },
               { icon: FileText, title: 'Tenders', desc: 'Procurement & tenders', category: 'TENDER', color: 'secondary' },
               { icon: AlertTriangle, title: 'Health Advisories', desc: 'Public health notices', category: 'PUBLIC_HEALTH', color: 'danger' },
-            ].map((item) => (
+            ].map((item) => {
+              const Icon = item.icon;
+              // Tailwind's scanner cannot see `bg-${color}-100`, so the palette
+              // must be spelled out for each variant.
+              const accent = categoryAccentStyles[item.color];
+
+              return (
               <Link
                 key={item.category}
                 href={`/notices?category=${item.category}`}
                 className="group p-5 bg-gray-50 rounded-2xl border border-gray-100 hover:border-primary-200 hover:shadow-lg transition-all duration-300"
               >
-                <div className={cn(
-                  'w-10 h-10 rounded-xl flex items-center justify-center mb-3 group-hover:scale-110 transition-transform',
-                  `bg-${item.color}-100 text-${item.color}-600`
-                )}>
-                  <item.icon className="w-5 h-5" />
+                <div
+                  className={cn(
+                    'w-10 h-10 rounded-xl flex items-center justify-center mb-3 group-hover:scale-110 transition-transform',
+                    accent,
+                  )}
+                >
+                  <Icon className="w-5 h-5" />
                 </div>
                 <h3 className="font-semibold text-gray-900 mb-1">{item.title}</h3>
                 <p className="text-sm text-gray-500">{item.desc}</p>
               </Link>
-            ))}
+            );
+            })}
           </div>
         </div>
       </div>

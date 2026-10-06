@@ -536,54 +536,69 @@ curl -X POST https://cert-in.gov.in/api/incident \
 | **Security Events** | failed_login, brute_force, suspicious_activity |
 | **Clinical/ABDM** | fhir_bundle_create, fhir_bundle_update, fhir_bundle_delete, consent_grant, consent_revoke, care_context_link |
 
-### Automated Audit Logging via MikroORM Lifecycle Hooks
+### Audit Logging Inside the Same Unit of Work
 
-For Clinical & ABDM services using MikroORM, audit logging is automatically handled via entity lifecycle hooks, ensuring CERT-In compliance without manual instrumentation:
+Clinical and ABDM writes go through MikroORM's Unit of Work, and the audit row
+is written with **the same EntityManager** as the business change. That is what
+makes the trail non-bypassable: the audit row cannot commit without the change,
+and the change cannot commit without the audit row.
 
 ```typescript
-// Automatic audit logging via MikroORM lifecycle hooks
-@Entity({ tableName: 'fhir_bundles' })
-export class FhirBundle {
-  // ... entity properties ...
+// apps/backend/src/modules/abdm/abdm.service.ts
+@Injectable()
+export class AbdmService {
+  constructor(
+    @Inject(ENTITY_MANAGER) private readonly em: EntityManager,
+    private readonly audit: AuditLogService,
+  ) {}
 
-  @OnCreate()
-  async onCreate(em: EntityManager) {
-    await AuditLogService.log({
-      action: 'FHIR_BUNDLE_CREATE',
-      resource: 'FhirBundle',
-      resourceId: this.id,
-      details: { bundleId: this.bundleId, patientId: this.patientId },
-    });
-  }
+  async recordBundle(input: RecordBundleInput): Promise<FhirBundle> {
+    return this.em.transactional(async (em) => {
+      const bundle = em.create(FhirBundle, {
+        id: newId(),
+        bundleId: input.bundleId,
+        bundleType: input.bundleType,
+        patientId: input.patientId,
+        fhirJson: input.fhirJson,
+        status: input.encryptedData ? 'ENCRYPTED' : 'PENDING',
+      } as any);
 
-  @OnUpdate()
-  async onUpdate(em: EntityManager) {
-    await AuditLogService.log({
-      action: 'FHIR_BUNDLE_UPDATE',
-      resource: 'FhirBundle',
-      resourceId: this.id,
-      details: { bundleId: this.bundleId, status: this.status },
-    });
-  }
+      await em.persistAndFlush(bundle);
 
-  @OnDelete()
-  async onDelete(em: EntityManager) {
-    await AuditLogService.log({
-      action: 'FHIR_BUNDLE_DELETE',
-      resource: 'FhirBundle',
-      resourceId: this.id,
-      details: { bundleId: this.bundleId },
+      await this.audit.logWith(em, {
+        action: 'FHIR_BUNDLE_CREATE',
+        resource: 'FhirBundle',
+        resourceId: bundle.id,
+        userId: input.actorId,
+        correlationId: input.correlationId,
+        // Metadata only — never diagnoses or raw FHIR payloads.
+        details: { bundleId: bundle.bundleId, entryCount: /* … */ },
+      });
+
+      return bundle;
     });
   }
 }
 ```
 
-**Benefits**:
-- **Zero Manual Instrumentation**: Audit logs automatically generated on entity lifecycle events
-- **CERT-In Compliant**: 180-day retention guaranteed by automated hooks
-- **Immutable**: Audit logs cannot be bypassed or disabled
-- **Contextual**: Full entity state captured at each lifecycle event
-- **Transactional**: Audit logs part of same Unit of Work as data changes
+Non-transactional audit writes (failed logins, rate-limit events, reads that
+happen outside a Unit of Work) use `AuditLogService.log()`, which persists via
+the injected EntityManager and **swallows failures** — an audit outage must never
+take down the citizen-facing operation it is recording.
+
+**Properties this design gives us:**
+
+- **Atomic**: audit rows commit or roll back with the clinical change
+- **Non-bypassable**: there is one write path per operation, and it always audits
+- **No clinical content in logs**: `details` carries shape metadata only
+- **Traceable**: `correlationId` ties every row from one request together
+- **Compliant**: `AuditLogService.purgeOlderThan(180)` performs the single,
+  scheduled CERT-In retention cut; no other code deletes audit rows
+
+> Earlier drafts of this document proposed entity lifecycle decorators
+> (`@OnCreate`/`@OnUpdate`). Those were replaced: a hook cannot share the
+> caller's transaction, so an audited write could have committed without its
+> audit row.
 
 ### Log Integrity
 

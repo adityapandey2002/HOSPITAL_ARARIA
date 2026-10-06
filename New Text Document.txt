@@ -1,0 +1,1 @@
+postgresql://postgres:Hospital_araia2@@db.ayhpgxwlfvwcuirpxefn.supabase.co:5432/postgres

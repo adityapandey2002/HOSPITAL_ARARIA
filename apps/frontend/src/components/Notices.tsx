@@ -117,7 +117,10 @@ export function Notices() {
         </div>
 
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {notices.slice(0, 6).map((notice, index) => (
+          {notices.slice(0, 6).map((notice, index) => {
+            const CategoryIcon = categoryIcons[notice.category as keyof typeof categoryIcons];
+
+            return (
             <article
               key={notice.id}
               className="group p-6 bg-gray-50 rounded-2xl border border-gray-100 hover:border-blue-200 hover:shadow-lg transition-all duration-300 animate-slide-up"
@@ -125,8 +128,8 @@ export function Notices() {
             >
               <div className="flex items-start justify-between gap-2 mb-3">
                 <div className="flex items-center gap-2">
-                  <categoryIcons[notice.category as keyof typeof categoryIcons] 
-                    className={`w-5 h-5 ${categoryStyles[notice.category as keyof typeof categoryStyles]}`} 
+                  <CategoryIcon
+                    className={`w-5 h-5 ${categoryStyles[notice.category as keyof typeof categoryStyles]}`}
                   />
                   <span className={`inline-flex items-center gap-1.5 font-medium rounded-full px-2.5 py-1 text-sm border ${categoryStyles[notice.category as keyof typeof categoryStyles]}`}>
                     {notice.category.replace('_', ' ')}
@@ -166,7 +169,8 @@ export function Notices() {
                 <ChevronRight className="w-4 h-4" />
               </Link>
             </article>
-          ))}
+            );
+          })}
         </div>
 
         <div className="mt-12 text-center">
@@ -186,19 +190,23 @@ export function Notices() {
             { icon: Shield, title: 'Recruitment', desc: 'Job openings & applications', href: '/notices?category=RECRUITMENT' },
             { icon: Megaphone, title: 'Tenders', desc: 'Procurement & tenders', href: '/notices?category=TENDER' },
             { icon: Heart, title: 'Health Advisories', desc: 'Public health notices', href: '/notices?category=PUBLIC_HEALTH' },
-          ].map((item) => (
+          ].map((item) => {
+            const Icon = item.icon;
+
+            return (
             <Link
               key={item.title}
               href={item.href}
               className="group p-5 bg-gray-50 rounded-2xl border border-gray-100 hover:border-blue-200 hover:shadow-lg transition-all duration-300"
             >
               <div className="w-10 h-10 bg-blue-100 text-blue-600 rounded-xl flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
-                <item.icon className="w-5 h-5" />
+                <Icon className="w-5 h-5" />
               </div>
               <h3 className="font-semibold text-gray-900 mb-1">{item.title}</h3>
               <p className="text-sm text-gray-500">{item.desc}</p>
             </Link>
-          ))}
+            );
+          })}
         </div>
       </div>
     </section>

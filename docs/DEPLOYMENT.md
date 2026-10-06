@@ -308,33 +308,54 @@ kubectl apply -f k8s/production/frontend.yaml
 kubectl apply -f k8s/production/ingress.yaml
 ```
 
-#### 6. Run Migrations (Dual-ORM)
+#### 6. Run Migrations
+
+Prisma owns **all** schema changes — Drizzle and MikroORM are query layers over
+the tables Prisma creates, and their own migration commands are intentionally not
+exposed. There is therefore exactly one migration step.
 
 ```bash
 # Wait for backend pods to be ready
 kubectl wait --for=condition=available deployment/backend -n production --timeout=300s
 
-# Run Drizzle ORM migrations (Citizen-Facing Services)
-kubectl exec -it deployment/backend -n production -- npm run db:migrate
-
-# Run MikroORM migrations (Clinical & ABDM Services)
-kubectl exec -it deployment/backend -n production -- npm run mikro:migrate
+# Apply pending migrations (idempotent; safe to re-run)
+kubectl exec -it deployment/backend -n production -- npm run db:migrate:prod
 
 # Seed production data (first time only)
 kubectl exec -it deployment/backend -n production -- npm run db:seed
 ```
 
-#### Dual-ORM Verification
+> Running a `drizzle-kit push` or a MikroORM migration in production would fork
+> the schema. Neither tool is installed, and neither migration command is present
+> in `package.json`.
+
+#### Verification
 
 ```bash
-# Verify Drizzle ORM tables (Citizen-Facing)
-kubectl exec -it deployment/backend -n production -- psql -U postgres -d dh_araria -c "\dt" | grep -E "(users|appointments|doctors|departments|blood_stock|grievances|notices)"
+# Every table exists (both query layers share one physical schema)
+kubectl exec -it deployment/backend -n production -- psql -U postgres -d dh_araria -c "\dt"
 
-# Verify MikroORM tables (Clinical/ABDM)
-kubectl exec -it deployment/backend -n production -- psql -U postgres -d dh_araria -c "\dt" | grep -E "(fhir_bundles|care_contexts|abha_profiles|consent_artefacts|audit_logs)"
-
-# Verify JSONB column for FHIR R4
+# JSONB column for FHIR R4
 kubectl exec -it deployment/backend -n production -- psql -U postgres -d dh_araria -c "\d fhir_bundles" | grep fhirJson
+
+# Read-only drift check: exits 0 in sync, 1 on drift, 2 if the DB is unreachable.
+# Safe to run post-deploy; it never writes DDL.
+kubectl exec -it deployment/backend -n production -- npm run mikro:schema:update
+
+# Health endpoint reports Prisma + Drizzle reachability and pool stats
+kubectl exec -it deployment/backend -n production -- \
+  curl -s localhost:3001/api/v1/health | jq '.database'
+```
+
+Expected `database` block:
+
+```json
+{
+  "status": "up",
+  "prisma": "up",
+  "drizzle": "up",
+  "drizzlePool": { "total": 0, "idle": 0, "waiting": 0 }
+}
 ```
 
 #### 7. Verify Production

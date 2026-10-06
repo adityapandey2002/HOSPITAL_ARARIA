@@ -104,15 +104,33 @@ export interface BloodStock {
 }
 
 export enum BloodGroup {
-  A_POSITIVE = 'A+',
-  A_NEGATIVE = 'A-',
-  B_POSITIVE = 'B+',
-  B_NEGATIVE = 'B-',
-  AB_POSITIVE = 'AB+',
-  AB_NEGATIVE = 'AB-',
-  O_POSITIVE = 'O+',
-  O_NEGATIVE = 'O-',
+  A_POSITIVE = 'A_POSITIVE',
+  A_NEGATIVE = 'A_NEGATIVE',
+  B_POSITIVE = 'B_POSITIVE',
+  B_NEGATIVE = 'B_NEGATIVE',
+  AB_POSITIVE = 'AB_POSITIVE',
+  AB_NEGATIVE = 'AB_NEGATIVE',
+  O_POSITIVE = 'O_POSITIVE',
+  O_NEGATIVE = 'O_NEGATIVE',
 }
+
+/**
+ * Human-readable labels for `BloodGroup`.
+ *
+ * The database stores Prisma-safe identifiers (`A_POSITIVE`) because Postgres /
+ * Prisma enum values cannot contain `+`/`-`. Always render `BLOOD_GROUP_LABELS`
+ * rather than the raw enum value so citizens see `A+`.
+ */
+export const BLOOD_GROUP_LABELS: Record<BloodGroup, string> = {
+  [BloodGroup.A_POSITIVE]: 'A+',
+  [BloodGroup.A_NEGATIVE]: 'A-',
+  [BloodGroup.B_POSITIVE]: 'B+',
+  [BloodGroup.B_NEGATIVE]: 'B-',
+  [BloodGroup.AB_POSITIVE]: 'AB+',
+  [BloodGroup.AB_NEGATIVE]: 'AB-',
+  [BloodGroup.O_POSITIVE]: 'O+',
+  [BloodGroup.O_NEGATIVE]: 'O-',
+};
 
 export enum BloodComponentType {
   WHOLE_BLOOD = 'WHOLE_BLOOD',
@@ -121,6 +139,15 @@ export enum BloodComponentType {
   PLASMA = 'PLASMA',
   CRYOPRECIPITATE = 'CRYOPRECIPITATE',
 }
+
+/** Human-readable labels for `BloodComponentType` (same rationale as groups). */
+export const BLOOD_COMPONENT_LABELS: Record<BloodComponentType, string> = {
+  [BloodComponentType.WHOLE_BLOOD]: 'Whole Blood',
+  [BloodComponentType.PACKED_RED_CELLS]: 'Packed Red Cells',
+  [BloodComponentType.PLATELETS]: 'Platelets',
+  [BloodComponentType.PLASMA]: 'Plasma',
+  [BloodComponentType.CRYOPRECIPITATE]: 'Cryoprecipitate',
+};
 
 export interface Grievance {
   id: string;

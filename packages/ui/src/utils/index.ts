@@ -45,7 +45,7 @@ export function formatDate(date: Date | string, options?: Intl.DateTimeFormatOpt
  * Formats a time for display
  */
 export function formatTime(time: string): string {
-  const [hours, minutes] = time.split(':');
+  const [hours = '0', minutes = '00'] = time.split(':');
   const hour = parseInt(hours, 10);
   const ampm = hour >= 12 ? 'PM' : 'AM';
   const displayHour = hour % 12 || 12;
@@ -97,7 +97,9 @@ export function getAvatarColor(name: string): string {
   for (let i = 0; i < name.length; i++) {
     hash = name.charCodeAt(i) + ((hash << 5) - hash);
   }
-  return colors[Math.abs(hash) % colors.length];
+  // `noUncheckedIndexedAccess` makes this a `string | undefined`, but the modulo
+  // above guarantees a valid index.
+  return colors[Math.abs(hash) % colors.length] ?? 'bg-gray-500';
 }
 
 /**

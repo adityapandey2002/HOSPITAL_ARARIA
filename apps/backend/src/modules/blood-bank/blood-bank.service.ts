@@ -1,98 +1,156 @@
-import { Injectable, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
-import { Inject } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { and, asc, count, desc, eq, gt } from 'drizzle-orm';
+import type { AnyPgColumn } from 'drizzle-orm/pg-core';
+
 import { PaginationDto } from '../../common/dto/pagination.dto';
-import { bloodStock, bloodGroupEnum, bloodComponentTypeEnum } from '../../common/drizzle/schema';
-import { eq, and, desc, asc, sql, count, gt } from 'drizzle-orm';
-import { BloodGroup, BloodComponentType } from '@dh-araria/shared/types';
+import { DRIZZLE, type DrizzleDb } from '../../common/drizzle/drizzle.module';
+import { newId } from '../../common/drizzle/id';
+import { bloodStock, type BloodStockRow } from '../../common/drizzle/schema';
+
+export const BLOOD_GROUPS = [
+  'A_POSITIVE',
+  'A_NEGATIVE',
+  'B_POSITIVE',
+  'B_NEGATIVE',
+  'AB_POSITIVE',
+  'AB_NEGATIVE',
+  'O_POSITIVE',
+  'O_NEGATIVE',
+] as const;
+
+export const BLOOD_COMPONENT_TYPES = [
+  'WHOLE_BLOOD',
+  'PACKED_RED_CELLS',
+  'PLATELETS',
+  'PLASMA',
+  'CRYOPRECIPITATE',
+] as const;
+
+export type BloodGroupValue = (typeof BLOOD_GROUPS)[number];
+export type BloodComponentTypeValue = (typeof BLOOD_COMPONENT_TYPES)[number];
+
+const SORTABLE: Record<string, AnyPgColumn> = {
+  bloodGroup: bloodStock.bloodGroup,
+  componentType: bloodStock.componentType,
+  unitsAvailable: bloodStock.unitsAvailable,
+  lastUpdated: bloodStock.lastUpdated,
+};
 
 @Injectable()
 export class BloodBankService {
-  constructor(
-    @Inject('DRIZZLE') private db: any,
-  ) {}
+  constructor(@Inject(DRIZZLE) private readonly db: DrizzleDb) {}
 
-  async findAll(pagination: any) {
-    const { page = 1, limit = 50, sortBy = 'bloodGroup', sortOrder = 'asc' } = pagination;
-    const offset = (page - 1) * limit;
+  async findAll(pagination: PaginationDto) {
+    const page = pagination.page ?? 1;
+    const limit = pagination.limit ?? 50;
+    const column = SORTABLE[pagination.sortBy ?? 'bloodGroup'] ?? bloodStock.bloodGroup;
+    const orderBy = pagination.sortOrder === 'asc' ? asc(column) : desc(column);
 
-    const sortColumn = bloodStock[sortBy as keyof typeof bloodStock];
-    const orderBy = sortOrder === 'asc' ? asc(sortColumn as any) : desc(sortColumn as any);
-
-    const [stock, totalResult] = await Promise.all([
+    const [rows, totals] = await Promise.all([
       this.db
         .select()
         .from(bloodStock)
         .orderBy(orderBy)
         .limit(limit)
-        .offset(offset),
-      this.db.select({ count: count() }).from(bloodStock),
+        .offset((page - 1) * limit),
+      this.db.select({ value: count() }).from(bloodStock),
     ]);
 
-    const total = totalResult[0]?.count || 0;
-
-    return { data: stock, meta: { page, limit, total, totalPages: Math.ceil(total / limit) } };
+    const total = totals[0]?.value ?? 0;
+    return { data: rows, meta: { page, limit, total, totalPages: Math.ceil(total / limit) } };
   }
 
-  async getStockSummary() {
-    const stock = await this.db
+  /**
+   * Grouped availability, e.g. `{ O_NEGATIVE: { WHOLE_BLOOD: 3 } }`.
+   * Drives the e-RaktKosh sync badge on the homepage.
+   */
+  async getStockSummary(): Promise<Record<string, Record<string, number>>> {
+    const rows = await this.db
       .select()
       .from(bloodStock)
       .where(gt(bloodStock.unitsAvailable, 0))
       .orderBy(asc(bloodStock.bloodGroup), asc(bloodStock.componentType));
 
-    const summary = stock.reduce((acc: any, item: any) => {
-      if (!acc[item.bloodGroup]) acc[item.bloodGroup] = {};
-      acc[item.bloodGroup][item.componentType] = item.unitsAvailable;
-      return acc;
-    }, {} as Record<string, Record<string, number>>);
-
-    return summary;
+    return rows.reduce<Record<string, Record<string, number>>>((summary, row) => {
+      summary[row.bloodGroup] ??= {};
+      summary[row.bloodGroup][row.componentType] = row.unitsAvailable;
+      return summary;
+    }, {});
   }
 
-  async updateStock(bloodGroup: BloodGroup, componentType: BloodComponentType, units: number) {
-    const existing = await this.db
-      .select()
-      .from(bloodStock)
-      .where(and(eq(bloodStock.bloodGroup, bloodGroup), eq(bloodStock.componentType, componentType)))
-      .limit(1);
+  /** Relative adjustment (donation `+`, issue `-`). Never lets stock go negative. */
+  async updateStock(
+    bloodGroup: BloodGroupValue,
+    componentType: BloodComponentTypeValue,
+    units: number,
+  ): Promise<BloodStockRow> {
+    const key = and(eq(bloodStock.bloodGroup, bloodGroup), eq(bloodStock.componentType, componentType));
 
-    if (existing[0]) {
-      const newUnits = existing[0].unitsAvailable + units;
-      if (newUnits < 0) throw new BadRequestException('Insufficient stock');
-      const result = await this.db
+    const [existing] = await this.db.select().from(bloodStock).where(key).limit(1);
+
+    if (existing) {
+      const next = existing.unitsAvailable + units;
+      if (next < 0) {
+        throw new BadRequestException(
+          `Insufficient stock: only ${existing.unitsAvailable} unit(s) of ${bloodGroup} ${componentType} available`,
+        );
+      }
+
+      const [updated] = await this.db
         .update(bloodStock)
-        .set({ unitsAvailable: newUnits, lastUpdated: new Date() })
-        .where(and(eq(bloodStock.bloodGroup, bloodGroup), eq(bloodStock.componentType, componentType)))
+        .set({ unitsAvailable: next, lastUpdated: new Date() })
+        .where(key)
         .returning();
-      return result[0];
+
+      return updated;
     }
 
-    if (units < 0) throw new BadRequestException('Cannot reduce non-existent stock');
-    const result = await this.db
+    if (units < 0) throw new BadRequestException('Cannot reduce stock that does not exist');
+
+    const [created] = await this.db
       .insert(bloodStock)
-      .values({ bloodGroup, componentType, unitsAvailable: units })
+      .values({ id: newId(), bloodGroup, componentType, unitsAvailable: units })
       .returning();
-    return result[0];
+
+    return created;
   }
 
-  async setStock(bloodGroup: BloodGroup, componentType: BloodComponentType, units: number) {
+  /** Absolute set used by inventory audits and e-RaktKosh corrections. */
+  async setStock(
+    bloodGroup: BloodGroupValue,
+    componentType: BloodComponentTypeValue,
+    units: number,
+  ): Promise<BloodStockRow> {
     if (units < 0) throw new BadRequestException('Units cannot be negative');
-    const result = await this.db
+
+    const [row] = await this.db
       .insert(bloodStock)
-      .values({ bloodGroup, componentType, unitsAvailable: units })
+      .values({ id: newId(), bloodGroup, componentType, unitsAvailable: units })
       .onConflictDoUpdate({
         target: [bloodStock.bloodGroup, bloodStock.componentType],
         set: { unitsAvailable: units, lastUpdated: new Date() },
       })
       .returning();
-    return result[0];
+
+    return row;
   }
 
-  async getBloodGroups() {
-    return Object.values({ A_POSITIVE: 'A+', A_NEGATIVE: 'A-', B_POSITIVE: 'B+', B_NEGATIVE: 'B-', AB_POSITIVE: 'AB+', AB_NEGATIVE: 'AB-', O_POSITIVE: 'O+', O_NEGATIVE: 'O-' });
+  async getBloodGroups(): Promise<readonly string[]> {
+    return BLOOD_GROUPS;
   }
 
-  async getComponentTypes() {
-    return Object.values({ WHOLE_BLOOD: 'WHOLE_BLOOD', PACKED_RED_CELLS: 'PACKED_RED_CELLS', PLATELETS: 'PLATELETS', PLASMA: 'PLASMA', CRYOPRECIPITATE: 'CRYOPRECIPITATE' });
+  async getComponentTypes(): Promise<readonly string[]> {
+    return BLOOD_COMPONENT_TYPES;
+  }
+
+  async findOne(bloodGroup: string, componentType: string): Promise<BloodStockRow> {
+    const [row] = await this.db
+      .select()
+      .from(bloodStock)
+      .where(and(eq(bloodStock.bloodGroup, bloodGroup as BloodGroupValue), eq(bloodStock.componentType, componentType as BloodComponentTypeValue)))
+      .limit(1);
+
+    if (!row) throw new NotFoundException('Blood stock record not found');
+    return row;
   }
 }

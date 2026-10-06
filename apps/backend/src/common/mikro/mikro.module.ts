@@ -1,43 +1,35 @@
-// MikroORM Module - Global NestJS module providing MikroORM instance with EntityManager
-import { Module, Global, DynamicModule, Provider } from '@nestjs/common';
-import { MikroORM, EntityManager, EntityRepository, Options } from '@mikro-orm/core';
-import { PostgreSqlDriver } from '@mikro-orm/postgresql';
-import mikroOrmConfig from './mikro.config';
+/**
+ * MikroModule
+ * -----------
+ * Global module publishing the MikroORM instance and its request-scoped
+ * `EntityManager`.
+ *
+ * `ENTITY_MANAGER` is the handle clinical services should inject — it starts a
+ * Unit of Work per resolution and is flushed/committed inside
+ * `em.transactional(...)` (see AbdmService).
+ */
+import { Global, Module, Provider } from '@nestjs/common';
+import { MikroORM } from '@mikro-orm/core';
 
-export const MIKRO_ORM_TOKEN = 'MIKRO_ORM';
-export const ENTITY_MANAGER_TOKEN = 'ENTITY_MANAGER';
+import { createMikroOrmConfig } from './mikro.config';
 
-export interface MikroModuleOptions {
-  isGlobal?: boolean;
-}
+export const MIKRO_ORM = 'MIKRO_ORM';
+export const ENTITY_MANAGER = 'ENTITY_MANAGER';
+
+const mikroOrmProvider: Provider = {
+  provide: MIKRO_ORM,
+  useFactory: async () => MikroORM.init(createMikroOrmConfig()),
+};
+
+const entityManagerProvider: Provider = {
+  provide: ENTITY_MANAGER,
+  useFactory: (orm: MikroORM) => orm.em.fork(),
+  inject: [MIKRO_ORM],
+};
 
 @Global()
-@Module({})
-export class MikroModule {
-  static forRoot(options: MikroModuleOptions = {}): DynamicModule {
-    const providers: Provider[] = [
-      {
-        provide: MIKRO_ORM_TOKEN,
-        useFactory: async () => {
-          const orm = await MikroORM.init(mikroOrmConfig as any);
-          return orm;
-        },
-      },
-      {
-        provide: ENTITY_MANAGER_TOKEN,
-        useFactory: (orm: MikroORM) => orm.em,
-        inject: [MIKRO_ORM_TOKEN],
-      },
-    ];
-
-    return {
-      module: MikroModule,
-      providers,
-      exports: [MIKRO_ORM_TOKEN, ENTITY_MANAGER_TOKEN],
-      global: true,
-    };
-  }
-}
-
-// Repository token factory for injection
-export const createRepositoryToken = (entityName: string) => `${entityName}Repository`;
+@Module({
+  providers: [mikroOrmProvider, entityManagerProvider],
+  exports: [MIKRO_ORM, ENTITY_MANAGER],
+})
+export class MikroModule {}
