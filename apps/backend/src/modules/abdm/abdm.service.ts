@@ -68,7 +68,7 @@ export class AbdmService {
 
   constructor(
     @Inject(ENTITY_MANAGER) private readonly em: EntityManager,
-    private readonly audit: AuditLogService,
+    private readonly audit: AuditLogService
   ) {}
 
   // -------------------------------------------------------------------------
@@ -101,14 +101,21 @@ export class AbdmService {
         resourceId: careContext.id,
         userId: input.actorId,
         correlationId: input.correlationId,
-        details: { referenceNumber: careContext.referenceNumber, type: careContext.careContextType },
+        details: {
+          referenceNumber: careContext.referenceNumber,
+          type: careContext.careContextType,
+        },
       });
 
       return careContext;
     });
   }
 
-  async completeCareContext(id: string, actorId?: string, correlationId?: string): Promise<CareContext> {
+  async completeCareContext(
+    id: string,
+    actorId?: string,
+    correlationId?: string
+  ): Promise<CareContext> {
     return this.em.transactional(async (em) => {
       const careContext = await em.findOne(CareContext, { id });
       if (!careContext) throw new NotFoundException('Care context not found');
@@ -188,7 +195,7 @@ export class AbdmService {
     id: string,
     status: FhirBundleStatus,
     actorId?: string,
-    correlationId?: string,
+    correlationId?: string
   ): Promise<FhirBundle> {
     return this.em.transactional(async (em) => {
       const bundle = await em.findOne(FhirBundle, { id });
@@ -267,7 +274,7 @@ export class AbdmService {
     id: string,
     status: ConsentStatus,
     actorId?: string,
-    correlationId?: string,
+    correlationId?: string
   ): Promise<ConsentArtefact> {
     return this.em.transactional(async (em) => {
       const consent = await em.findOne(ConsentArtefact, { id });
@@ -296,7 +303,7 @@ export class AbdmService {
    */
   async getRecordsForConsent(
     patientId: string,
-    consentId: string,
+    consentId: string
   ): Promise<{ consent: ConsentArtefact; bundles: FhirBundle[] }> {
     const consent = await this.em.findOne(ConsentArtefact, { consentId, patientId });
     if (!consent) throw new NotFoundException('Consent artefact not found');
@@ -322,7 +329,7 @@ export class AbdmService {
         patientId,
         createdAt: { $gte: consent.dateRangeStart, $lte: consent.dateRangeEnd },
       },
-      { orderBy: { createdAt: 'DESC' } },
+      { orderBy: { createdAt: 'DESC' } }
     );
 
     await this.audit.log({

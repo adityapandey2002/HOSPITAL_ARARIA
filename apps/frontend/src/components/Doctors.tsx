@@ -1,9 +1,15 @@
 'use client';
 
 import Link from 'next/link';
-import { 
-  Stethoscope, Award, Star, MapPin, Clock, 
-  ChevronRight, User, HeartPulse
+import {
+  Stethoscope,
+  Award,
+  Star,
+  MapPin,
+  Clock,
+  ChevronRight,
+  User,
+  HeartPulse,
 } from 'lucide-react';
 
 const doctors = [
@@ -98,10 +104,21 @@ function getInitials(name: string): string {
 
 function getAvatarColor(name: string): string {
   const colors = [
-    'bg-red-500', 'bg-orange-500', 'bg-amber-500', 'bg-green-500',
-    'bg-emerald-500', 'bg-teal-500', 'bg-cyan-500', 'bg-sky-500',
-    'bg-blue-500', 'bg-indigo-500', 'bg-violet-500', 'bg-purple-500',
-    'bg-fuchsia-500', 'bg-pink-500', 'bg-rose-500',
+    'bg-red-500',
+    'bg-orange-500',
+    'bg-amber-500',
+    'bg-green-500',
+    'bg-emerald-500',
+    'bg-teal-500',
+    'bg-cyan-500',
+    'bg-sky-500',
+    'bg-blue-500',
+    'bg-indigo-500',
+    'bg-violet-500',
+    'bg-purple-500',
+    'bg-fuchsia-500',
+    'bg-pink-500',
+    'bg-rose-500',
   ];
   let hash = 0;
   for (let i = 0; i < name.length; i++) {
@@ -116,11 +133,11 @@ function cn(...classes: (string | undefined | null | false)[]): string {
 
 export function Doctors() {
   return (
-    <section className="py-20 bg-white">
+    <section className="bg-white py-20">
       <div className="container mx-auto px-4">
-        <div className="flex items-center justify-between mb-12">
+        <div className="mb-12 flex items-center justify-between">
           <div>
-            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
+            <h2 className="mb-2 text-3xl font-bold text-gray-900 sm:text-4xl">
               Our Specialist Doctors
             </h2>
             <p className="text-lg text-gray-600">
@@ -129,72 +146,78 @@ export function Doctors() {
           </div>
           <Link
             href="/doctors"
-            className="inline-flex items-center gap-2 text-blue-600 font-medium hover:text-blue-700 transition-colors"
+            className="inline-flex items-center gap-2 font-medium text-blue-600 transition-colors hover:text-blue-700"
           >
             View All Doctors
-            <ChevronRight className="w-4 h-4" />
+            <ChevronRight className="h-4 w-4" />
           </Link>
         </div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {doctors.map((doctor, index) => (
             <article
               key={doctor.id}
-              className="group p-6 bg-gray-50 rounded-2xl border border-gray-100 hover:border-blue-200 hover:shadow-lg transition-all duration-300 animate-slide-up"
+              className="group animate-slide-up rounded-2xl border border-gray-100 bg-gray-50 p-6 transition-all duration-300 hover:border-blue-200 hover:shadow-lg"
               style={{ animationDelay: `${index * 100}ms` }}
             >
               <div className="flex items-start gap-4">
-                <div className={cn(
-                  'w-16 h-16 rounded-full flex items-center justify-center text-white text-xl font-bold flex-shrink-0',
-                  getAvatarColor(doctor.name)
-                )}>
+                <div
+                  className={cn(
+                    'flex h-16 w-16 flex-shrink-0 items-center justify-center rounded-full text-xl font-bold text-white',
+                    getAvatarColor(doctor.name)
+                  )}
+                >
                   {doctor.imageUrl ? (
-                    <img src={doctor.imageUrl} alt={doctor.name} className="w-full h-full rounded-full object-cover" />
+                    <img
+                      src={doctor.imageUrl}
+                      alt={doctor.name}
+                      className="h-full w-full rounded-full object-cover"
+                    />
                   ) : (
                     getInitials(doctor.name)
                   )}
                 </div>
-                <div className="flex-1 min-w-0">
+                <div className="min-w-0 flex-1">
                   <div className="flex items-start justify-between gap-2">
                     <div>
-                      <h3 className="text-lg font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
+                      <h3 className="text-lg font-semibold text-gray-900 transition-colors group-hover:text-blue-600">
                         {doctor.name}
                       </h3>
-                      <p className="text-sm text-blue-600 font-medium">{doctor.specialization}</p>
+                      <p className="text-sm font-medium text-blue-600">{doctor.specialization}</p>
                     </div>
                     <div className="flex items-center gap-1 text-yellow-500">
-                      <Star className="w-4 h-4 fill-current" />
+                      <Star className="h-4 w-4 fill-current" />
                       <span className="font-semibold">{doctor.rating}</span>
                       <span className="text-gray-400">({doctor.reviewCount})</span>
                     </div>
                   </div>
-                  
-                  <p className="text-sm text-gray-500 mt-2 mb-3 line-clamp-1">
+
+                  <p className="mb-3 mt-2 line-clamp-1 text-sm text-gray-500">
                     {doctor.qualification} • {doctor.experience}+ years experience
                   </p>
-                  
-                  <div className="flex flex-wrap gap-3 text-sm text-gray-600 mb-4">
+
+                  <div className="mb-4 flex flex-wrap gap-3 text-sm text-gray-600">
                     <span className="flex items-center gap-1">
-                      <User className="w-3 h-3" />
+                      <User className="h-3 w-3" />
                       {doctor.department}
                     </span>
                     <span className="flex items-center gap-1">
-                      <Clock className="w-3 h-3" />
+                      <Clock className="h-3 w-3" />
                       {doctor.availableDays.join(', ')}
                     </span>
                   </div>
-                  
-                  <div className="flex items-center justify-between pt-4 border-t border-gray-100">
+
+                  <div className="flex items-center justify-between border-t border-gray-100 pt-4">
                     <span className="font-semibold text-gray-900">
                       ₹{doctor.consultationFee}
                       <span className="text-sm font-normal text-gray-500">/consultation</span>
                     </span>
                     <Link
                       href={`/doctors/${doctor.id}`}
-                      className="text-sm font-medium text-blue-600 hover:text-blue-700 flex items-center gap-1 transition-colors"
+                      className="flex items-center gap-1 text-sm font-medium text-blue-600 transition-colors hover:text-blue-700"
                     >
                       View Profile
-                      <ChevronRight className="w-4 h-4" />
+                      <ChevronRight className="h-4 w-4" />
                     </Link>
                   </div>
                 </div>
@@ -206,10 +229,10 @@ export function Doctors() {
         <div className="mt-12 text-center">
           <Link
             href="/doctors"
-            className="inline-flex items-center gap-2 px-8 py-3 border-2 border-blue-600 text-blue-600 text-lg font-medium rounded-xl hover:bg-blue-50 transition-all duration-200"
+            className="inline-flex items-center gap-2 rounded-xl border-2 border-blue-600 px-8 py-3 text-lg font-medium text-blue-600 transition-all duration-200 hover:bg-blue-50"
           >
             View All {doctors.length}+ Doctors
-            <ChevronRight className="w-5 h-5" />
+            <ChevronRight className="h-5 w-5" />
           </Link>
         </div>
       </div>

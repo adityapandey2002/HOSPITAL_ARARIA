@@ -9,7 +9,12 @@ interface AuthContextType {
   isLoading: boolean;
   isAuthenticated: boolean;
   login: (email: string, password: string) => Promise<void>;
-  register: (data: { name: string; email: string; password: string; phone?: string }) => Promise<void>;
+  register: (data: {
+    name: string;
+    email: string;
+    password: string;
+    phone?: string;
+  }) => Promise<void>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
   hasRole: (roles: UserRole[]) => boolean;
@@ -32,7 +37,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         const refreshToken = localStorage.getItem('refreshToken');
         if (refreshToken) {
-          const refreshResponse = await api.post<{ accessToken: string; refreshToken: string }>('/auth/refresh', { refreshToken });
+          const refreshResponse = await api.post<{ accessToken: string; refreshToken: string }>(
+            '/auth/refresh',
+            { refreshToken }
+          );
           if (refreshResponse.success && refreshResponse.data) {
             localStorage.setItem('accessToken', refreshResponse.data.accessToken);
             localStorage.setItem('refreshToken', refreshResponse.data.refreshToken);
@@ -85,7 +93,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(userData);
   };
 
-  const register = async (data: { name: string; email: string; password: string; phone?: string }) => {
+  const register = async (data: {
+    name: string;
+    email: string;
+    password: string;
+    phone?: string;
+  }) => {
     const response = await api.register(data);
     if (!response.success) {
       throw new Error(response.error?.message || 'Registration failed');
@@ -127,11 +140,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     hasRole,
   };
 
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth() {

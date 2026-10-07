@@ -84,9 +84,7 @@ describe('AuthService', () => {
         role: 'PATIENT',
         createdAt: new Date(),
       });
-      mockJwtService.sign
-        .mockReturnValueOnce('access-token')
-        .mockReturnValueOnce('refresh-token');
+      mockJwtService.sign.mockReturnValueOnce('access-token').mockReturnValueOnce('refresh-token');
 
       const result = await service.register(registerDto);
 
@@ -131,9 +129,7 @@ describe('AuthService', () => {
     it('should login successfully with valid credentials', async () => {
       mockPrisma.user.findUnique.mockResolvedValue(mockUser);
       (bcrypt.compare as jest.Mock).mockResolvedValue(true);
-      mockJwtService.sign
-        .mockReturnValueOnce('access-token')
-        .mockReturnValueOnce('refresh-token');
+      mockJwtService.sign.mockReturnValueOnce('access-token').mockReturnValueOnce('refresh-token');
 
       const result = await service.login(loginDto);
 

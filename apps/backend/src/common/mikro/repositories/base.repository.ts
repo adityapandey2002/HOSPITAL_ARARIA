@@ -39,7 +39,7 @@ export abstract class BaseMikroRepository<T extends object> {
 
   constructor(
     @Inject(ENTITY_MANAGER) protected readonly em: EntityManager,
-    @Inject(MIKRO_ORM) protected readonly orm: any,
+    @Inject(MIKRO_ORM) protected readonly orm: any
   ) {}
 
   protected repo(): EntityRepository<T> {
@@ -54,13 +54,16 @@ export abstract class BaseMikroRepository<T extends object> {
     return this.repo().findOne(where);
   }
 
-  async findMany(where: FilterQuery<T> = {} as FilterQuery<T>, options?: FindOptions<T>): Promise<T[]> {
+  async findMany(
+    where: FilterQuery<T> = {} as FilterQuery<T>,
+    options?: FindOptions<T>
+  ): Promise<T[]> {
     return this.repo().find(where, options);
   }
 
   async findAll(
     pagination: PaginationParams = {},
-    where: FilterQuery<T> = {} as FilterQuery<T>,
+    where: FilterQuery<T> = {} as FilterQuery<T>
   ): Promise<PaginatedResult<T>> {
     const page = Math.max(1, pagination.page ?? 1);
     const limit = Math.min(100, Math.max(1, pagination.limit ?? 20));

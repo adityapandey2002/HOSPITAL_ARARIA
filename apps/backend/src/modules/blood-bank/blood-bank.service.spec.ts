@@ -35,8 +35,8 @@ function createQueryBuilderMock(rows: unknown[]) {
 
   // Terminal methods resolve to the rows the fake table "contains".
   builder.returning = jest.fn(() => rows);
-  builder.then = jest.fn(
-    (resolve: (value: unknown[]) => unknown) => Promise.resolve(rows).then(resolve),
+  builder.then = jest.fn((resolve: (value: unknown[]) => unknown) =>
+    Promise.resolve(rows).then(resolve)
   );
 
   return builder as unknown as {
@@ -132,7 +132,7 @@ describe('BloodBankService', () => {
       db.select.mockReturnValue(createQueryBuilderMock([{ id: 's1', unitsAvailable: 1 }]));
 
       await expect(service.updateStock('O_NEGATIVE', 'WHOLE_BLOOD', -5)).rejects.toThrow(
-        /Insufficient stock/,
+        /Insufficient stock/
       );
       expect(db.update).not.toHaveBeenCalled();
     });
@@ -151,7 +151,7 @@ describe('BloodBankService', () => {
       db.select.mockReturnValue(createQueryBuilderMock([]));
 
       await expect(service.updateStock('A_POSITIVE', 'PLASMA', -1)).rejects.toThrow(
-        /does not exist/,
+        /does not exist/
       );
       expect(db.insert).not.toHaveBeenCalled();
     });
@@ -170,7 +170,7 @@ describe('BloodBankService', () => {
 
     it('rejects negative absolute values', async () => {
       await expect(service.setStock('B_POSITIVE', 'PLATELETS', -1)).rejects.toThrow(
-        /Units cannot be negative/,
+        /Units cannot be negative/
       );
       expect(db.insert).not.toHaveBeenCalled();
     });

@@ -43,7 +43,7 @@ export class GrievancesController {
     @Query('status') status?: GrievanceStatus,
     @Query('category') category?: GrievanceCategory,
     @Query('userId') userId?: string,
-    @Query('assignedTo') assignedTo?: string,
+    @Query('assignedTo') assignedTo?: string
   ) {
     return this.grievancesService.findAll(pagination, { status, category, userId, assignedTo });
   }
@@ -53,10 +53,7 @@ export class GrievancesController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get current user grievances' })
   @ApiResponse({ status: 200, description: 'Grievances retrieved successfully' })
-  async getMyGrievances(
-    @CurrentUser('id') userId: string,
-    @Query() pagination: PaginationDto,
-  ) {
+  async getMyGrievances(@CurrentUser('id') userId: string, @Query() pagination: PaginationDto) {
     return this.grievancesService.getMyGrievances(userId, pagination);
   }
 
@@ -81,7 +78,11 @@ export class GrievancesController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get grievance by ID' })
   @ApiResponse({ status: 200, description: 'Grievance retrieved successfully' })
-  async findById(@Param('id') id: string, @CurrentUser('id') userId: string, @CurrentUser('role') userRole: string) {
+  async findById(
+    @Param('id') id: string,
+    @CurrentUser('id') userId: string,
+    @CurrentUser('role') userRole: string
+  ) {
     const grievance = await this.grievancesService.findById(id);
     if (userRole !== 'ADMIN' && userRole !== 'STAFF' && grievance.userId !== userId) {
       throw new ForbiddenException('Not authorized to view this grievance');
@@ -106,7 +107,7 @@ export class GrievancesController {
     @Param('id') id: string,
     @Body() data: any,
     @CurrentUser('id') userId: string,
-    @CurrentUser('role') userRole: string,
+    @CurrentUser('role') userRole: string
   ) {
     return this.grievancesService.update(id, data, userId, userRole);
   }
@@ -122,7 +123,7 @@ export class GrievancesController {
     @Body('status') status: GrievanceStatus,
     @Body('resolution') resolution: string | undefined,
     @CurrentUser('id') userId: string,
-    @CurrentUser('role') userRole: string,
+    @CurrentUser('role') userRole: string
   ) {
     return this.grievancesService.updateStatus(id, status, userId, userRole, resolution);
   }
@@ -137,7 +138,7 @@ export class GrievancesController {
     @Param('id') id: string,
     @Body('assigneeId') assigneeId: string,
     @CurrentUser('id') userId: string,
-    @CurrentUser('role') userRole: string,
+    @CurrentUser('role') userRole: string
   ) {
     return this.grievancesService.assign(id, assigneeId, userId, userRole);
   }
@@ -150,7 +151,7 @@ export class GrievancesController {
   async delete(
     @Param('id') id: string,
     @CurrentUser('id') userId: string,
-    @CurrentUser('role') userRole: string,
+    @CurrentUser('role') userRole: string
   ) {
     return this.grievancesService.delete(id, userId, userRole);
   }

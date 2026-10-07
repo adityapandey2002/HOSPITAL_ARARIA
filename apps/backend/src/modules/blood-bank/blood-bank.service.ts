@@ -82,9 +82,12 @@ export class BloodBankService {
   async updateStock(
     bloodGroup: BloodGroupValue,
     componentType: BloodComponentTypeValue,
-    units: number,
+    units: number
   ): Promise<BloodStockRow> {
-    const key = and(eq(bloodStock.bloodGroup, bloodGroup), eq(bloodStock.componentType, componentType));
+    const key = and(
+      eq(bloodStock.bloodGroup, bloodGroup),
+      eq(bloodStock.componentType, componentType)
+    );
 
     const [existing] = await this.db.select().from(bloodStock).where(key).limit(1);
 
@@ -92,7 +95,7 @@ export class BloodBankService {
       const next = existing.unitsAvailable + units;
       if (next < 0) {
         throw new BadRequestException(
-          `Insufficient stock: only ${existing.unitsAvailable} unit(s) of ${bloodGroup} ${componentType} available`,
+          `Insufficient stock: only ${existing.unitsAvailable} unit(s) of ${bloodGroup} ${componentType} available`
         );
       }
 
@@ -119,7 +122,7 @@ export class BloodBankService {
   async setStock(
     bloodGroup: BloodGroupValue,
     componentType: BloodComponentTypeValue,
-    units: number,
+    units: number
   ): Promise<BloodStockRow> {
     if (units < 0) throw new BadRequestException('Units cannot be negative');
 
@@ -147,7 +150,12 @@ export class BloodBankService {
     const [row] = await this.db
       .select()
       .from(bloodStock)
-      .where(and(eq(bloodStock.bloodGroup, bloodGroup as BloodGroupValue), eq(bloodStock.componentType, componentType as BloodComponentTypeValue)))
+      .where(
+        and(
+          eq(bloodStock.bloodGroup, bloodGroup as BloodGroupValue),
+          eq(bloodStock.componentType, componentType as BloodComponentTypeValue)
+        )
+      )
       .limit(1);
 
     if (!row) throw new NotFoundException('Blood stock record not found');

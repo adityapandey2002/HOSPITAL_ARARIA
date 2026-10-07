@@ -39,7 +39,13 @@ export class NoticesService {
     const where = this.buildWhere(filters);
 
     const [rows, totals] = await Promise.all([
-      this.db.select().from(notices).where(where).orderBy(orderBy).limit(limit).offset((page - 1) * limit),
+      this.db
+        .select()
+        .from(notices)
+        .where(where)
+        .orderBy(orderBy)
+        .limit(limit)
+        .offset((page - 1) * limit),
       this.db.select({ value: count() }).from(notices).where(where),
     ]);
 
@@ -60,11 +66,17 @@ export class NoticesService {
     const where = and(
       eq(notices.isPublished, true),
       or(isNull(notices.expiresAt), gte(notices.expiresAt, new Date())),
-      ...(language ? [eq(notices.language, language)] : []),
+      ...(language ? [eq(notices.language, language)] : [])
     );
 
     const [rows, totals] = await Promise.all([
-      this.db.select().from(notices).where(where).orderBy(orderBy).limit(limit).offset((page - 1) * limit),
+      this.db
+        .select()
+        .from(notices)
+        .where(where)
+        .orderBy(orderBy)
+        .limit(limit)
+        .offset((page - 1) * limit),
       this.db.select({ value: count() }).from(notices).where(where),
     ]);
 
@@ -87,7 +99,9 @@ export class NoticesService {
         authorId: data.authorId ?? userId,
         // Publishing and stamping the timestamp happen together so the public
         // board ordering can never show an un-dated notice.
-        publishedAt: data.isPublished ? (data.publishedAt ?? new Date()) : data.publishedAt ?? null,
+        publishedAt: data.isPublished
+          ? (data.publishedAt ?? new Date())
+          : (data.publishedAt ?? null),
         createdAt: new Date(),
         updatedAt: new Date(),
       } as NewNoticeRow)
@@ -100,7 +114,7 @@ export class NoticesService {
     id: string,
     data: Partial<NewNoticeRow>,
     userId: string,
-    userRole: string,
+    userRole: string
   ): Promise<NoticeRow> {
     if (!STAFF_ROLES.has(userRole)) {
       throw new ForbiddenException('Not authorized to update notices');
@@ -142,7 +156,8 @@ export class NoticesService {
 
     if (filters.category) conditions.push(eq(notices.category, filters.category as never));
     if (filters.priority) conditions.push(eq(notices.priority, filters.priority as never));
-    if (filters.isPublished !== undefined) conditions.push(eq(notices.isPublished, filters.isPublished));
+    if (filters.isPublished !== undefined)
+      conditions.push(eq(notices.isPublished, filters.isPublished));
     if (filters.language) conditions.push(eq(notices.language, filters.language));
     if (filters.search) {
       const pattern = `%${filters.search}%`;

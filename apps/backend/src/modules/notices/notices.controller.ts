@@ -1,14 +1,4 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Put,
-  Delete,
-  Param,
-  Body,
-  Query,
-  UseGuards,
-} from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Param, Body, Query, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 
 import { NoticesService } from './notices.service';
@@ -18,8 +8,8 @@ import { RolesGuard } from '../../common/auth/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { Public } from '../../common/decorators/public.decorator';
-import { UserRole } from '@dh-araria/shared/types';
-import { NoticeCategory, NoticePriority } from '@dh-araria/shared/types';
+import { UserRole } from '@dh-araria/shared';
+import { NoticeCategory, NoticePriority } from '@dh-araria/shared';
 
 @ApiTags('Notices')
 @Controller('notices')
@@ -45,9 +35,15 @@ export class NoticesController {
     @Query('priority') priority?: NoticePriority,
     @Query('isPublished') isPublished?: boolean,
     @Query('language') language?: string,
-    @Query('search') search?: string,
+    @Query('search') search?: string
   ) {
-    return this.noticesService.findAll(pagination, { category, priority, isPublished, language, search });
+    return this.noticesService.findAll(pagination, {
+      category,
+      priority,
+      isPublished,
+      language,
+      search,
+    });
   }
 
   @Get('published')
@@ -57,10 +53,7 @@ export class NoticesController {
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiQuery({ name: 'language', required: false, type: String })
-  async findPublished(
-    @Query() pagination: PaginationDto,
-    @Query('language') language?: string,
-  ) {
+  async findPublished(@Query() pagination: PaginationDto, @Query('language') language?: string) {
     return this.noticesService.findPublished(pagination, language);
   }
 
@@ -108,7 +101,7 @@ export class NoticesController {
     @Param('id') id: string,
     @Body() data: any,
     @CurrentUser('id') userId: string,
-    @CurrentUser('role') userRole: string,
+    @CurrentUser('role') userRole: string
   ) {
     return this.noticesService.update(id, data, userId, userRole);
   }
@@ -119,7 +112,11 @@ export class NoticesController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Delete notice (Admin/Staff)' })
   @ApiResponse({ status: 200, description: 'Notice deleted successfully' })
-  async delete(@Param('id') id: string, @CurrentUser('id') userId: string, @CurrentUser('role') userRole: string) {
+  async delete(
+    @Param('id') id: string,
+    @CurrentUser('id') userId: string,
+    @CurrentUser('role') userRole: string
+  ) {
     return this.noticesService.delete(id, userId, userRole);
   }
 }

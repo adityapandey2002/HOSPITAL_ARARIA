@@ -1,14 +1,4 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Put,
-  Delete,
-  Param,
-  Body,
-  Query,
-  UseGuards,
-} from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Param, Body, Query, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 
 import { DoctorsService } from './doctors.service';
@@ -18,7 +8,7 @@ import { RolesGuard } from '../../common/auth/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { Public } from '../../common/decorators/public.decorator';
-import { UserRole } from '@dh-araria/shared/types';
+import { UserRole } from '@dh-araria/shared';
 
 @ApiTags('Doctors')
 @Controller('doctors')
@@ -38,7 +28,7 @@ export class DoctorsController {
     @Query() pagination: PaginationDto,
     @Query('departmentId') departmentId?: string,
     @Query('isActive') isActive?: boolean,
-    @Query('search') search?: string,
+    @Query('search') search?: string
   ) {
     return this.doctorsService.findAll(pagination, { departmentId, isActive, search });
   }

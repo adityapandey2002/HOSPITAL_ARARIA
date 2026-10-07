@@ -6,9 +6,14 @@
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
     "allowSyntheticDefaultImports": true,
+    // Required so `import compression from 'compression'` (CommonJS package
+    // with no .default export) resolves to module.exports at runtime instead
+    // of `compression_1.default`, which is undefined.
+    "esModuleInterop": true,
     "target": "ES2021",
     "sourceMap": true,
     "outDir": "./dist",
+    "rootDir": "./src",
     "baseUrl": "./",
     "skipLibCheck": true,
     "strictNullChecks": true,
@@ -18,7 +23,7 @@
     "noFallthroughCasesInSwitch": true,
     "paths": {
       "@/*": ["src/*"],
-      "@dh-araria/shared/*": ["../../packages/shared/src/*"]
+      "@dh-araria/shared": ["../../packages/shared/dist/index.d.ts"]
     }
   },
   "include": ["src/**/*"],

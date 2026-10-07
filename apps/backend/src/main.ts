@@ -13,26 +13,28 @@ import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
 
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
-  
+
   const app = await NestFactory.create(AppModule, {
     bufferLogs: true,
   });
-  
+
   app.useLogger(logger);
-  
+
   const configService = app.get(ConfigService);
   const port = configService.get<number>('PORT', 3001);
   const nodeEnv = configService.get<string>('NODE_ENV', 'development');
   const frontendUrl = configService.get<string>('FRONTEND_URL', 'http://localhost:3000');
 
   // Security middleware
-  app.use(helmet({
-    contentSecurityPolicy: nodeEnv === 'production' ? undefined : false,
-    crossOriginEmbedderPolicy: false,
-  }));
-  
+  app.use(
+    helmet({
+      contentSecurityPolicy: nodeEnv === 'production' ? undefined : false,
+      crossOriginEmbedderPolicy: false,
+    })
+  );
+
   app.use(compression());
-  
+
   // CORS configuration
   app.enableCors({
     origin: frontendUrl,
@@ -59,7 +61,7 @@ async function bootstrap() {
         enableImplicitConversion: true,
       },
       disableErrorMessages: nodeEnv === 'production',
-    }),
+    })
   );
 
   // Global filters and interceptors
@@ -72,10 +74,7 @@ async function bootstrap() {
       .setTitle('DH Araria Hospital API')
       .setDescription('API documentation for District Hospital Araria Portal')
       .setVersion('1.0')
-      .addBearerAuth(
-        { type: 'http', scheme: 'bearer', bearerFormat: 'JWT' },
-        'JWT-auth',
-      )
+      .addBearerAuth({ type: 'http', scheme: 'bearer', bearerFormat: 'JWT' }, 'JWT-auth')
       .addTag('Auth', 'Authentication endpoints')
       .addTag('Users', 'User management')
       .addTag('Doctors', 'Doctor management')
@@ -86,7 +85,7 @@ async function bootstrap() {
       .addTag('Notices', 'Notices and announcements')
       .addTag('Health', 'Health check endpoints')
       .build();
-    
+
     const document = SwaggerModule.createDocument(app, config);
     SwaggerModule.setup('api/docs', app, document, {
       swaggerOptions: {

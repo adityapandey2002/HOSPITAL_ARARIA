@@ -4,7 +4,10 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 /**
  * Hook for managing local storage with SSR support
  */
-export function useLocalStorage<T>(key: string, initialValue: T): [T, (value: T | ((val: T) => T)) => void] {
+export function useLocalStorage<T>(
+  key: string,
+  initialValue: T
+): [T, (value: T | ((val: T) => T)) => void] {
   const [storedValue, setStoredValue] = useState<T>(() => {
     if (typeof window === 'undefined') return initialValue;
     try {
@@ -15,17 +18,20 @@ export function useLocalStorage<T>(key: string, initialValue: T): [T, (value: T 
     }
   });
 
-  const setValue = useCallback((value: T | ((val: T) => T)) => {
-    try {
-      const valueToStore = value instanceof Function ? value(storedValue) : value;
-      setStoredValue(valueToStore);
-      if (typeof window !== 'undefined') {
-        window.localStorage.setItem(key, JSON.stringify(valueToStore));
+  const setValue = useCallback(
+    (value: T | ((val: T) => T)) => {
+      try {
+        const valueToStore = value instanceof Function ? value(storedValue) : value;
+        setStoredValue(valueToStore);
+        if (typeof window !== 'undefined') {
+          window.localStorage.setItem(key, JSON.stringify(valueToStore));
+        }
+      } catch (error) {
+        console.error(`Error setting localStorage key "${key}":`, error);
       }
-    } catch (error) {
-      console.error(`Error setting localStorage key "${key}":`, error);
-    }
-  }, [key, storedValue]);
+    },
+    [key, storedValue]
+  );
 
   return [storedValue, setValue];
 }
@@ -139,7 +145,7 @@ export function useIntersectionObserver(
 
     const observer = new IntersectionObserver(
       ([firstEntry]) => setEntry(firstEntry ?? null),
-      options,
+      options
     );
     observer.observe(ref.current);
 
@@ -224,21 +230,24 @@ export function useForm<T extends Record<string, unknown>>(initialValues: T) {
     setTouched((prev) => ({ ...prev, [name]: isTouched }));
   }, []);
 
-  const validate = useCallback((validationSchema: Record<keyof T, (value: unknown) => string | undefined>) => {
-    const newErrors: Partial<Record<keyof T, string>> = {};
-    let isValid = true;
+  const validate = useCallback(
+    (validationSchema: Record<keyof T, (value: unknown) => string | undefined>) => {
+      const newErrors: Partial<Record<keyof T, string>> = {};
+      let isValid = true;
 
-    (Object.keys(validationSchema) as Array<keyof T>).forEach((key) => {
-      const error = validationSchema[key](values[key]);
-      if (error) {
-        newErrors[key] = error;
-        isValid = false;
-      }
-    });
+      (Object.keys(validationSchema) as Array<keyof T>).forEach((key) => {
+        const error = validationSchema[key](values[key]);
+        if (error) {
+          newErrors[key] = error;
+          isValid = false;
+        }
+      });
 
-    setErrors(newErrors);
-    return isValid;
-  }, [values]);
+      setErrors(newErrors);
+      return isValid;
+    },
+    [values]
+  );
 
   const reset = useCallback(() => {
     setValues(initialValues);
@@ -246,14 +255,20 @@ export function useForm<T extends Record<string, unknown>>(initialValues: T) {
     setTouched({});
   }, [initialValues]);
 
-  const handleChange = useCallback((name: keyof T) => (value: unknown) => {
-    setValue(name, value);
-    clearError(name);
-  }, [setValue, clearError]);
+  const handleChange = useCallback(
+    (name: keyof T) => (value: unknown) => {
+      setValue(name, value);
+      clearError(name);
+    },
+    [setValue, clearError]
+  );
 
-  const handleBlur = useCallback((name: keyof T) => () => {
-    setFieldTouched(name, true);
-  }, [setFieldTouched]);
+  const handleBlur = useCallback(
+    (name: keyof T) => () => {
+      setFieldTouched(name, true);
+    },
+    [setFieldTouched]
+  );
 
   return {
     values,
@@ -270,8 +285,9 @@ export function useForm<T extends Record<string, unknown>>(initialValues: T) {
     getFieldProps: (name: keyof T) => ({
       name: String(name),
       value: values[name],
-      onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => 
-        handleChange(name)(e.target.value),
+      onChange: (
+        e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+      ) => handleChange(name)(e.target.value),
       onBlur: handleBlur(name),
       error: errors[name],
       touched: touched[name],

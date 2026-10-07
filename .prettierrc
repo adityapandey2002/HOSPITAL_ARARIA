@@ -8,7 +8,5 @@
   "arrowParens": "always",
   "endOfLine": "lf",
   "plugins": ["prettier-plugin-tailwindcss"],
-  "tailwindConfig": {
-    "callees": ["cn", "cva"]
-  }
+  "tailwindConfig": "apps/frontend/tailwind.config.ts"
 }

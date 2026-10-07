@@ -1,14 +1,4 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Put,
-  Delete,
-  Param,
-  Body,
-  Query,
-  UseGuards,
-} from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Param, Body, Query, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 
 import { AppointmentsService } from './appointments.service';
@@ -18,8 +8,8 @@ import { RolesGuard } from '../../common/auth/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { Public } from '../../common/decorators/public.decorator';
-import { UserRole } from '@dh-araria/shared/types';
-import { AppointmentStatus } from '@dh-araria/shared/types';
+import { UserRole } from '@dh-araria/shared';
+import { AppointmentStatus } from '@dh-araria/shared';
 
 @ApiTags('Appointments')
 @Controller('appointments')
@@ -47,9 +37,16 @@ export class AppointmentsController {
     @Query('departmentId') departmentId?: string,
     @Query('status') status?: AppointmentStatus,
     @Query('dateFrom') dateFrom?: string,
-    @Query('dateTo') dateTo?: string,
+    @Query('dateTo') dateTo?: string
   ) {
-    return this.appointmentsService.findAll(pagination, { patientId, doctorId, departmentId, status, dateFrom, dateTo });
+    return this.appointmentsService.findAll(pagination, {
+      patientId,
+      doctorId,
+      departmentId,
+      status,
+      dateFrom,
+      dateTo,
+    });
   }
 
   @Get('my')
@@ -57,7 +54,7 @@ export class AppointmentsController {
   @ApiResponse({ status: 200, description: 'Appointments retrieved successfully' })
   async getMyAppointments(
     @CurrentUser('id') patientId: string,
-    @Query() pagination: PaginationDto,
+    @Query() pagination: PaginationDto
   ) {
     return this.appointmentsService.getMyAppointments(patientId, pagination);
   }
@@ -69,7 +66,7 @@ export class AppointmentsController {
   async getDoctorAppointments(
     @Param('doctorId') doctorId: string,
     @Query() pagination: PaginationDto,
-    @Query('date') date?: string,
+    @Query('date') date?: string
   ) {
     return this.appointmentsService.getDoctorAppointments(doctorId, pagination, date);
   }
@@ -109,7 +106,11 @@ export class AppointmentsController {
   @Delete(':id')
   @ApiOperation({ summary: 'Cancel appointment' })
   @ApiResponse({ status: 200, description: 'Appointment cancelled successfully' })
-  async cancel(@Param('id') id: string, @CurrentUser('id') userId: string, @CurrentUser('role') userRole: string) {
+  async cancel(
+    @Param('id') id: string,
+    @CurrentUser('id') userId: string,
+    @CurrentUser('role') userRole: string
+  ) {
     return this.appointmentsService.cancel(id, userId, userRole);
   }
 }

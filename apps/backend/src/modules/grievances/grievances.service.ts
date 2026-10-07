@@ -36,7 +36,8 @@ export class GrievancesService {
     const conditions = [];
     if (filters.userId) conditions.push(eq(grievances.userId, filters.userId));
     if (filters.status) conditions.push(eq(grievances.status, filters.status as Select['status']));
-    if (filters.category) conditions.push(eq(grievances.category, filters.category as Select['category']));
+    if (filters.category)
+      conditions.push(eq(grievances.category, filters.category as Select['category']));
     if (filters.assignedTo) conditions.push(eq(grievances.assignedTo, filters.assignedTo));
 
     const where = conditions.length > 0 ? and(...conditions) : undefined;
@@ -154,7 +155,7 @@ export class GrievancesService {
     status: Insert['status'],
     userId: string,
     userRole: string,
-    resolution?: string,
+    resolution?: string
   ) {
     if (!STAFF_ROLES.has(userRole)) {
       throw new ForbiddenException('Not authorized to update status');
@@ -184,7 +185,11 @@ export class GrievancesService {
 
     const [updated] = await this.db
       .update(grievances)
-      .set({ assignedTo: assigneeId, status: 'IN_PROGRESS', updatedAt: new Date() } as Partial<Insert>)
+      .set({
+        assignedTo: assigneeId,
+        status: 'IN_PROGRESS',
+        updatedAt: new Date(),
+      } as Partial<Insert>)
       .where(eq(grievances.id, id))
       .returning();
 

@@ -1,4 +1,14 @@
-import { Droplet, Heart, AlertCircle, CheckCircle, Clock, MapPin, Phone, ArrowRight, Info } from 'lucide-react';
+import {
+  Droplet,
+  Heart,
+  AlertCircle,
+  CheckCircle,
+  Clock,
+  MapPin,
+  Phone,
+  ArrowRight,
+  Info,
+} from 'lucide-react';
 import Link from 'next/link';
 
 const bloodStock = [
@@ -43,12 +53,12 @@ const statusIcons = {
 
 export function BloodBank() {
   return (
-    <div className="py-20 bg-red-50">
+    <div className="bg-red-50 py-20">
       <div className="container mx-auto px-4">
-        <div className="flex items-center justify-between mb-12">
+        <div className="mb-12 flex items-center justify-between">
           <div>
-            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2 flex items-center gap-3">
-              <Droplet className="w-8 h-8 text-red-600" />
+            <h2 className="mb-2 flex items-center gap-3 text-3xl font-bold text-gray-900 sm:text-4xl">
+              <Droplet className="h-8 w-8 text-red-600" />
               Blood Bank Inventory
             </h2>
             <p className="text-lg text-gray-600">
@@ -57,23 +67,33 @@ export function BloodBank() {
           </div>
           <Link
             href="/blood-bank"
-            className="inline-flex items-center gap-2 text-red-600 font-medium hover:text-red-700 transition-colors"
+            className="inline-flex items-center gap-2 font-medium text-red-600 transition-colors hover:text-red-700"
           >
             View Full Inventory
-            <ArrowRight className="w-4 h-4" />
+            <ArrowRight className="h-4 w-4" />
           </Link>
         </div>
 
         {/* Blood Stock Table */}
-        <div className="overflow-x-auto rounded-2xl bg-white border border-gray-100 shadow-sm">
+        <div className="overflow-x-auto rounded-2xl border border-gray-100 bg-white shadow-sm">
           <table className="w-full">
             <thead className="bg-red-50">
               <tr>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Blood Group</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Component</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Units Available</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Action</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
+                  Blood Group
+                </th>
+                <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
+                  Component
+                </th>
+                <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
+                  Units Available
+                </th>
+                <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
+                  Status
+                </th>
+                <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
+                  Action
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
@@ -81,37 +101,44 @@ export function BloodBank() {
                 const StatusIcon = statusIcons[item.status as keyof typeof statusIcons];
 
                 return (
-                <tr key={`${item.group}-${item.component}`} className={index % 2 === 0 ? 'bg-gray-50' : ''}>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-3">
-                      <div className={`w-10 h-10 rounded-lg flex items-center justify-center font-bold text-white ${
-                        item.group.includes('-') ? 'bg-red-600' : 'bg-blue-600'
-                      }`}>
-                        {item.group}
+                  <tr
+                    key={`${item.group}-${item.component}`}
+                    className={index % 2 === 0 ? 'bg-gray-50' : ''}
+                  >
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-3">
+                        <div
+                          className={`flex h-10 w-10 items-center justify-center rounded-lg font-bold text-white ${
+                            item.group.includes('-') ? 'bg-red-600' : 'bg-blue-600'
+                          }`}
+                        >
+                          {item.group}
+                        </div>
+                        <span className="font-medium text-gray-900">{item.group}</span>
                       </div>
-                      <span className="font-medium text-gray-900">{item.group}</span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 text-gray-600">{item.component}</td>
-                  <td className="px-6 py-4">
-                    <span className="font-semibold text-gray-900">{item.units} units</span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className={`inline-flex items-center gap-1.5 font-medium rounded-full px-2.5 py-1 text-sm border ${statusStyles[item.status as keyof typeof statusStyles]}`}>
-                      <StatusIcon className="w-3 h-3" />
-                      {statusLabels[item.status as keyof typeof statusLabels]}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <Link
-                      href="/blood-bank"
-                      className="text-sm font-medium text-red-600 hover:text-red-700 flex items-center gap-1 transition-colors"
-                    >
-                      Request
-                      <ArrowRight className="w-3 h-3" />
-                    </Link>
-                  </td>
-                </tr>
+                    </td>
+                    <td className="px-6 py-4 text-gray-600">{item.component}</td>
+                    <td className="px-6 py-4">
+                      <span className="font-semibold text-gray-900">{item.units} units</span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span
+                        className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-sm font-medium ${statusStyles[item.status as keyof typeof statusStyles]}`}
+                      >
+                        <StatusIcon className="h-3 w-3" />
+                        {statusLabels[item.status as keyof typeof statusLabels]}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <Link
+                        href="/blood-bank"
+                        className="flex items-center gap-1 text-sm font-medium text-red-600 transition-colors hover:text-red-700"
+                      >
+                        Request
+                        <ArrowRight className="h-3 w-3" />
+                      </Link>
+                    </td>
+                  </tr>
                 );
               })}
             </tbody>
@@ -119,62 +146,75 @@ export function BloodBank() {
         </div>
 
         {/* Quick Actions */}
-        <div className="mt-10 grid md:grid-cols-3 gap-6">
+        <div className="mt-10 grid gap-6 md:grid-cols-3">
           <Link
             href="/blood-bank/donate"
-            className="group p-6 bg-white rounded-2xl border border-gray-100 hover:border-red-200 hover:shadow-lg transition-all duration-300"
+            className="group rounded-2xl border border-gray-100 bg-white p-6 transition-all duration-300 hover:border-red-200 hover:shadow-lg"
           >
-            <div className="w-12 h-12 bg-red-100 text-red-600 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-              <Heart className="w-6 h-6" />
+            <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-red-100 text-red-600 transition-transform group-hover:scale-110">
+              <Heart className="h-6 w-6" />
             </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Donate Blood</h3>
-            <p className="text-gray-600 mb-4">Register as a blood donor and save lives. Quick and easy process.</p>
-            <span className="inline-flex items-center gap-1 text-sm font-medium text-red-600 group-hover:gap-2 transition-all">
+            <h3 className="mb-2 text-lg font-semibold text-gray-900">Donate Blood</h3>
+            <p className="mb-4 text-gray-600">
+              Register as a blood donor and save lives. Quick and easy process.
+            </p>
+            <span className="inline-flex items-center gap-1 text-sm font-medium text-red-600 transition-all group-hover:gap-2">
               Register Now
-              <ArrowRight className="w-4 h-4" />
+              <ArrowRight className="h-4 w-4" />
             </span>
           </Link>
 
           <Link
             href="/blood-bank/request"
-            className="group p-6 bg-white rounded-2xl border border-gray-100 hover:border-red-200 hover:shadow-lg transition-all duration-300"
+            className="group rounded-2xl border border-gray-100 bg-white p-6 transition-all duration-300 hover:border-red-200 hover:shadow-lg"
           >
-            <div className="w-12 h-12 bg-blue-100 text-blue-600 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-              <Droplet className="w-6 h-6" />
+            <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-blue-100 text-blue-600 transition-transform group-hover:scale-110">
+              <Droplet className="h-6 w-6" />
             </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Request Blood</h3>
-            <p className="text-gray-600 mb-4">Submit a blood request for patients. Track status in real-time.</p>
-            <span className="inline-flex items-center gap-1 text-sm font-medium text-blue-600 group-hover:gap-2 transition-all">
+            <h3 className="mb-2 text-lg font-semibold text-gray-900">Request Blood</h3>
+            <p className="mb-4 text-gray-600">
+              Submit a blood request for patients. Track status in real-time.
+            </p>
+            <span className="inline-flex items-center gap-1 text-sm font-medium text-blue-600 transition-all group-hover:gap-2">
               Request Blood
-              <ArrowRight className="w-4 h-4" />
+              <ArrowRight className="h-4 w-4" />
             </span>
           </Link>
 
-          <div className="group p-6 bg-white rounded-2xl border border-gray-100 hover:border-blue-200 hover:shadow-lg transition-all duration-300">
-            <div className="w-12 h-12 bg-purple-100 text-purple-600 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-              <Phone className="w-6 h-6" />
+          <div className="group rounded-2xl border border-gray-100 bg-white p-6 transition-all duration-300 hover:border-blue-200 hover:shadow-lg">
+            <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-purple-100 text-purple-600 transition-transform group-hover:scale-110">
+              <Phone className="h-6 w-6" />
             </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Contact Blood Bank</h3>
-            <p className="text-gray-600 mb-4">Direct contact for urgent blood requirements and queries.</p>
-            <a href="tel:+91-6453-222102" className="text-sm font-medium text-purple-600 hover:text-purple-700 flex items-center gap-1 transition-colors">
+            <h3 className="mb-2 text-lg font-semibold text-gray-900">Contact Blood Bank</h3>
+            <p className="mb-4 text-gray-600">
+              Direct contact for urgent blood requirements and queries.
+            </p>
+            <a
+              href="tel:+91-6453-222102"
+              className="flex items-center gap-1 text-sm font-medium text-purple-600 transition-colors hover:text-purple-700"
+            >
               +91-6453-222102
-              <ArrowRight className="w-4 h-4" />
+              <ArrowRight className="h-4 w-4" />
             </a>
           </div>
         </div>
 
         {/* Blood Compatibility Info */}
-        <div className="mt-16 p-6 bg-white rounded-2xl border border-gray-100">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-            <Info className="w-5 h-5 text-blue-600" />
+        <div className="mt-16 rounded-2xl border border-gray-100 bg-white p-6">
+          <h3 className="mb-4 flex items-center gap-2 text-lg font-semibold text-gray-900">
+            <Info className="h-5 w-5 text-blue-600" />
             Blood Group Compatibility Quick Reference
           </h3>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-200">
-                  <th className="px-4 py-3 text-left font-medium text-gray-700">Your Blood Group</th>
-                  <th className="px-4 py-3 text-left font-medium text-gray-700">Can Receive From</th>
+                  <th className="px-4 py-3 text-left font-medium text-gray-700">
+                    Your Blood Group
+                  </th>
+                  <th className="px-4 py-3 text-left font-medium text-gray-700">
+                    Can Receive From
+                  </th>
                   <th className="px-4 py-3 text-left font-medium text-gray-700">Can Donate To</th>
                 </tr>
               </thead>
@@ -182,9 +222,11 @@ export function BloodBank() {
                 {bloodGroups.map((bg) => (
                   <tr key={bg.group} className="border-b border-gray-100 hover:bg-gray-50">
                     <td className="px-4 py-3">
-                      <span className={`px-3 py-1 rounded-full font-bold text-white text-sm ${
-                        bg.group.includes('-') ? 'bg-red-600' : 'bg-blue-600'
-                      }`}>
+                      <span
+                        className={`rounded-full px-3 py-1 text-sm font-bold text-white ${
+                          bg.group.includes('-') ? 'bg-red-600' : 'bg-blue-600'
+                        }`}
+                      >
                         {bg.group}
                       </span>
                     </td>

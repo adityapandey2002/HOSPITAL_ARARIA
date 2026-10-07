@@ -6,7 +6,8 @@ import { EmergencyServices } from '@/components/EmergencyServices';
 
 export const metadata: Metadata = {
   title: 'Services',
-  description: 'Explore all medical services and departments at District Hospital Araria. From emergency care to specialized treatments.',
+  description:
+    'Explore all medical services and departments at District Hospital Araria. From emergency care to specialized treatments.',
 };
 
 export default function ServicesPage() {
@@ -14,12 +15,12 @@ export default function ServicesPage() {
     <>
       <Header />
       <main id="main-content" className="min-h-screen pt-32">
-        <section className="bg-primary-600 text-white py-16">
+        <section className="bg-primary-600 py-16 text-white">
           <div className="container mx-auto px-4 text-center">
-            <h1 className="text-4xl sm:text-5xl font-bold mb-4">Our Medical Services</h1>
-            <p className="text-xl text-primary-100 max-w-3xl mx-auto">
-              Comprehensive healthcare services across 15+ specialized departments, 
-              24/7 emergency care, and advanced diagnostic facilities.
+            <h1 className="mb-4 text-4xl font-bold sm:text-5xl">Our Medical Services</h1>
+            <p className="mx-auto max-w-3xl text-xl text-primary-100">
+              Comprehensive healthcare services across 15+ specialized departments, 24/7 emergency
+              care, and advanced diagnostic facilities.
             </p>
           </div>
         </section>

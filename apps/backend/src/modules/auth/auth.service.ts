@@ -20,7 +20,7 @@ export class AuthService {
     private prisma: PrismaService,
     private usersService: UsersService,
     private jwtService: JwtService,
-    private configService: ConfigService,
+    private configService: ConfigService
   ) {}
 
   async register(registerDto: RegisterDto) {

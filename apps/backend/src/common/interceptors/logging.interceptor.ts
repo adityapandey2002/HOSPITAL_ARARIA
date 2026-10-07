@@ -1,10 +1,4 @@
-import {
-  Injectable,
-  NestInterceptor,
-  ExecutionContext,
-  CallHandler,
-  Logger,
-} from '@nestjs/common';
+import { Injectable, NestInterceptor, ExecutionContext, CallHandler, Logger } from '@nestjs/common';
 import { Observable, tap } from 'rxjs';
 
 @Injectable()
@@ -16,7 +10,7 @@ export class LoggingInterceptor implements NestInterceptor {
     const { method, url, ip, headers } = request;
     const userAgent = headers['user-agent'] || '';
     const userId = request.user?.id || 'anonymous';
-    
+
     const now = Date.now();
 
     this.logger.log(`${method} ${url} - User: ${userId} - IP: ${ip} - UA: ${userAgent}`);
@@ -26,19 +20,17 @@ export class LoggingInterceptor implements NestInterceptor {
         next: (response) => {
           const responseTime = Date.now() - now;
           const statusCode = context.switchToHttp().getResponse().statusCode;
-          
-          this.logger.log(
-            `${method} ${url} - ${statusCode} - ${responseTime}ms - User: ${userId}`,
-          );
+
+          this.logger.log(`${method} ${url} - ${statusCode} - ${responseTime}ms - User: ${userId}`);
         },
         error: (error) => {
           const responseTime = Date.now() - now;
           this.logger.error(
             `${method} ${url} - Error: ${error.message} - ${responseTime}ms - User: ${userId}`,
-            error.stack,
+            error.stack
           );
         },
-      }),
+      })
     );
   }
 }

@@ -10,6 +10,14 @@ build/
 out/
 *.tsbuildinfo
 
+# Compiled JS artifacts accidentally emitted inside package sources.
+# `tsc` writing index.js/index.d.ts next to index.ts SHADOWS the TypeScript
+# source (webpack resolves the .js first) and silently hides newer exports.
+packages/*/src/**/*.js
+packages/*/src/**/*.d.ts
+packages/*/src/**/*.js.map
+packages/*/src/**/*.jsx.map
+
 # Environment files
 .env
 .env.local

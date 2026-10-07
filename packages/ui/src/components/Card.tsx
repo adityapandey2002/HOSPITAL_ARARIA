@@ -33,13 +33,13 @@ const Card = forwardRef<HTMLDivElement, CardProps>(
         'rounded-xl transition-shadow duration-200',
         CARD_VARIANTS[variant],
         CARD_PADDINGS[padding],
-        className,
+        className
       )}
       {...props}
     >
       {children}
     </div>
-  ),
+  )
 );
 
 Card.displayName = 'Card';
@@ -51,7 +51,7 @@ const CardHeader = forwardRef<HTMLDivElement, CardHeaderProps>(
     <div ref={ref} className={cn('mb-4', className)} {...props}>
       {children}
     </div>
-  ),
+  )
 );
 
 CardHeader.displayName = 'CardHeader';
@@ -63,7 +63,7 @@ const CardTitle = forwardRef<HTMLHeadingElement, CardTitleProps>(
     <h3 ref={ref} className={cn('text-xl font-semibold text-gray-900', className)} {...props}>
       {children}
     </h3>
-  ),
+  )
 );
 
 CardTitle.displayName = 'CardTitle';
@@ -75,7 +75,7 @@ const CardDescription = forwardRef<HTMLParagraphElement, CardDescriptionProps>(
     <p ref={ref} className={cn('mt-1 text-sm text-gray-500', className)} {...props}>
       {children}
     </p>
-  ),
+  )
 );
 
 CardDescription.displayName = 'CardDescription';
@@ -87,7 +87,7 @@ const CardContent = forwardRef<HTMLDivElement, CardContentProps>(
     <div ref={ref} className={cn(className)} {...props}>
       {children}
     </div>
-  ),
+  )
 );
 
 CardContent.displayName = 'CardContent';
@@ -98,12 +98,12 @@ const CardFooter = forwardRef<HTMLDivElement, CardFooterProps>(
   ({ className, children, ...props }, ref) => (
     <div
       ref={ref}
-      className={cn('mt-4 pt-4 border-t border-gray-100 flex items-center gap-2', className)}
+      className={cn('mt-4 flex items-center gap-2 border-t border-gray-100 pt-4', className)}
       {...props}
     >
       {children}
     </div>
-  ),
+  )
 );
 
 CardFooter.displayName = 'CardFooter';

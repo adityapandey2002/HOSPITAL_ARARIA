@@ -20,21 +20,86 @@ export const HOSPITAL_INFO = {
 } as const;
 
 export const DEPARTMENTS = [
-  { id: 'general-medicine', name: 'General Medicine', icon: 'stethoscope', description: 'Comprehensive medical care for adults' },
-  { id: 'pediatrics', name: 'Pediatrics', icon: 'baby', description: 'Child healthcare and immunization' },
-  { id: 'obstetrics-gynecology', name: 'Obstetrics & Gynecology', icon: 'heart', description: 'Women\'s health and maternity care' },
-  { id: 'orthopedics', name: 'Orthopedics', icon: 'bone', description: 'Bone, joint, and muscle disorders' },
-  { id: 'surgery', name: 'General Surgery', icon: 'scalpel', description: 'Surgical procedures and operations' },
-  { id: 'ophthalmology', name: 'Ophthalmology', icon: 'eye', description: 'Eye care and vision treatment' },
+  {
+    id: 'general-medicine',
+    name: 'General Medicine',
+    icon: 'stethoscope',
+    description: 'Comprehensive medical care for adults',
+  },
+  {
+    id: 'pediatrics',
+    name: 'Pediatrics',
+    icon: 'baby',
+    description: 'Child healthcare and immunization',
+  },
+  {
+    id: 'obstetrics-gynecology',
+    name: 'Obstetrics & Gynecology',
+    icon: 'heart',
+    description: "Women's health and maternity care",
+  },
+  {
+    id: 'orthopedics',
+    name: 'Orthopedics',
+    icon: 'bone',
+    description: 'Bone, joint, and muscle disorders',
+  },
+  {
+    id: 'surgery',
+    name: 'General Surgery',
+    icon: 'scalpel',
+    description: 'Surgical procedures and operations',
+  },
+  {
+    id: 'ophthalmology',
+    name: 'Ophthalmology',
+    icon: 'eye',
+    description: 'Eye care and vision treatment',
+  },
   { id: 'ent', name: 'ENT', icon: 'ear', description: 'Ear, nose, and throat disorders' },
-  { id: 'dermatology', name: 'Dermatology', icon: 'sparkles', description: 'Skin, hair, and nail conditions' },
-  { id: 'psychiatry', name: 'Psychiatry', icon: 'brain', description: 'Mental health and behavioral disorders' },
+  {
+    id: 'dermatology',
+    name: 'Dermatology',
+    icon: 'sparkles',
+    description: 'Skin, hair, and nail conditions',
+  },
+  {
+    id: 'psychiatry',
+    name: 'Psychiatry',
+    icon: 'brain',
+    description: 'Mental health and behavioral disorders',
+  },
   { id: 'radiology', name: 'Radiology', icon: 'scan', description: 'Diagnostic imaging services' },
-  { id: 'pathology', name: 'Pathology', icon: 'microscope', description: 'Laboratory and diagnostic testing' },
-  { id: 'anesthesiology', name: 'Anesthesiology', icon: 'droplet', description: 'Anesthesia and pain management' },
-  { id: 'emergency', name: 'Emergency Medicine', icon: 'ambulance', description: '24/7 emergency and trauma care' },
-  { id: 'dental', name: 'Dental Surgery', icon: 'tooth', description: 'Oral health and dental procedures' },
-  { id: 'physiotherapy', name: 'Physiotherapy', icon: 'activity', description: 'Rehabilitation and physical therapy' },
+  {
+    id: 'pathology',
+    name: 'Pathology',
+    icon: 'microscope',
+    description: 'Laboratory and diagnostic testing',
+  },
+  {
+    id: 'anesthesiology',
+    name: 'Anesthesiology',
+    icon: 'droplet',
+    description: 'Anesthesia and pain management',
+  },
+  {
+    id: 'emergency',
+    name: 'Emergency Medicine',
+    icon: 'ambulance',
+    description: '24/7 emergency and trauma care',
+  },
+  {
+    id: 'dental',
+    name: 'Dental Surgery',
+    icon: 'tooth',
+    description: 'Oral health and dental procedures',
+  },
+  {
+    id: 'physiotherapy',
+    name: 'Physiotherapy',
+    icon: 'activity',
+    description: 'Rehabilitation and physical therapy',
+  },
 ] as const;
 
 export const BLOOD_GROUPS = [

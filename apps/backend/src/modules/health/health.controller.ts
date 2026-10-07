@@ -19,17 +19,14 @@ import { PrismaService } from '../../common/prisma/prisma.service';
 export class DatabaseHealthIndicator extends HealthIndicator {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly drizzle: DrizzleService,
+    private readonly drizzle: DrizzleService
   ) {
     super();
   }
 
   async pingCheck(key: string): Promise<HealthIndicatorResult> {
     const [prismaOk, drizzleOk] = await Promise.all([
-      this.prisma
-        .$queryRaw`SELECT 1`
-        .then(() => true)
-        .catch(() => false),
+      this.prisma.$queryRaw`SELECT 1`.then(() => true).catch(() => false),
       this.drizzle.healthCheck(),
     ]);
 
@@ -48,7 +45,7 @@ export class DatabaseHealthIndicator extends HealthIndicator {
 export class HealthController {
   constructor(
     private readonly health: HealthCheckService,
-    private readonly database: DatabaseHealthIndicator,
+    private readonly database: DatabaseHealthIndicator
   ) {}
 
   @Get()

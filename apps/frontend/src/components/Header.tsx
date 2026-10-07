@@ -2,7 +2,17 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Menu, X, Hospital, Phone, MapPin, AlertCircle, User, Calendar, Droplet } from 'lucide-react';
+import {
+  Menu,
+  X,
+  Hospital,
+  Phone,
+  MapPin,
+  AlertCircle,
+  User,
+  Calendar,
+  Droplet,
+} from 'lucide-react';
 
 const navItems = [
   { href: '/', label: 'Home' },
@@ -38,58 +48,67 @@ export function Header() {
   }, []);
 
   return (
-    <header className={cn(
-      'fixed top-0 left-0 right-0 z-40 transition-all duration-300',
-      isScrolled ? 'bg-white/95 backdrop-blur-sm shadow-md' : 'bg-transparent'
-    )}>
+    <header
+      className={cn(
+        'fixed left-0 right-0 top-0 z-40 transition-all duration-300',
+        isScrolled ? 'bg-white/95 shadow-md backdrop-blur-sm' : 'bg-transparent'
+      )}
+    >
       {/* Top Bar */}
-      <div className="hidden md:flex items-center justify-between px-4 py-2 bg-blue-700 text-white text-sm">
+      <div className="hidden items-center justify-between bg-blue-700 px-4 py-2 text-sm text-white md:flex">
         <div className="flex items-center gap-6">
           <div className="flex items-center gap-2">
-            <MapPin className="w-4 h-4" />
+            <MapPin className="h-4 w-4" />
             <span>Araria, Bihar - 854311</span>
           </div>
           <div className="flex items-center gap-2">
-            <Phone className="w-4 h-4" />
+            <Phone className="h-4 w-4" />
             <span>+91-6453-222123</span>
           </div>
           <div className="flex items-center gap-2">
-            <AlertCircle className="w-4 h-4 text-yellow-200" />
+            <AlertCircle className="h-4 w-4 text-yellow-200" />
             <span className="text-yellow-100">Emergency: 108 / 102</span>
           </div>
         </div>
         <div className="flex items-center gap-4">
-          <Link href="/appointments" className="hover:text-blue-100 transition-colors">
+          <Link href="/appointments" className="transition-colors hover:text-blue-100">
             Book Appointment
           </Link>
-          <Link href="/login" className="bg-white/10 px-4 py-1.5 rounded-lg hover:bg-white/20 transition-colors">
+          <Link
+            href="/login"
+            className="rounded-lg bg-white/10 px-4 py-1.5 transition-colors hover:bg-white/20"
+          >
             Login / Register
           </Link>
         </div>
       </div>
 
       {/* Main Navigation */}
-      <nav className="relative bg-white border-b border-gray-100" aria-label="Main navigation">
+      <nav className="relative border-b border-gray-100 bg-white" aria-label="Main navigation">
         <div className="container mx-auto px-4">
-          <div className="flex items-center justify-between h-16">
+          <div className="flex h-16 items-center justify-between">
             {/* Logo */}
-            <Link href="/" className="flex items-center gap-3" aria-label="District Hospital Araria Home">
-              <div className="p-2 bg-blue-600 rounded-lg">
-                <Hospital className="w-7 h-7 text-white" />
+            <Link
+              href="/"
+              className="flex items-center gap-3"
+              aria-label="District Hospital Araria Home"
+            >
+              <div className="rounded-lg bg-blue-600 p-2">
+                <Hospital className="h-7 w-7 text-white" />
               </div>
               <div className="hidden sm:block">
-                <h1 className="font-bold text-xl text-gray-900">District Hospital Araria</h1>
+                <h1 className="text-xl font-bold text-gray-900">District Hospital Araria</h1>
                 <p className="text-xs text-gray-500">Government of Bihar</p>
               </div>
             </Link>
 
             {/* Desktop Navigation */}
-            <div className="hidden md:flex items-center gap-1">
+            <div className="hidden items-center gap-1 md:flex">
               {navItems.map((item) => (
                 <Link
                   key={item.href}
                   href={item.href}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                  className="rounded-lg px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-blue-50 hover:text-blue-600"
                 >
                   {item.label}
                 </Link>
@@ -97,32 +116,32 @@ export function Header() {
             </div>
 
             {/* Desktop Actions */}
-            <div className="hidden md:flex items-center gap-3">
+            <div className="hidden items-center gap-3 md:flex">
               <Link
                 href="/appointments"
-                className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors"
+                className="rounded-lg bg-blue-600 px-4 py-2 font-medium text-white transition-colors hover:bg-blue-700"
               >
-                <Calendar className="w-4 h-4 mr-2 inline" />
+                <Calendar className="mr-2 inline h-4 w-4" />
                 Book Appointment
               </Link>
               <Link
                 href="/login"
-                className="text-gray-700 hover:text-blue-600 px-4 py-2 font-medium transition-colors"
+                className="px-4 py-2 font-medium text-gray-700 transition-colors hover:text-blue-600"
               >
-                <User className="w-4 h-4 mr-2 inline" />
+                <User className="mr-2 inline h-4 w-4" />
                 Login
               </Link>
             </div>
 
             {/* Mobile Menu Button */}
             <button
-              className="md:hidden p-2 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors"
+              className="rounded-lg p-2 text-gray-700 transition-colors hover:bg-gray-100 md:hidden"
               onClick={() => setIsMenuOpen(!isMenuOpen)}
               aria-expanded={isMenuOpen}
               aria-controls="mobile-menu"
               aria-label={isMenuOpen ? 'Close menu' : 'Open menu'}
             >
-              {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+              {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
             </button>
           </div>
 
@@ -130,49 +149,49 @@ export function Header() {
           <div
             id="mobile-menu"
             className={cn(
-              'md:hidden overflow-hidden transition-all duration-300 ease-in-out border-t border-gray-100',
+              'overflow-hidden border-t border-gray-100 transition-all duration-300 ease-in-out md:hidden',
               isMenuOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
             )}
           >
-            <div className="py-4 space-y-2">
+            <div className="space-y-2 py-4">
               {navItems.map((item) => (
                 <Link
                   key={item.href}
                   href={item.href}
-                  className="block px-4 py-3 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                  className="block rounded-lg px-4 py-3 text-gray-700 transition-colors hover:bg-blue-50 hover:text-blue-600"
                   onClick={() => setIsMenuOpen(false)}
                 >
                   {item.label}
                 </Link>
               ))}
-              <div className="pt-4 border-t border-gray-100 space-y-2">
+              <div className="space-y-2 border-t border-gray-100 pt-4">
                 <Link
                   href="/appointments"
-                  className="block bg-blue-600 text-white text-center py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors"
+                  className="block rounded-lg bg-blue-600 py-3 text-center font-medium text-white transition-colors hover:bg-blue-700"
                   onClick={() => setIsMenuOpen(false)}
                 >
-                  <Calendar className="w-4 h-4 mr-2 inline" />
+                  <Calendar className="mr-2 inline h-4 w-4" />
                   Book Appointment
                 </Link>
                 <Link
                   href="/login"
-                  className="block text-center text-gray-700 py-3 font-medium hover:text-blue-600 transition-colors"
+                  className="block py-3 text-center font-medium text-gray-700 transition-colors hover:text-blue-600"
                   onClick={() => setIsMenuOpen(false)}
                 >
-                  <User className="w-4 h-4 mr-2 inline" />
+                  <User className="mr-2 inline h-4 w-4" />
                   Login / Register
                 </Link>
               </div>
-              <div className="pt-4 border-t border-gray-100">
-                <p className="px-4 text-sm font-medium text-gray-500 mb-2">Emergency Contacts</p>
+              <div className="border-t border-gray-100 pt-4">
+                <p className="mb-2 px-4 text-sm font-medium text-gray-500">Emergency Contacts</p>
                 <div className="space-y-2 px-4">
                   {emergencyContacts.map((contact) => (
                     <a
                       key={contact.label}
                       href={`tel:${contact.number}`}
-                      className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                      className="flex items-center gap-3 rounded-lg bg-gray-50 p-3 transition-colors hover:bg-gray-100"
                     >
-                      <contact.icon className="w-5 h-5 text-red-500" />
+                      <contact.icon className="h-5 w-5 text-red-500" />
                       <div>
                         <p className="font-medium text-gray-900">{contact.label}</p>
                         <p className="text-sm text-gray-500">{contact.number}</p>

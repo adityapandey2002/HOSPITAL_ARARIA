@@ -1,0 +1,28 @@
+{
+  "name": "District Hospital Araria",
+  "short_name": "DH Araria",
+  "description": "Official portal of District Hospital Araria, Government of Bihar. Book appointments, view doctors, check blood availability and file grievances.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f9fafb",
+  "theme_color": "#0284c7",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-64.png",
+      "sizes": "64x64",
+      "type": "image/png"
+    },
+    {
+      "src": "/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    }
+  ]
+}

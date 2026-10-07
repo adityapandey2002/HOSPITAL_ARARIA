@@ -6,7 +6,10 @@ import { PaginationDto } from '../../common/dto/pagination.dto';
 export class DoctorsService {
   constructor(private prisma: PrismaService) {}
 
-  async findAll(pagination: PaginationDto, filters?: { departmentId?: string; isActive?: boolean; search?: string }) {
+  async findAll(
+    pagination: PaginationDto,
+    filters?: { departmentId?: string; isActive?: boolean; search?: string }
+  ) {
     const { page = 1, limit = 10, sortBy = 'name', sortOrder = 'asc' } = pagination;
     const skip = (page - 1) * limit;
 

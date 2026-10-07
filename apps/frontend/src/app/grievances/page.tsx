@@ -5,7 +5,8 @@ import { GrievanceForm } from '@/components/GrievanceForm';
 
 export const metadata: Metadata = {
   title: 'Grievance Redressal',
-  description: 'File complaints and track grievance status at District Hospital Araria. Integrated with CPGRAMS for transparent resolution.',
+  description:
+    'File complaints and track grievance status at District Hospital Araria. Integrated with CPGRAMS for transparent resolution.',
 };
 
 export default function GrievancesPage() {
@@ -13,11 +14,12 @@ export default function GrievancesPage() {
     <>
       <Header />
       <main id="main-content" className="min-h-screen pt-32">
-        <section className="bg-warning-600 text-white py-16">
+        <section className="bg-warning-600 py-16 text-white">
           <div className="container mx-auto px-4 text-center">
-            <h1 className="text-4xl sm:text-5xl font-bold mb-4">Grievance Redressal</h1>
-            <p className="text-xl text-warning-100 max-w-3xl mx-auto">
-              File complaints, track status, and get timely resolution. Integrated with CPGRAMS for transparent 30-day resolution timeline.
+            <h1 className="mb-4 text-4xl font-bold sm:text-5xl">Grievance Redressal</h1>
+            <p className="mx-auto max-w-3xl text-xl text-warning-100">
+              File complaints, track status, and get timely resolution. Integrated with CPGRAMS for
+              transparent 30-day resolution timeline.
             </p>
           </div>
         </section>

@@ -289,7 +289,16 @@ export interface PaginationParams {
 export interface FhirBundle {
   resourceType: 'Bundle';
   id: string;
-  type: 'document' | 'message' | 'transaction' | 'transaction-response' | 'batch' | 'batch-response' | 'history' | 'searchset' | 'collection';
+  type:
+    | 'document'
+    | 'message'
+    | 'transaction'
+    | 'transaction-response'
+    | 'batch'
+    | 'batch-response'
+    | 'history'
+    | 'searchset'
+    | 'collection';
   timestamp: string;
   total?: number;
   entry?: FhirBundleEntry[];

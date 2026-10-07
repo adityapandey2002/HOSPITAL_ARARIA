@@ -61,7 +61,10 @@ function Table<T>({
   onSort,
   selection,
 }: TableProps<T>) {
-  const [sortState, setSortState] = React.useState<{ key: string; direction: 'asc' | 'desc' } | null>(sortConfig || null);
+  const [sortState, setSortState] = React.useState<{
+    key: string;
+    direction: 'asc' | 'desc';
+  } | null>(sortConfig || null);
 
   const handleSort = (key: string) => {
     if (onSort) {
@@ -95,10 +98,16 @@ function Table<T>({
           <thead>
             <tr>
               {columns.map((column) => (
-                <th key={column.key} className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  <div className="flex items-center gap-2 animate-pulse">
-                    <div className="h-4 bg-gray-200 rounded" style={{ width: column.width || '100px' }} />
-                    {column.sortable && <div className="w-4 h-4 bg-gray-200 rounded" />}
+                <th
+                  key={column.key}
+                  className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500"
+                >
+                  <div className="flex animate-pulse items-center gap-2">
+                    <div
+                      className="h-4 rounded bg-gray-200"
+                      style={{ width: column.width || '100px' }}
+                    />
+                    {column.sortable && <div className="h-4 w-4 rounded bg-gray-200" />}
                   </div>
                 </th>
               ))}
@@ -109,7 +118,10 @@ function Table<T>({
               <tr key={i}>
                 {columns.map((column) => (
                   <td key={column.key} className="px-4 py-3">
-                    <div className="h-4 bg-gray-100 rounded animate-pulse" style={{ width: '80px' }} />
+                    <div
+                      className="h-4 animate-pulse rounded bg-gray-100"
+                      style={{ width: '80px' }}
+                    />
                   </td>
                 ))}
               </tr>
@@ -126,17 +138,12 @@ function Table<T>({
         <thead className="bg-gray-50">
           <tr>
             {selection && (
-              <th
-                className={cn(
-                  'px-4 py-3 text-left',
-                  compact && 'py-2'
-                )}
-              >
+              <th className={cn('px-4 py-3 text-left', compact && 'py-2')}>
                 <input
                   type="checkbox"
                   checked={selection.selectedKeys.length === data.length && data.length > 0}
                   onChange={handleSelectAll}
-                  className="h-4 w-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
+                  className="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
                   aria-label="Select all rows"
                 />
               </th>
@@ -145,7 +152,7 @@ function Table<T>({
               <th
                 key={column.key}
                 className={cn(
-                  'px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider',
+                  'px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500',
                   column.headerClassName,
                   column.sortable && 'cursor-pointer select-none hover:bg-gray-100',
                   compact && 'py-2'
@@ -166,10 +173,13 @@ function Table<T>({
             ))}
           </tr>
         </thead>
-        <tbody className="bg-white divide-y divide-gray-200">
+        <tbody className="divide-y divide-gray-200 bg-white">
           {data.length === 0 ? (
             <tr>
-              <td colSpan={columns.length + (selection ? 1 : 0)} className="px-4 py-12 text-center text-gray-500">
+              <td
+                colSpan={columns.length + (selection ? 1 : 0)}
+                className="px-4 py-12 text-center text-gray-500"
+              >
                 {emptyMessage}
               </td>
             </tr>
@@ -177,7 +187,7 @@ function Table<T>({
             data.map((row, rowIndex) => {
               const rowKey = keyExtractor(row);
               const isSelected = selection?.selectedKeys.includes(rowKey);
-              
+
               return (
                 <tr
                   key={rowKey}
@@ -206,7 +216,7 @@ function Table<T>({
                         checked={isSelected}
                         onChange={() => handleSelectRow(rowKey)}
                         onClick={(e) => e.stopPropagation()}
-                        className="h-4 w-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
+                        className="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
                         aria-label={`Select row ${rowIndex + 1}`}
                       />
                     </td>
@@ -221,7 +231,9 @@ function Table<T>({
                         bordered && 'border-t border-gray-100'
                       )}
                     >
-                      {column.render ? column.render(row, rowIndex) : String((row as Record<string, unknown>)[column.key] ?? '')}
+                      {column.render
+                        ? column.render(row, rowIndex)
+                        : String((row as Record<string, unknown>)[column.key] ?? '')}
                     </td>
                   ))}
                 </tr>
@@ -230,17 +242,19 @@ function Table<T>({
           )}
         </tbody>
       </table>
-      
+
       {pagination && (
-        <div className="px-4 py-3 border-t border-gray-200 flex items-center justify-between">
+        <div className="flex items-center justify-between border-t border-gray-200 px-4 py-3">
           <div className="text-sm text-gray-700">
-            Showing {((pagination.page - 1) * pagination.pageSize) + 1} to {Math.min(pagination.page * pagination.pageSize, pagination.total)} of {pagination.total} results
+            Showing {(pagination.page - 1) * pagination.pageSize + 1} to{' '}
+            {Math.min(pagination.page * pagination.pageSize, pagination.total)} of{' '}
+            {pagination.total} results
           </div>
           <div className="flex items-center gap-2">
             <select
               value={pagination.pageSize}
               onChange={(e) => pagination.onPageSizeChange(Number(e.target.value))}
-              className="text-sm border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-primary-500"
+              className="rounded border border-gray-300 px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
               aria-label="Rows per page"
             >
               {[10, 25, 50, 100].map((size) => (
@@ -252,7 +266,7 @@ function Table<T>({
             <button
               onClick={() => pagination.onPageChange(pagination.page - 1)}
               disabled={pagination.page === 1}
-              className="p-2 text-gray-500 hover:text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed rounded transition-colors"
+              className="rounded p-2 text-gray-500 transition-colors hover:text-gray-700 disabled:cursor-not-allowed disabled:opacity-50"
               aria-label="Previous page"
             >
               ←
@@ -263,7 +277,7 @@ function Table<T>({
             <button
               onClick={() => pagination.onPageChange(pagination.page + 1)}
               disabled={pagination.page >= Math.ceil(pagination.total / pagination.pageSize)}
-              className="p-2 text-gray-500 hover:text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed rounded transition-colors"
+              className="rounded p-2 text-gray-500 transition-colors hover:text-gray-700 disabled:cursor-not-allowed disabled:opacity-50"
               aria-label="Next page"
             >
               →

@@ -43,6 +43,8 @@ async function main() {
 
   // Create demo patient user
   const patientPassword = await bcrypt.hash('Demo@123', 12);
+  // Shared password for every seeded doctor account (see printout at the end).
+  const doctorPassword = await bcrypt.hash('Doctor@123', 12);
   const patient = await prisma.user.upsert({
     where: { email: 'demo@dhararia.gov.in' },
     update: {},
@@ -60,21 +62,21 @@ async function main() {
 
   // Create departments
   const departmentsData = [
-    { name: 'General Medicine', description: 'Comprehensive medical care for adults with chronic and acute conditions', icon: 'stethoscope', displayOrder: 1 },
-    { name: 'Pediatrics', description: 'Child healthcare, immunization, growth monitoring, and neonatal care', icon: 'baby', displayOrder: 2 },
-    { name: 'Obstetrics & Gynecology', description: 'Women\'s health, maternity care, high-risk pregnancies, and gynecological surgeries', icon: 'heart', displayOrder: 3 },
-    { name: 'Orthopedics', description: 'Bone, joint, and muscle disorders including joint replacement and trauma', icon: 'bone', displayOrder: 4 },
-    { name: 'General Surgery', description: 'Surgical procedures including laparoscopic, gastrointestinal, and breast surgery', icon: 'scalpel', displayOrder: 5 },
-    { name: 'Ophthalmology', description: 'Eye care, cataract surgery, glaucoma treatment, and vision correction', icon: 'eye', displayOrder: 6 },
-    { name: 'ENT', description: 'Ear, nose, and throat disorders including endoscopic sinus surgery', icon: 'ear', displayOrder: 7 },
-    { name: 'Dermatology', description: 'Skin, hair, and nail conditions with laser and cosmetic procedures', icon: 'sparkles', displayOrder: 8 },
-    { name: 'Psychiatry', description: 'Mental health, de-addiction, counseling, and behavioral therapy', icon: 'brain', displayOrder: 9 },
-    { name: 'Radiology', description: 'X-ray, ultrasound, CT scan, MRI, and interventional radiology', icon: 'scan', displayOrder: 10 },
-    { name: 'Pathology', description: 'Clinical pathology, biochemistry, microbiology, and blood bank', icon: 'microscope', displayOrder: 11 },
-    { name: 'Anesthesiology', description: 'Anesthesia, pain management, and critical care support', icon: 'droplet', displayOrder: 12 },
-    { name: 'Emergency Medicine', description: '24/7 emergency and trauma care with resuscitation facilities', icon: 'ambulance', displayOrder: 13 },
-    { name: 'Dental Surgery', description: 'Oral health, dental implants, orthodontics, and maxillofacial surgery', icon: 'tooth', displayOrder: 14 },
-    { name: 'Physiotherapy', description: 'Rehabilitation, electrotherapy, exercise therapy, and sports injury', icon: 'activity', displayOrder: 15 },
+    { name: 'General Medicine', description: 'Comprehensive medical care for adults with chronic and acute conditions', icon: 'stethoscope' },
+    { name: 'Pediatrics', description: 'Child healthcare, immunization, growth monitoring, and neonatal care', icon: 'baby' },
+    { name: 'Obstetrics & Gynecology', description: 'Women\'s health, maternity care, high-risk pregnancies, and gynecological surgeries', icon: 'heart' },
+    { name: 'Orthopedics', description: 'Bone, joint, and muscle disorders including joint replacement and trauma', icon: 'bone' },
+    { name: 'General Surgery', description: 'Surgical procedures including laparoscopic, gastrointestinal, and breast surgery', icon: 'scalpel' },
+    { name: 'Ophthalmology', description: 'Eye care, cataract surgery, glaucoma treatment, and vision correction', icon: 'eye' },
+    { name: 'ENT', description: 'Ear, nose, and throat disorders including endoscopic sinus surgery', icon: 'ear' },
+    { name: 'Dermatology', description: 'Skin, hair, and nail conditions with laser and cosmetic procedures', icon: 'sparkles' },
+    { name: 'Psychiatry', description: 'Mental health, de-addiction, counseling, and behavioral therapy', icon: 'brain' },
+    { name: 'Radiology', description: 'X-ray, ultrasound, CT scan, MRI, and interventional radiology', icon: 'scan' },
+    { name: 'Pathology', description: 'Clinical pathology, biochemistry, microbiology, and blood bank', icon: 'microscope' },
+    { name: 'Anesthesiology', description: 'Anesthesia, pain management, and critical care support', icon: 'droplet' },
+    { name: 'Emergency Medicine', description: '24/7 emergency and trauma care with resuscitation facilities', icon: 'ambulance' },
+    { name: 'Dental Surgery', description: 'Oral health, dental implants, orthodontics, and maxillofacial surgery', icon: 'tooth' },
+    { name: 'Physiotherapy', description: 'Rehabilitation, electrotherapy, exercise therapy, and sports injury', icon: 'activity' },
   ];
 
   const departments = [];
@@ -91,7 +93,6 @@ async function main() {
   // Create doctors
   const doctorsData = [
     {
-      userId: admin.id,
       name: 'Dr. Rajesh Kumar',
       specialization: 'Cardiology',
       qualification: 'MD, DM (Cardiology), FACC',
@@ -103,7 +104,6 @@ async function main() {
       bio: 'Senior Cardiologist with 15+ years experience in interventional cardiology.',
     },
     {
-      userId: admin.id,
       name: 'Dr. Priya Sharma',
       specialization: 'Gynecology & Obstetrics',
       qualification: 'MS (OBG), DNB, MRCOG',
@@ -115,7 +115,6 @@ async function main() {
       bio: 'Expert in high-risk pregnancies and minimally invasive gynecological surgeries.',
     },
     {
-      userId: admin.id,
       name: 'Dr. Amit Singh',
       specialization: 'Orthopedics',
       qualification: 'MS (Ortho), MCh (Joint Replacement)',
@@ -127,7 +126,6 @@ async function main() {
       bio: 'Specialist in joint replacement and complex trauma surgeries.',
     },
     {
-      userId: admin.id,
       name: 'Dr. Sunita Devi',
       specialization: 'Pediatrics',
       qualification: 'MD (Pediatrics), DNB',
@@ -139,7 +137,6 @@ async function main() {
       bio: 'Child specialist with expertise in neonatal care and vaccination.',
     },
     {
-      userId: admin.id,
       name: 'Dr. Vikash Patel',
       specialization: 'General Surgery',
       qualification: 'MS (General Surgery), FIAGES',
@@ -151,7 +148,6 @@ async function main() {
       bio: 'Laparoscopic surgeon with extensive experience in gastrointestinal surgeries.',
     },
     {
-      userId: admin.id,
       name: 'Dr. Anjali Verma',
       specialization: 'Dermatology',
       qualification: 'MD (Dermatology), DVD',
@@ -165,10 +161,29 @@ async function main() {
   ];
 
   for (const docData of doctorsData) {
+    // `Doctor.userId` is @unique (User.doctor is a 1:1 relation), so every
+    // doctor needs its own User row rather than sharing the admin account.
+    const slug = docData.name
+      .toLowerCase()
+      .replace(/^dr\.?\s*/, '')
+      .replace(/[^a-z]+/g, '.');
+    const doctorUser = await prisma.user.upsert({
+      where: { email: `${slug}@dhararia.gov.in` },
+      update: {},
+      create: {
+        email: `${slug}@dhararia.gov.in`,
+        password: doctorPassword,
+        name: docData.name,
+        phone: `+91-6453-2${String(20000 + doctorsData.indexOf(docData)).slice(-5)}`,
+        role: UserRole.DOCTOR,
+        isActive: true,
+      },
+    });
+
     const doctor = await prisma.doctor.upsert({
       where: { hprId: docData.hprId! },
       update: {},
-      create: docData,
+      create: { ...docData, userId: doctorUser.id },
     });
     console.log(`✅ Doctor created: ${doctor.name}`);
 
@@ -265,7 +280,6 @@ async function main() {
   // Create audit log entry
   await prisma.auditLog.create({
     data: {
-      userId: admin.id,
       action: 'SEED_DATABASE',
       resource: 'Database',
       details: { message: 'Initial database seed completed' },

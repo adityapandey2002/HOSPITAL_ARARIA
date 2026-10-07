@@ -71,7 +71,7 @@ export abstract class BaseDrizzleRepository<
 
   async findAll(
     pagination: PaginationParams = {},
-    where?: SQL<unknown>,
+    where?: SQL<unknown>
   ): Promise<PaginatedResult<TSelect>> {
     const page = Math.max(1, pagination.page ?? 1);
     const limit = Math.min(100, Math.max(1, pagination.limit ?? 20));
@@ -93,13 +93,19 @@ export abstract class BaseDrizzleRepository<
   }
 
   async create(data: TInsert): Promise<TSelect> {
-    const rows = await this.db.insert(this.table).values(data as any).returning();
+    const rows = await this.db
+      .insert(this.table)
+      .values(data as any)
+      .returning();
     return rows[0] as unknown as TSelect;
   }
 
   async createMany(data: TInsert[]): Promise<TSelect[]> {
     if (data.length === 0) return [];
-    const rows = await this.db.insert(this.table).values(data as any).returning();
+    const rows = await this.db
+      .insert(this.table)
+      .values(data as any)
+      .returning();
     return rows as unknown as TSelect[];
   }
 
@@ -123,11 +129,7 @@ export abstract class BaseDrizzleRepository<
   }
 
   async exists(where: SQL<unknown>): Promise<boolean> {
-    const rows = await this.db
-      .select({ id: this.idColumn })
-      .from(this.table)
-      .where(where)
-      .limit(1);
+    const rows = await this.db.select({ id: this.idColumn }).from(this.table).where(where).limit(1);
     return rows.length > 0;
   }
 

@@ -16,6 +16,12 @@ export default () => ({
     password: process.env.DB_PASSWORD || 'postgres',
     name: process.env.DB_NAME || 'dh_araria',
     poolSize: parseInt(process.env.DB_POOL_SIZE || '10', 10),
+    // Managed Postgres (Supabase/Neon/Railway) requires TLS, while a local
+    // devserver usually does not offer it. Default to TLS for any non-local
+    // host; override explicitly with DB_SSL=true/false when needed.
+    ssl: process.env.DB_SSL
+      ? process.env.DB_SSL === 'true'
+      : (process.env.DB_HOST || 'localhost') !== 'localhost',
   },
 
   // ORM layer (dual-ORM over a single PostgreSQL engine — see docs/ARCHITECTURE.md).
@@ -50,12 +56,7 @@ export default () => ({
   upload: {
     maxFileSize: parseInt(process.env.MAX_FILE_SIZE || '10485760', 10), // 10MB
     uploadPath: process.env.UPLOAD_PATH || './uploads',
-    allowedMimeTypes: [
-      'image/jpeg',
-      'image/png',
-      'image/webp',
-      'application/pdf',
-    ],
+    allowedMimeTypes: ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'],
   },
 
   // ABDM Integration (for future phases)
@@ -83,7 +84,8 @@ export default () => ({
     userInfoUrl: 'https://epramaan.gov.in/oauth2/userinfo',
     clientId: process.env.EPRAAMAN_CLIENT_ID || '',
     clientSecret: process.env.EPRAAMAN_CLIENT_SECRET || '',
-    callbackUrl: process.env.EPRAAMAN_CALLBACK_URL || 'http://localhost:3001/api/auth/epramaan/callback',
+    callbackUrl:
+      process.env.EPRAAMAN_CALLBACK_URL || 'http://localhost:3001/api/auth/epramaan/callback',
   },
 
   // CPGRAMS Integration (for future phases)

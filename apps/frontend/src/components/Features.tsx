@@ -1,9 +1,16 @@
 'use client';
 
-import { 
-  Calendar, Stethoscope, Droplet, AlertCircle, 
-  Shield, Truck, MessageSquare, MapPin,
-  CheckCircle, ArrowRight 
+import {
+  Calendar,
+  Stethoscope,
+  Droplet,
+  AlertCircle,
+  Shield,
+  Truck,
+  MessageSquare,
+  MapPin,
+  CheckCircle,
+  ArrowRight,
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -11,42 +18,48 @@ const features = [
   {
     icon: Calendar,
     title: 'Online Appointments',
-    description: 'Book, reschedule, or cancel appointments with your preferred doctor from the comfort of your home. Get instant confirmation and reminders.',
+    description:
+      'Book, reschedule, or cancel appointments with your preferred doctor from the comfort of your home. Get instant confirmation and reminders.',
     href: '/appointments',
     color: 'primary',
   },
   {
     icon: Stethoscope,
     title: 'Specialist Doctors',
-    description: 'Access 50+ specialist doctors across 15+ departments. View profiles, qualifications, experience, and patient reviews.',
+    description:
+      'Access 50+ specialist doctors across 15+ departments. View profiles, qualifications, experience, and patient reviews.',
     href: '/doctors',
     color: 'secondary',
   },
   {
     icon: Droplet,
     title: 'Real-time Blood Bank',
-    description: 'Check real-time blood availability by group and component type. Integrated with e-RaktKosh for up-to-date inventory.',
+    description:
+      'Check real-time blood availability by group and component type. Integrated with e-RaktKosh for up-to-date inventory.',
     href: '/blood-bank',
     color: 'danger',
   },
   {
     icon: AlertCircle,
     title: 'Grievance Redressal',
-    description: 'File complaints and track their resolution through CPGRAMS integration. Transparent 30-day resolution timeline.',
+    description:
+      'File complaints and track their resolution through CPGRAMS integration. Transparent 30-day resolution timeline.',
     href: '/grievances',
     color: 'warning',
   },
   {
     icon: MessageSquare,
     title: 'Multilingual Support',
-    description: 'Access the portal in 22 Indian languages through Bhashini AI integration. Voice search and text-to-speech available.',
+    description:
+      'Access the portal in 22 Indian languages through Bhashini AI integration. Voice search and text-to-speech available.',
     href: '/services',
     color: 'success',
   },
   {
     icon: MapPin,
     title: 'Location & Directions',
-    description: 'Find us easily with integrated maps, ambulance services, and detailed contact information for all departments.',
+    description:
+      'Find us easily with integrated maps, ambulance services, and detailed contact information for all departments.',
     href: '/contact',
     color: 'secondary',
   },
@@ -66,37 +79,40 @@ function cn(...classes: (string | undefined | null | false)[]): string {
 
 export function Features() {
   return (
-    <section className="py-20 bg-white">
+    <section className="bg-white py-20">
       <div className="container mx-auto px-4">
-        <div className="text-center max-w-3xl mx-auto mb-16">
-          <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
+        <div className="mx-auto mb-16 max-w-3xl text-center">
+          <h2 className="mb-4 text-3xl font-bold text-gray-900 sm:text-4xl">
             Comprehensive Healthcare Services
           </h2>
           <p className="text-lg text-gray-600">
-            We offer a wide range of digital healthcare services to make your experience seamless and efficient.
+            We offer a wide range of digital healthcare services to make your experience seamless
+            and efficient.
           </p>
         </div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {features.map((feature, index) => (
             <article
               key={feature.title}
               className={cn(
-                'group p-8 rounded-2xl bg-gray-50 border border-gray-100 hover:border-blue-200 hover:shadow-lg transition-all duration-300',
+                'group rounded-2xl border border-gray-100 bg-gray-50 p-8 transition-all duration-300 hover:border-blue-200 hover:shadow-lg',
                 'animate-slide-up'
               )}
               style={{ animationDelay: `${index * 100}ms` }}
             >
-              <div className={cn(
-                'w-14 h-14 rounded-xl flex items-center justify-center mb-6 transition-colors',
-                colorStyles[feature.color as keyof typeof colorStyles]
-              )}>
-                <feature.icon className="w-7 h-7" />
+              <div
+                className={cn(
+                  'mb-6 flex h-14 w-14 items-center justify-center rounded-xl transition-colors',
+                  colorStyles[feature.color as keyof typeof colorStyles]
+                )}
+              >
+                <feature.icon className="h-7 w-7" />
               </div>
-              
-              <h3 className="text-xl font-semibold text-gray-900 mb-3">{feature.title}</h3>
-              <p className="text-gray-600 mb-6 leading-relaxed">{feature.description}</p>
-              
+
+              <h3 className="mb-3 text-xl font-semibold text-gray-900">{feature.title}</h3>
+              <p className="mb-6 leading-relaxed text-gray-600">{feature.description}</p>
+
               <Link
                 href={feature.href}
                 className={cn(
@@ -105,28 +121,40 @@ export function Features() {
                 )}
               >
                 Learn more
-                <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
               </Link>
             </article>
           ))}
         </div>
 
         {/* Key Highlights */}
-        <div className="mt-20 grid md:grid-cols-3 gap-6">
+        <div className="mt-20 grid gap-6 md:grid-cols-3">
           {[
-            { icon: Shield, title: 'Quality Certified', desc: 'NABH accredited with STQC GIGW 3.0 compliance' },
-            { icon: Truck, title: '24/7 Ambulance', desc: 'Free ambulance service with GPS tracking (Dial 102)' },
-            { icon: CheckCircle, title: 'Cashless Treatment', desc: 'Ayushman Bharat & state health scheme empanelled' },
+            {
+              icon: Shield,
+              title: 'Quality Certified',
+              desc: 'NABH accredited with STQC GIGW 3.0 compliance',
+            },
+            {
+              icon: Truck,
+              title: '24/7 Ambulance',
+              desc: 'Free ambulance service with GPS tracking (Dial 102)',
+            },
+            {
+              icon: CheckCircle,
+              title: 'Cashless Treatment',
+              desc: 'Ayushman Bharat & state health scheme empanelled',
+            },
           ].map((item, index) => (
             <div
               key={item.title}
-              className="p-6 bg-gray-50 rounded-2xl border border-gray-100 animate-slide-up"
+              className="animate-slide-up rounded-2xl border border-gray-100 bg-gray-50 p-6"
               style={{ animationDelay: `${index * 100}ms` }}
             >
-              <div className="w-12 h-12 bg-blue-100 text-blue-600 rounded-xl flex items-center justify-center mb-4">
-                <item.icon className="w-6 h-6" />
+              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-blue-100 text-blue-600">
+                <item.icon className="h-6 w-6" />
               </div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">{item.title}</h3>
+              <h3 className="mb-2 text-lg font-semibold text-gray-900">{item.title}</h3>
               <p className="text-gray-600">{item.desc}</p>
             </div>
           ))}

@@ -1,7 +1,12 @@
-import { Injectable, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+  BadRequestException,
+} from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { PaginationDto } from '../../common/dto/pagination.dto';
-import { AppointmentStatus, AppointmentType } from '@dh-araria/shared/types';
+import { AppointmentStatus, AppointmentType } from '@dh-araria/shared';
 
 @Injectable()
 export class AppointmentsService {
@@ -38,7 +43,10 @@ export class AppointmentsService {
       this.prisma.appointment.count({ where }),
     ]);
 
-    return { data: appointments, meta: { page, limit, total, totalPages: Math.ceil(total / limit) } };
+    return {
+      data: appointments,
+      meta: { page, limit, total, totalPages: Math.ceil(total / limit) },
+    };
   }
 
   async findById(id: string) {
@@ -46,7 +54,15 @@ export class AppointmentsService {
       where: { id },
       include: {
         patient: { select: { id: true, name: true, email: true, phone: true, abhaId: true } },
-        doctor: { select: { id: true, name: true, specialization: true, departmentId: true, consultationFee: true } },
+        doctor: {
+          select: {
+            id: true,
+            name: true,
+            specialization: true,
+            departmentId: true,
+            consultationFee: true,
+          },
+        },
         department: { select: { id: true, name: true } },
       },
     });
@@ -66,7 +82,8 @@ export class AppointmentsService {
     const appointmentDate = new Date(data.appointmentDate);
     const dayOfWeek = appointmentDate.getDay();
     const timeSlot = doctor.timeSlots.find(
-      (slot) => slot.dayOfWeek === dayOfWeek && slot.startTime === data.startTime && slot.isAvailable
+      (slot) =>
+        slot.dayOfWeek === dayOfWeek && slot.startTime === data.startTime && slot.isAvailable
     );
     if (!timeSlot) throw new BadRequestException('Selected time slot is not available');
 

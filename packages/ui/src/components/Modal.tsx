@@ -84,12 +84,12 @@ const Modal: React.FC<ModalProps> = ({
           ref={modalRef}
           tabIndex={-1}
           className={cn(
-            'relative w-full bg-white rounded-xl shadow-xl transform transition-all',
+            'relative w-full transform rounded-xl bg-white shadow-xl transition-all',
             sizes[size]
           )}
         >
           {(title || showCloseButton) && (
-            <div className="flex items-start justify-between p-6 border-b border-gray-100">
+            <div className="flex items-start justify-between border-b border-gray-100 p-6">
               <div>
                 {title && (
                   <h2 id={titleId} className="text-lg font-semibold text-gray-900">
@@ -106,17 +106,15 @@ const Modal: React.FC<ModalProps> = ({
                 <button
                   type="button"
                   onClick={onClose}
-                  className="p-1 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  className="rounded-lg p-1 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-primary-500"
                   aria-label="Close modal"
                 >
-                  <X className="w-5 h-5" />
+                  <X className="h-5 w-5" />
                 </button>
               )}
             </div>
           )}
-          <div className="p-6">
-            {children}
-          </div>
+          <div className="p-6">{children}</div>
         </div>
       </div>
     </div>

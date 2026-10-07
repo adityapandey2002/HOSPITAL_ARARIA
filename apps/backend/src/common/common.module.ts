@@ -24,13 +24,6 @@ import { PrismaService } from './prisma/prisma.service';
 @Module({
   imports: [ConfigModule, DrizzleModule, MikroModule, AuditModule],
   providers: [PrismaService, JwtStrategy, RolesGuard],
-  exports: [
-    PrismaService,
-    JwtStrategy,
-    RolesGuard,
-    DrizzleModule,
-    MikroModule,
-    AuditModule,
-  ],
+  exports: [PrismaService, JwtStrategy, RolesGuard, DrizzleModule, MikroModule, AuditModule],
 })
 export class CommonModule {}

@@ -144,11 +144,17 @@ class ApiClient {
 
   // Auth methods
   async login(email: string, password: string) {
-    return this.post<{ user: any; accessToken: string; refreshToken: string }>('/auth/login', { email, password });
+    return this.post<{ user: any; accessToken: string; refreshToken: string }>('/auth/login', {
+      email,
+      password,
+    });
   }
 
   async register(data: { name: string; email: string; password: string; phone?: string }) {
-    return this.post<{ user: any; accessToken: string; refreshToken: string }>('/auth/register', data);
+    return this.post<{ user: any; accessToken: string; refreshToken: string }>(
+      '/auth/register',
+      data
+    );
   }
 
   async logout() {

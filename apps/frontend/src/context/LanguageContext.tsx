@@ -21,42 +21,45 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const savedLanguage = localStorage.getItem('preferredLanguage');
     if (savedLanguage) {
-      const lang = SUPPORTED_LANGUAGES.find(l => l.code === savedLanguage);
+      const lang = SUPPORTED_LANGUAGES.find((l) => l.code === savedLanguage);
       if (lang) setCurrentLanguage(lang);
     }
   }, []);
 
   const setLanguage = useCallback((languageCode: string) => {
-    const lang = SUPPORTED_LANGUAGES.find(l => l.code === languageCode);
+    const lang = SUPPORTED_LANGUAGES.find((l) => l.code === languageCode);
     if (lang) {
       setCurrentLanguage(lang);
       localStorage.setItem('preferredLanguage', languageCode);
-      
+
       // Update document direction for RTL languages
       document.documentElement.dir = lang.direction;
       document.documentElement.lang = languageCode;
     }
   }, []);
 
-  const translate = useCallback(async (text: string, targetLanguage?: string): Promise<string> => {
-    if (!text.trim()) return text;
-    
-    const target = targetLanguage || currentLanguage.code;
-    if (target === 'en') return text; // No translation needed for English
+  const translate = useCallback(
+    async (text: string, targetLanguage?: string): Promise<string> => {
+      if (!text.trim()) return text;
 
-    setIsTranslating(true);
-    try {
-      // In Phase 3, this will call Bhashini API
-      // For now, return original text
-      console.log(`Translate "${text}" to ${target}`);
-      return text;
-    } catch (error) {
-      console.error('Translation failed:', error);
-      return text;
-    } finally {
-      setIsTranslating(false);
-    }
-  }, [currentLanguage.code]);
+      const target = targetLanguage || currentLanguage.code;
+      if (target === 'en') return text; // No translation needed for English
+
+      setIsTranslating(true);
+      try {
+        // In Phase 3, this will call Bhashini API
+        // For now, return original text
+        console.log(`Translate "${text}" to ${target}`);
+        return text;
+      } catch (error) {
+        console.error('Translation failed:', error);
+        return text;
+      } finally {
+        setIsTranslating(false);
+      }
+    },
+    [currentLanguage.code]
+  );
 
   const value: LanguageContextType = {
     currentLanguage,
@@ -66,11 +69,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     supportedLanguages: SUPPORTED_LANGUAGES,
   };
 
-  return (
-    <LanguageContext.Provider value={value}>
-      {children}
-    </LanguageContext.Provider>
-  );
+  return <LanguageContext.Provider value={value}>{children}</LanguageContext.Provider>;
 }
 
 export function useLanguage() {
@@ -86,11 +85,14 @@ export function useTranslation() {
   const { translate, currentLanguage } = useLanguage();
   const [translatedText, setTranslatedText] = useState<string>('');
 
-  const t = useCallback(async (text: string): Promise<string> => {
-    if (currentLanguage.code === 'en') return text;
-    const result = await translate(text);
-    return result;
-  }, [translate, currentLanguage.code]);
+  const t = useCallback(
+    async (text: string): Promise<string> => {
+      if (currentLanguage.code === 'en') return text;
+      const result = await translate(text);
+      return result;
+    },
+    [translate, currentLanguage.code]
+  );
 
   return { t, currentLanguage };
 }

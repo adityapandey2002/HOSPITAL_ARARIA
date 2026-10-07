@@ -5,13 +5,7 @@ import { forwardRef } from 'react';
 import { cn } from '@dh-araria/shared/utils';
 
 export type BadgeVariant =
-  | 'default'
-  | 'primary'
-  | 'secondary'
-  | 'success'
-  | 'warning'
-  | 'danger'
-  | 'outline';
+  'default' | 'primary' | 'secondary' | 'success' | 'warning' | 'danger' | 'outline';
 
 export type BadgeSize = 'sm' | 'md' | 'lg';
 
@@ -53,17 +47,17 @@ const Badge = forwardRef<HTMLSpanElement, BadgeProps>(
     <span
       ref={ref}
       className={cn(
-        'inline-flex items-center gap-1.5 font-medium rounded-full',
+        'inline-flex items-center gap-1.5 rounded-full font-medium',
         BADGE_VARIANTS[variant],
         BADGE_SIZES[size],
-        className,
+        className
       )}
       {...props}
     >
-      {dot && <span className={cn('w-1.5 h-1.5 rounded-full', BADGE_DOT_COLORS[variant])} />}
+      {dot && <span className={cn('h-1.5 w-1.5 rounded-full', BADGE_DOT_COLORS[variant])} />}
       {children}
     </span>
-  ),
+  )
 );
 
 Badge.displayName = 'Badge';

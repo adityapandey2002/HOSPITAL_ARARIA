@@ -1,14 +1,21 @@
 'use client';
 
-import { useState } from 'react';
+import { Suspense, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { 
-  Hospital, Mail, Lock, Eye, EyeOff, 
-  AlertCircle, CheckCircle, User, Phone
+import {
+  Hospital,
+  Mail,
+  Lock,
+  Eye,
+  EyeOff,
+  AlertCircle,
+  CheckCircle,
+  User,
+  Phone,
 } from 'lucide-react';
 import { cn } from '@dh-araria/shared/utils';
 import { Button, Input } from '@dh-araria/ui/components';
@@ -23,13 +30,33 @@ const loginSchema = z.object({
 
 type LoginFormData = z.infer<typeof loginSchema>;
 
+/**
+ * `useSearchParams()` opts a route into client-side rendering, so Next.js refuses
+ * to prerender `/login` unless the hook is isolated behind a <Suspense> boundary.
+ * The wrapper below is what the router renders; <LoginForm> bails out to the
+ * client at runtime and the fallback is served for the static shell.
+ */
 export default function LoginPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4 py-12 pt-32">
+          <p className="text-gray-500">Loading sign in…</p>
+        </div>
+      }
+    >
+      <LoginForm />
+    </Suspense>
+  );
+}
+
+function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { login } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  
+
   const callbackUrl = searchParams.get('callbackUrl') || '/appointments';
   const expired = searchParams.get('expired') === 'true';
 
@@ -63,32 +90,32 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 pt-32">
-      <div className="max-w-md w-full space-y-8">
+    <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4 py-12 pt-32 sm:px-6 lg:px-8">
+      <div className="w-full max-w-md space-y-8">
         <div className="text-center">
-          <Link href="/" className="inline-flex items-center justify-center gap-3 mb-6">
-            <div className="p-2 bg-primary-600 rounded-lg">
-              <Hospital className="w-8 h-8 text-white" />
+          <Link href="/" className="mb-6 inline-flex items-center justify-center gap-3">
+            <div className="rounded-lg bg-primary-600 p-2">
+              <Hospital className="h-8 w-8 text-white" />
             </div>
             <div>
-              <h1 className="font-bold text-xl text-gray-900">District Hospital Araria</h1>
+              <h1 className="text-xl font-bold text-gray-900">District Hospital Araria</h1>
               <p className="text-xs text-gray-500">Government of Bihar</p>
             </div>
           </Link>
           <h2 className="text-3xl font-bold text-gray-900">Sign in to your account</h2>
           <p className="mt-2 text-gray-600">
             Or{' '}
-            <Link href="/register" className="text-primary-600 hover:text-primary-500 font-medium">
+            <Link href="/register" className="font-medium text-primary-600 hover:text-primary-500">
               create a new account
             </Link>
           </p>
         </div>
 
         {expired && (
-          <div className="p-4 bg-warning-50 border border-warning-200 rounded-xl flex items-start gap-3">
-            <AlertCircle className="w-5 h-5 text-warning-600 flex-shrink-0 mt-0.5" />
+          <div className="border-warning-200 flex items-start gap-3 rounded-xl border bg-warning-50 p-4">
+            <AlertCircle className="mt-0.5 h-5 w-5 flex-shrink-0 text-warning-600" />
             <div>
-              <p className="text-sm font-medium text-warning-900">Session Expired</p>
+              <p className="text-warning-900 text-sm font-medium">Session Expired</p>
               <p className="text-sm text-warning-700">Please log in again to continue.</p>
             </div>
           </div>
@@ -104,7 +131,7 @@ export default function LoginPage() {
               error={errors.email?.message}
               autoComplete="email"
             />
-            
+
             <div>
               <label htmlFor="password" className="form-label">
                 Password
@@ -125,36 +152,31 @@ export default function LoginPage() {
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
                   aria-label={showPassword ? 'Hide password' : 'Show password'}
                 >
-                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                 </button>
               </div>
               {errors.password && <p className="form-error">{errors.password.message}</p>}
             </div>
 
             <div className="flex items-center justify-between">
-              <label className="flex items-center gap-2 cursor-pointer">
+              <label className="flex cursor-pointer items-center gap-2">
                 <input
                   type="checkbox"
                   {...register('rememberMe')}
-                  className="h-4 w-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
+                  className="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
                 />
                 <span className="text-sm text-gray-600">Remember me</span>
               </label>
               <Link
                 href="/forgot-password"
-                className="text-sm text-primary-600 hover:text-primary-500 font-medium"
+                className="text-sm font-medium text-primary-600 hover:text-primary-500"
               >
                 Forgot password?
               </Link>
             </div>
           </div>
 
-          <Button
-            type="submit"
-            size="lg"
-            className="w-full"
-            loading={isLoading}
-          >
+          <Button type="submit" size="lg" className="w-full" loading={isLoading}>
             Sign In
           </Button>
         </form>
@@ -164,13 +186,13 @@ export default function LoginPage() {
             <div className="w-full border-t border-gray-200" />
           </div>
           <div className="relative flex justify-center text-sm">
-            <span className="px-4 bg-gray-50 text-gray-500">Demo Credentials</span>
+            <span className="bg-gray-50 px-4 text-gray-500">Demo Credentials</span>
           </div>
         </div>
 
-        <div className="bg-gray-50 rounded-xl p-4 text-sm">
-          <p className="font-medium text-gray-900 mb-2">For testing purposes:</p>
-          <div className="space-y-1 text-gray-600 font-mono text-xs">
+        <div className="rounded-xl bg-gray-50 p-4 text-sm">
+          <p className="mb-2 font-medium text-gray-900">For testing purposes:</p>
+          <div className="space-y-1 font-mono text-xs text-gray-600">
             <p>Email: demo@dhararia.gov.in</p>
             <p>Password: Demo@123</p>
           </div>
@@ -179,9 +201,13 @@ export default function LoginPage() {
         <div className="text-center">
           <p className="text-sm text-gray-600">
             By signing in, you agree to our{' '}
-            <Link href="/terms" className="text-primary-600 hover:text-primary-500">Terms of Service</Link>
-            {' '}and{' '}
-            <Link href="/privacy" className="text-primary-600 hover:text-primary-500">Privacy Policy</Link>
+            <Link href="/terms" className="text-primary-600 hover:text-primary-500">
+              Terms of Service
+            </Link>{' '}
+            and{' '}
+            <Link href="/privacy" className="text-primary-600 hover:text-primary-500">
+              Privacy Policy
+            </Link>
           </p>
         </div>
       </div>

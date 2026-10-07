@@ -7,7 +7,7 @@ import { JwtAuthGuard } from '../../modules/auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/auth/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { Public } from '../../common/decorators/public.decorator';
-import { UserRole } from '@dh-araria/shared/types';
+import { UserRole } from '@dh-araria/shared';
 
 @ApiTags('Departments')
 @Controller('departments')

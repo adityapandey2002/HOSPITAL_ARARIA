@@ -5,7 +5,8 @@ import { NoticesList } from '@/components/NoticesList';
 
 export const metadata: Metadata = {
   title: 'Notices & Announcements',
-  description: 'Latest notices, circulars, recruitment updates, tenders, and public health advisories from District Hospital Araria.',
+  description:
+    'Latest notices, circulars, recruitment updates, tenders, and public health advisories from District Hospital Araria.',
 };
 
 export default function NoticesPage() {
@@ -13,11 +14,12 @@ export default function NoticesPage() {
     <>
       <Header />
       <main id="main-content" className="min-h-screen pt-32">
-        <section className="bg-primary-600 text-white py-16">
+        <section className="bg-primary-600 py-16 text-white">
           <div className="container mx-auto px-4 text-center">
-            <h1 className="text-4xl sm:text-5xl font-bold mb-4">Notices & Announcements</h1>
-            <p className="text-xl text-primary-100 max-w-3xl mx-auto">
-              Stay updated with official circulars, recruitment notices, tenders, and public health advisories.
+            <h1 className="mb-4 text-4xl font-bold sm:text-5xl">Notices & Announcements</h1>
+            <p className="mx-auto max-w-3xl text-xl text-primary-100">
+              Stay updated with official circulars, recruitment notices, tenders, and public health
+              advisories.
             </p>
           </div>
         </section>

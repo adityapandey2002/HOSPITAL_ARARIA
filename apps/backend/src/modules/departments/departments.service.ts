@@ -72,7 +72,11 @@ export class DepartmentsService {
 
   /** Department detail plus its active doctors and their bookable slots. */
   async findById(id: string) {
-    const [department] = await this.db.select().from(departments).where(eq(departments.id, id)).limit(1);
+    const [department] = await this.db
+      .select()
+      .from(departments)
+      .where(eq(departments.id, id))
+      .limit(1);
     if (!department) throw new NotFoundException('Department not found');
 
     const staff = await this.db

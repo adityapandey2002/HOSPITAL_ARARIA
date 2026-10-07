@@ -115,7 +115,7 @@ export function BloodBankInventory() {
         groupLabel: BLOOD_GROUP_LABELS[item.bloodGroup] ?? item.bloodGroup,
         componentLabel: BLOOD_COMPONENT_LABELS[item.componentType] ?? item.componentType,
       })),
-    [stock],
+    [stock]
   );
 
   const filtered = useMemo<DecoratedStock[]>(() => {
@@ -145,9 +145,15 @@ export function BloodBankInventory() {
             ? 'low'
             : 'available';
 
-        return { group, label: BLOOD_GROUP_LABELS[group], totalUnits, status, count: groupRows.length };
+        return {
+          group,
+          label: BLOOD_GROUP_LABELS[group],
+          totalUnits,
+          status,
+          count: groupRows.length,
+        };
       }),
-    [filtered],
+    [filtered]
   );
 
   const availableCount = rows.filter((r) => r.status === 'available').length;
@@ -155,35 +161,35 @@ export function BloodBankInventory() {
   const criticalCount = rows.filter((r) => r.status === 'critical').length;
 
   return (
-    <section className="py-20 bg-white">
+    <section className="bg-white py-20">
       <div className="container mx-auto px-4">
         {/* Header with Actions */}
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-8">
+        <div className="mb-8 flex flex-col items-start justify-between gap-4 md:flex-row md:items-center">
           <div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Live Blood Inventory</h2>
+            <h2 className="mb-2 text-2xl font-bold text-gray-900">Live Blood Inventory</h2>
             <p className="text-gray-600">Source of truth: District Hospital Araria blood bank</p>
           </div>
           <div className="flex items-center gap-3">
             <button
               onClick={() => void load()}
               disabled={loading}
-              className="flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
+              className="flex items-center gap-2 rounded-lg border border-gray-200 px-4 py-2 transition-colors hover:bg-gray-50 disabled:opacity-50"
             >
-              <RefreshCw className={cn('w-4 h-4', loading && 'animate-spin')} />
+              <RefreshCw className={cn('h-4 w-4', loading && 'animate-spin')} />
               <span>Refresh</span>
             </button>
-            <span className="text-sm text-gray-500 hidden sm:block">
+            <span className="hidden text-sm text-gray-500 sm:block">
               Last updated: {lastRefresh.toLocaleTimeString()}
             </span>
           </div>
         </div>
 
         {/* Summary Cards */}
-        <div className="grid md:grid-cols-4 gap-4 mb-8">
-          <div className="bg-white p-6 rounded-2xl border border-gray-100">
+        <div className="mb-8 grid gap-4 md:grid-cols-4">
+          <div className="rounded-2xl border border-gray-100 bg-white p-6">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-success-100 text-success-600 rounded-xl flex items-center justify-center">
-                <CheckCircle className="w-6 h-6" />
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-success-100 text-success-600">
+                <CheckCircle className="h-6 w-6" />
               </div>
               <div>
                 <p className="text-2xl font-bold text-gray-900">{availableCount}</p>
@@ -191,10 +197,10 @@ export function BloodBankInventory() {
               </div>
             </div>
           </div>
-          <div className="bg-white p-6 rounded-2xl border border-gray-100">
+          <div className="rounded-2xl border border-gray-100 bg-white p-6">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-warning-100 text-warning-600 rounded-xl flex items-center justify-center">
-                <AlertCircle className="w-6 h-6" />
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-warning-100 text-warning-600">
+                <AlertCircle className="h-6 w-6" />
               </div>
               <div>
                 <p className="text-2xl font-bold text-gray-900">{lowCount}</p>
@@ -202,10 +208,10 @@ export function BloodBankInventory() {
               </div>
             </div>
           </div>
-          <div className="bg-white p-6 rounded-2xl border border-gray-100">
+          <div className="rounded-2xl border border-gray-100 bg-white p-6">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-danger-100 text-danger-600 rounded-xl flex items-center justify-center">
-                <AlertCircle className="w-6 h-6" />
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-danger-100 text-danger-600">
+                <AlertCircle className="h-6 w-6" />
               </div>
               <div>
                 <p className="text-2xl font-bold text-gray-900">{criticalCount}</p>
@@ -213,10 +219,10 @@ export function BloodBankInventory() {
               </div>
             </div>
           </div>
-          <div className="bg-white p-6 rounded-2xl border border-gray-100">
+          <div className="rounded-2xl border border-gray-100 bg-white p-6">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-primary-100 text-primary-600 rounded-xl flex items-center justify-center">
-                <Droplet className="w-6 h-6" />
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary-100 text-primary-600">
+                <Droplet className="h-6 w-6" />
               </div>
               <div>
                 <p className="text-2xl font-bold text-gray-900">{rows.length}</p>
@@ -227,23 +233,23 @@ export function BloodBankInventory() {
         </div>
 
         {/* Filters */}
-        <div className="flex flex-col md:flex-row gap-4 mb-6">
+        <div className="mb-6 flex flex-col gap-4 md:flex-row">
           <div className="relative flex-1">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+            <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
             <input
               type="text"
               placeholder="Search blood group or component..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               aria-label="Search blood inventory"
-              className="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              className="w-full rounded-xl border border-gray-200 bg-white py-3 pl-12 pr-4 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-primary-500"
             />
           </div>
           <select
             value={selectedGroup}
             onChange={(e) => setSelectedGroup(e.target.value)}
             aria-label="Filter by blood group"
-            className="px-4 py-3 border border-gray-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-primary-500"
+            className="rounded-xl border border-gray-200 bg-white px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary-500"
           >
             <option value={ALL}>All Blood Groups</option>
             {bloodGroups.map((g) => (
@@ -256,7 +262,7 @@ export function BloodBankInventory() {
             value={selectedComponent}
             onChange={(e) => setSelectedComponent(e.target.value)}
             aria-label="Filter by component"
-            className="px-4 py-3 border border-gray-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-primary-500"
+            className="rounded-xl border border-gray-200 bg-white px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary-500"
           >
             <option value={ALL}>All Components</option>
             {componentTypes.map((c) => (
@@ -269,21 +275,18 @@ export function BloodBankInventory() {
 
         {/* Summary by Blood Group */}
         <div className="mb-8">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Availability by Blood Group</h3>
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <h3 className="mb-4 text-lg font-semibold text-gray-900">Availability by Blood Group</h3>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             {summary.map((item) => (
               <div
                 key={item.group}
-                className={cn(
-                  'p-4 rounded-2xl border transition-all',
-                  statusStyles[item.status],
-                )}
+                className={cn('rounded-2xl border p-4 transition-all', statusStyles[item.status])}
               >
-                <div className="flex items-center justify-between mb-3">
+                <div className="mb-3 flex items-center justify-between">
                   <span
                     className={cn(
-                      'px-3 py-1 rounded-full font-bold text-white text-sm',
-                      groupChipClass(item.group),
+                      'rounded-full px-3 py-1 text-sm font-bold text-white',
+                      groupChipClass(item.group)
                     )}
                   >
                     {item.label}
@@ -293,7 +296,7 @@ export function BloodBankInventory() {
                   </Badge>
                 </div>
                 <p className="text-2xl font-bold text-gray-900">{item.totalUnits} units</p>
-                <p className="text-sm text-gray-500 mt-1">
+                <p className="mt-1 text-sm text-gray-500">
                   Across {item.count} component{item.count === 1 ? '' : 's'}
                 </p>
               </div>
@@ -305,16 +308,16 @@ export function BloodBankInventory() {
         <div className="overflow-x-auto rounded-2xl border border-gray-100">
           {loading ? (
             <div className="p-8 text-center" role="status" aria-live="polite">
-              <RefreshCw className="w-8 h-8 animate-spin text-primary-600 mx-auto mb-4" />
+              <RefreshCw className="mx-auto mb-4 h-8 w-8 animate-spin text-primary-600" />
               <p className="text-gray-500">Loading blood inventory...</p>
             </div>
           ) : error ? (
             <div className="p-8 text-center" role="alert">
-              <AlertCircle className="w-8 h-8 text-danger-600 mx-auto mb-4" />
-              <p className="text-gray-700 mb-4">{error}</p>
+              <AlertCircle className="mx-auto mb-4 h-8 w-8 text-danger-600" />
+              <p className="mb-4 text-gray-700">{error}</p>
               <button
                 onClick={() => void load()}
-                className="px-4 py-2 border border-gray-200 rounded-lg hover:bg-gray-50"
+                className="rounded-lg border border-gray-200 px-4 py-2 hover:bg-gray-50"
               >
                 Try again
               </button>
@@ -329,8 +332,8 @@ export function BloodBankInventory() {
                   render: (item) => (
                     <span
                       className={cn(
-                        'px-3 py-1 rounded-full font-bold text-white text-sm',
-                        groupChipClass(item.bloodGroup),
+                        'rounded-full px-3 py-1 text-sm font-bold text-white',
+                        groupChipClass(item.bloodGroup)
                       )}
                     >
                       {item.groupLabel}
@@ -375,18 +378,18 @@ export function BloodBankInventory() {
                     item.status === 'critical' || item.status === 'low' ? (
                       <Link
                         href="/blood-bank/request"
-                        className="text-sm font-medium text-danger-600 hover:text-danger-700 flex items-center gap-1"
+                        className="flex items-center gap-1 text-sm font-medium text-danger-600 hover:text-danger-700"
                       >
                         Request
-                        <ArrowRight className="w-3 h-3" />
+                        <ArrowRight className="h-3 w-3" />
                       </Link>
                     ) : (
                       <Link
                         href="/blood-bank/donate"
-                        className="text-sm font-medium text-primary-600 hover:text-primary-700 flex items-center gap-1"
+                        className="flex items-center gap-1 text-sm font-medium text-primary-600 hover:text-primary-700"
                       >
                         Donate
-                        <ArrowRight className="w-3 h-3" />
+                        <ArrowRight className="h-3 w-3" />
                       </Link>
                     ),
                 },
@@ -401,49 +404,55 @@ export function BloodBankInventory() {
         </div>
 
         {/* Quick Actions */}
-        <div className="mt-10 grid md:grid-cols-3 gap-6">
+        <div className="mt-10 grid gap-6 md:grid-cols-3">
           <Link
             href="/blood-bank/donate"
-            className="group p-6 bg-white rounded-2xl border border-gray-100 hover:border-danger-200 hover:shadow-lg transition-all duration-300"
+            className="hover:border-danger-200 group rounded-2xl border border-gray-100 bg-white p-6 transition-all duration-300 hover:shadow-lg"
           >
-            <div className="w-12 h-12 bg-danger-100 text-danger-600 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-              <Heart className="w-6 h-6" />
+            <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-danger-100 text-danger-600 transition-transform group-hover:scale-110">
+              <Heart className="h-6 w-6" />
             </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Donate Blood</h3>
-            <p className="text-gray-600 mb-4">Register as a voluntary blood donor and help save lives.</p>
-            <span className="inline-flex items-center gap-1 text-sm font-medium text-danger-600 group-hover:gap-2 transition-all">
+            <h3 className="mb-2 text-lg font-semibold text-gray-900">Donate Blood</h3>
+            <p className="mb-4 text-gray-600">
+              Register as a voluntary blood donor and help save lives.
+            </p>
+            <span className="inline-flex items-center gap-1 text-sm font-medium text-danger-600 transition-all group-hover:gap-2">
               Register Now
-              <ArrowRight className="w-4 h-4" />
+              <ArrowRight className="h-4 w-4" />
             </span>
           </Link>
 
           <Link
             href="/blood-bank/request"
-            className="group p-6 bg-white rounded-2xl border border-gray-100 hover:border-primary-200 hover:shadow-lg transition-all duration-300"
+            className="group rounded-2xl border border-gray-100 bg-white p-6 transition-all duration-300 hover:border-primary-200 hover:shadow-lg"
           >
-            <div className="w-12 h-12 bg-primary-100 text-primary-600 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-              <Droplet className="w-6 h-6" />
+            <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-primary-100 text-primary-600 transition-transform group-hover:scale-110">
+              <Droplet className="h-6 w-6" />
             </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Request Blood</h3>
-            <p className="text-gray-600 mb-4">Submit a blood request for patients. Track status in real-time.</p>
-            <span className="inline-flex items-center gap-1 text-sm font-medium text-primary-600 group-hover:gap-2 transition-all">
+            <h3 className="mb-2 text-lg font-semibold text-gray-900">Request Blood</h3>
+            <p className="mb-4 text-gray-600">
+              Submit a blood request for patients. Track status in real-time.
+            </p>
+            <span className="inline-flex items-center gap-1 text-sm font-medium text-primary-600 transition-all group-hover:gap-2">
               Request Blood
-              <ArrowRight className="w-4 h-4" />
+              <ArrowRight className="h-4 w-4" />
             </span>
           </Link>
 
-          <div className="group p-6 bg-white rounded-2xl border border-gray-100 hover:border-secondary-200 hover:shadow-lg transition-all duration-300">
-            <div className="w-12 h-12 bg-secondary-100 text-secondary-600 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-              <Phone className="w-6 h-6" />
+          <div className="group rounded-2xl border border-gray-100 bg-white p-6 transition-all duration-300 hover:border-secondary-200 hover:shadow-lg">
+            <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-secondary-100 text-secondary-600 transition-transform group-hover:scale-110">
+              <Phone className="h-6 w-6" />
             </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Contact Blood Bank</h3>
-            <p className="text-gray-600 mb-4">Direct contact for urgent blood requirements and queries.</p>
+            <h3 className="mb-2 text-lg font-semibold text-gray-900">Contact Blood Bank</h3>
+            <p className="mb-4 text-gray-600">
+              Direct contact for urgent blood requirements and queries.
+            </p>
             <a
               href="tel:+91-6453-222102"
-              className="text-sm font-medium text-secondary-600 hover:text-secondary-700 flex items-center gap-1 transition-colors"
+              className="flex items-center gap-1 text-sm font-medium text-secondary-600 transition-colors hover:text-secondary-700"
             >
               +91-6453-222102
-              <ArrowRight className="w-4 h-4" />
+              <ArrowRight className="h-4 w-4" />
             </a>
           </div>
         </div>

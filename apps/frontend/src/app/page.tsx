@@ -10,7 +10,8 @@ import { Header } from '@/components/Header';
 
 export const metadata: Metadata = {
   title: 'Home',
-  description: 'District Hospital Araria - Your trusted healthcare partner in Bihar. Book appointments, view doctors, check blood availability, and access healthcare services.',
+  description:
+    'District Hospital Araria - Your trusted healthcare partner in Bihar. Book appointments, view doctors, check blood availability, and access healthcare services.',
 };
 
 export default function HomePage() {

@@ -84,7 +84,10 @@ export class UsersService {
     });
   }
 
-  async update(id: string, data: { name?: string; phone?: string; role?: UserRole; isActive?: boolean }) {
+  async update(
+    id: string,
+    data: { name?: string; phone?: string; role?: UserRole; isActive?: boolean }
+  ) {
     // Check if user exists
     await this.findById(id);
 

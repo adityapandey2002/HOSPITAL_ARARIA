@@ -1,13 +1,4 @@
-import {
-  Controller,
-  Get,
-  Put,
-  Delete,
-  Param,
-  Body,
-  Query,
-  UseGuards,
-} from '@nestjs/common';
+import { Controller, Get, Put, Delete, Param, Body, Query, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 
 import { UsersService } from './users.service';
@@ -49,7 +40,7 @@ export class UsersController {
   @ApiResponse({ status: 200, description: 'Profile updated successfully' })
   async updateProfile(
     @CurrentUser('id') userId: string,
-    @Body() data: { name?: string; phone?: string },
+    @Body() data: { name?: string; phone?: string }
   ) {
     return this.usersService.updateProfile(userId, data);
   }
@@ -70,7 +61,7 @@ export class UsersController {
   @ApiResponse({ status: 404, description: 'User not found' })
   async update(
     @Param('id') id: string,
-    @Body() data: { name?: string; phone?: string; role?: UserRole; isActive?: boolean },
+    @Body() data: { name?: string; phone?: string; role?: UserRole; isActive?: boolean }
   ) {
     return this.usersService.update(id, data);
   }

@@ -53,7 +53,7 @@ function createDb(rowSets: Rows = []): DbMock {
     // Drizzle builders are thenable.
     (builder as unknown as { then: unknown }).then = (
       onFulfilled: (rows: unknown[]) => unknown,
-      onRejected?: (reason: unknown) => unknown,
+      onRejected?: (reason: unknown) => unknown
     ) => take().then(onFulfilled, onRejected);
 
     return builder;

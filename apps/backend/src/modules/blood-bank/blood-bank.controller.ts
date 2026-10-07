@@ -1,6 +1,6 @@
 import { Body, Controller, Get, Post, Put, Query, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { UserRole } from '@dh-araria/shared/types';
+import { UserRole } from '@dh-araria/shared';
 
 import { Roles } from '../../common/decorators/roles.decorator';
 import { Public } from '../../common/decorators/public.decorator';
@@ -56,7 +56,12 @@ export class BloodBankController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Adjust blood stock by a relative amount (Admin/Staff only)' })
   async updateStock(
-    @Body() data: { bloodGroup: BloodGroupValue; componentType: BloodComponentTypeValue; units: number },
+    @Body()
+    data: {
+      bloodGroup: BloodGroupValue;
+      componentType: BloodComponentTypeValue;
+      units: number;
+    }
   ) {
     return this.bloodBankService.updateStock(data.bloodGroup, data.componentType, data.units);
   }
@@ -67,7 +72,12 @@ export class BloodBankController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Set blood stock to an absolute quantity (Admin/Staff only)' })
   async setStock(
-    @Body() data: { bloodGroup: BloodGroupValue; componentType: BloodComponentTypeValue; units: number },
+    @Body()
+    data: {
+      bloodGroup: BloodGroupValue;
+      componentType: BloodComponentTypeValue;
+      units: number;
+    }
   ) {
     return this.bloodBankService.setStock(data.bloodGroup, data.componentType, data.units);
   }

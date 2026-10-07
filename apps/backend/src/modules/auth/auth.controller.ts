@@ -87,12 +87,12 @@ export class AuthController {
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   async changePassword(
     @CurrentUser('id') userId: string,
-    @Body() changePasswordDto: ChangePasswordDto,
+    @Body() changePasswordDto: ChangePasswordDto
   ) {
     return this.authService.changePassword(
       userId,
       changePasswordDto.currentPassword,
-      changePasswordDto.newPassword,
+      changePasswordDto.newPassword
     );
   }
 

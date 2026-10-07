@@ -46,7 +46,7 @@ const Avatar = forwardRef<HTMLDivElement, AvatarProps>(
           <img
             src={src}
             alt={alt || name || 'Avatar'}
-            className="w-full h-full object-cover"
+            className="h-full w-full object-cover"
             onError={() => setImageError(true)}
           />
         </div>
@@ -83,12 +83,12 @@ interface AvatarGroupProps extends React.HTMLAttributes<HTMLDivElement> {
   children: React.ReactNode;
 }
 
-const AvatarGroup: React.FC<AvatarGroupProps> = ({ 
-  className, 
-  max = 5, 
-  size = 'md', 
+const AvatarGroup: React.FC<AvatarGroupProps> = ({
+  className,
+  max = 5,
+  size = 'md',
   children,
-  ...props 
+  ...props
 }) => {
   const childrenArray = React.Children.toArray(children);
   const visibleChildren = childrenArray.slice(0, max);
@@ -104,14 +104,14 @@ const AvatarGroup: React.FC<AvatarGroupProps> = ({
       {remainingCount > 0 && (
         <div
           className={cn(
-            'inline-flex items-center justify-center border-2 border-white font-medium text-gray-600 bg-white',
+            'inline-flex items-center justify-center border-2 border-white bg-white font-medium text-gray-600',
             {
-              'w-6 h-6 text-xs': size === 'xs',
-              'w-8 h-8 text-sm': size === 'sm',
-              'w-10 h-10 text-base': size === 'md',
-              'w-12 h-12 text-lg': size === 'lg',
-              'w-16 h-16 text-xl': size === 'xl',
-              'w-24 h-24 text-2xl': size === '2xl',
+              'h-6 w-6 text-xs': size === 'xs',
+              'h-8 w-8 text-sm': size === 'sm',
+              'h-10 w-10 text-base': size === 'md',
+              'h-12 w-12 text-lg': size === 'lg',
+              'h-16 w-16 text-xl': size === 'xl',
+              'h-24 w-24 text-2xl': size === '2xl',
             }
           )}
           aria-label={`${remainingCount} more people`}

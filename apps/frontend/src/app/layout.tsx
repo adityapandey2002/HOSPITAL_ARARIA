@@ -7,12 +7,24 @@ import { Providers } from '@/components/Providers';
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 
 export const metadata: Metadata = {
+  // Required so Next can resolve relative OG/Twitter image URLs during build.
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'),
   title: {
     default: 'District Hospital Araria | Government of Bihar',
     template: '%s | District Hospital Araria',
   },
-  description: 'Official website of District Hospital Araria, Bihar. Book appointments, view doctors, check blood availability, and access healthcare services.',
-  keywords: ['hospital', 'araria', 'bihar', 'healthcare', 'appointments', 'doctors', 'blood bank', 'government hospital'],
+  description:
+    'Official website of District Hospital Araria, Bihar. Book appointments, view doctors, check blood availability, and access healthcare services.',
+  keywords: [
+    'hospital',
+    'araria',
+    'bihar',
+    'healthcare',
+    'appointments',
+    'doctors',
+    'blood bank',
+    'government hospital',
+  ],
   authors: [{ name: 'District Hospital Araria' }],
   creator: 'District Hospital Araria',
   publisher: 'Government of Bihar',
@@ -23,7 +35,8 @@ export const metadata: Metadata = {
     url: 'https://dhararia.bihar.gov.in',
     siteName: 'District Hospital Araria',
     title: 'District Hospital Araria | Government of Bihar',
-    description: 'Official website of District Hospital Araria, Bihar. Book appointments, view doctors, check blood availability, and access healthcare services.',
+    description:
+      'Official website of District Hospital Araria, Bihar. Book appointments, view doctors, check blood availability, and access healthcare services.',
     images: [
       {
         url: '/og-image.jpg',
@@ -54,11 +67,7 @@ export const viewport: Viewport = {
   maximumScale: 5,
 };
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={`${inter.variable} antialiased`}>
       <head>
@@ -73,9 +82,7 @@ export default function RootLayout({
         <a href="#main-content" className="skip-link">
           Skip to main content
         </a>
-        <Providers>
-          {children}
-        </Providers>
+        <Providers>{children}</Providers>
         <Toaster position="top-right" toastOptions={{ className: 'bg-white text-gray-900' }} />
       </body>
     </html>

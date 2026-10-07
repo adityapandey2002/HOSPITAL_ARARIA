@@ -125,7 +125,7 @@ export const users = pgTable(
     phoneIdx: index('users_phone_idx').on(t.phone),
     roleIdx: index('users_role_idx').on(t.role),
     abhaIdIdx: index('users_abhaId_idx').on(t.abhaId),
-  }),
+  })
 );
 
 export const departments = pgTable(
@@ -143,7 +143,7 @@ export const departments = pgTable(
   (t) => ({
     nameIdx: index('departments_name_idx').on(t.name),
     isActiveIdx: index('departments_isActive_idx').on(t.isActive),
-  }),
+  })
 );
 
 export const doctors = pgTable(
@@ -181,7 +181,7 @@ export const doctors = pgTable(
     specializationIdx: index('doctors_specialization_idx').on(t.specialization),
     isActiveIdx: index('doctors_isActive_idx').on(t.isActive),
     hprIdIdx: index('doctors_hprId_idx').on(t.hprId),
-  }),
+  })
 );
 
 export const timeSlots = pgTable(
@@ -206,11 +206,11 @@ export const timeSlots = pgTable(
     doctorDayTimeUnique: uniqueIndex('time_slots_doctorId_dayOfWeek_startTime_key').on(
       t.doctorId,
       t.dayOfWeek,
-      t.startTime,
+      t.startTime
     ),
     doctorIdIdx: index('time_slots_doctorId_idx').on(t.doctorId),
     dayOfWeekIdx: index('time_slots_dayOfWeek_idx').on(t.dayOfWeek),
-  }),
+  })
 );
 
 export const appointments = pgTable(
@@ -247,7 +247,7 @@ export const appointments = pgTable(
     appointmentDateIdx: index('appointments_appointmentDate_idx').on(t.appointmentDate),
     statusIdx: index('appointments_status_idx').on(t.status),
     abhaIdIdx: index('appointments_abhaId_idx').on(t.abhaId),
-  }),
+  })
 );
 
 export const bloodStock = pgTable(
@@ -263,11 +263,11 @@ export const bloodStock = pgTable(
   (t) => ({
     groupComponentUnique: uniqueIndex('blood_stock_bloodGroup_componentType_key').on(
       t.bloodGroup,
-      t.componentType,
+      t.componentType
     ),
     bloodGroupIdx: index('blood_stock_bloodGroup_idx').on(t.bloodGroup),
     componentTypeIdx: index('blood_stock_componentType_idx').on(t.componentType),
-  }),
+  })
 );
 
 export const grievances = pgTable(
@@ -294,7 +294,7 @@ export const grievances = pgTable(
     categoryIdx: index('grievances_category_idx').on(t.category),
     assignedToIdx: index('grievances_assignedTo_idx').on(t.assignedTo),
     cpgramsIdIdx: index('grievances_cpgramsId_idx').on(t.cpgramsId),
-  }),
+  })
 );
 
 export const notices = pgTable(
@@ -321,7 +321,7 @@ export const notices = pgTable(
     publishedAtIdx: index('notices_publishedAt_idx').on(t.publishedAt),
     categoryIdx: index('notices_category_idx').on(t.category),
     languageIdx: index('notices_language_idx').on(t.language),
-  }),
+  })
 );
 
 // ---------------------------------------------------------------------------

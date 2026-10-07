@@ -84,7 +84,7 @@ describe('AbdmService consent gating', () => {
           action: 'FHIR_RECORDS_DISCLOSED',
           resourceId: 'consent-row',
           details: { consentId: 'CONSENT-1', bundleCount: 2 },
-        }),
+        })
       );
     });
 
@@ -92,7 +92,7 @@ describe('AbdmService consent gating', () => {
       em.findOne.mockResolvedValue(null);
 
       await expect(service.getRecordsForConsent('patient-1', 'MISSING')).rejects.toThrow(
-        NotFoundException,
+        NotFoundException
       );
       expect(em.find).not.toHaveBeenCalled();
     });
@@ -103,31 +103,27 @@ describe('AbdmService consent gating', () => {
         em.findOne.mockResolvedValue(grant({ status }));
 
         await expect(service.getRecordsForConsent('patient-1', 'CONSENT-1')).rejects.toThrow(
-          new RegExp(`Consent is ${status}`),
+          new RegExp(`Consent is ${status}`)
         );
         expect(em.find).not.toHaveBeenCalled();
-      },
+      }
     );
 
     it('refuses disclosure after the consent window has closed', async () => {
-      em.findOne.mockResolvedValue(
-        grant({ dateRangeEnd: new Date('2026-05-01T00:00:00.000Z') }),
-      );
+      em.findOne.mockResolvedValue(grant({ dateRangeEnd: new Date('2026-05-01T00:00:00.000Z') }));
 
       await expect(service.getRecordsForConsent('patient-1', 'CONSENT-1')).rejects.toThrow(
-        ForbiddenException,
+        ForbiddenException
       );
       expect(em.find).not.toHaveBeenCalled();
     });
 
     it('marks the artefact EXPIRED when it is read past its window', async () => {
-      em.findOne.mockResolvedValue(
-        grant({ dateRangeEnd: new Date('2026-05-01T00:00:00.000Z') }),
-      );
+      em.findOne.mockResolvedValue(grant({ dateRangeEnd: new Date('2026-05-01T00:00:00.000Z') }));
 
-      await expect(
-        service.getRecordsForConsent('patient-1', 'CONSENT-1'),
-      ).rejects.toThrow(ForbiddenException);
+      await expect(service.getRecordsForConsent('patient-1', 'CONSENT-1')).rejects.toThrow(
+        ForbiddenException
+      );
 
       // The status change is persisted, so the expiry is not re-evaluated per read.
       expect(em.flush).toHaveBeenCalled();
@@ -163,7 +159,7 @@ describe('AbdmService consent gating', () => {
           patientId: 'patient-1',
           careContextId: 'cc-1',
           fhirJson: { resourceType: 'Bundle' },
-        }),
+        })
       ).rejects.toThrow(/closed care context/);
     });
 
@@ -177,7 +173,7 @@ describe('AbdmService consent gating', () => {
           patientId: 'patient-1',
           careContextId: 'missing',
           fhirJson: { resourceType: 'Bundle' },
-        }),
+        })
       ).rejects.toThrow(NotFoundException);
     });
   });

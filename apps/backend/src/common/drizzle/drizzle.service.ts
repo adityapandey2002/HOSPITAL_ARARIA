@@ -38,7 +38,7 @@ export class DrizzleService implements OnModuleDestroy {
       max: config.get<number>('orm.drizzlePoolSize', 20),
       idleTimeoutMillis: 30_000,
       connectionTimeoutMillis: 5_000,
-      ssl: config.get<string>('nodeEnv') === 'production' ? { rejectUnauthorized: false } : undefined,
+      ssl: config.get<boolean>('database.ssl') ? { rejectUnauthorized: false } : undefined,
     };
 
     this.pool = new Pool(poolConfig);
@@ -63,7 +63,10 @@ export class DrizzleService implements OnModuleDestroy {
   }
 
   /** Escape hatch for raw SQL / diagnostics. Prefer the query builder. */
-  async execute(query: string, params: unknown[] = []): Promise<{ rows: any[]; rowCount: number | null }> {
+  async execute(
+    query: string,
+    params: unknown[] = []
+  ): Promise<{ rows: any[]; rowCount: number | null }> {
     const result = await this.pool.query(query, params);
     return { rows: result.rows, rowCount: result.rowCount };
   }

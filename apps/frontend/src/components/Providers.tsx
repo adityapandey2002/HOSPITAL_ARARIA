@@ -7,9 +7,7 @@ import { LanguageProvider } from '@/context/LanguageContext';
 export function Providers({ children }: { children: ReactNode }) {
   return (
     <LanguageProvider>
-      <AuthProvider>
-        {children}
-      </AuthProvider>
+      <AuthProvider>{children}</AuthProvider>
     </LanguageProvider>
   );
 }

@@ -13,6 +13,9 @@ export const validationSchema = Joi.object({
   DB_USERNAME: Joi.string().default('postgres'),
   DB_PASSWORD: Joi.string().default('postgres'),
   DB_NAME: Joi.string().default('dh_araria'),
+  // TLS toggle. Leave unset to auto-detect: enabled for any non-localhost host
+  // (Supabase/Neon/Railway all require TLS), disabled for a local devserver.
+  DB_SSL: Joi.boolean().optional(),
   DB_POOL_SIZE: Joi.number().default(10),
 
   // Dual-ORM pools (must sum to < the server's max_connections)
@@ -50,7 +53,10 @@ export const validationSchema = Joi.object({
   // e-Pramaan (optional for Phase 1)
   EPRAAMAN_CLIENT_ID: Joi.string().allow('').default(''),
   EPRAAMAN_CLIENT_SECRET: Joi.string().allow('').default(''),
-  EPRAAMAN_CALLBACK_URL: Joi.string().uri().allow('').default('http://localhost:3001/api/auth/epramaan/callback'),
+  EPRAAMAN_CALLBACK_URL: Joi.string()
+    .uri()
+    .allow('')
+    .default('http://localhost:3001/api/auth/epramaan/callback'),
 
   // CPGRAMS (optional for Phase 1)
   CPGRAMS_API_KEY: Joi.string().allow('').default(''),

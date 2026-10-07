@@ -66,7 +66,7 @@ export class AuditLogService {
     } catch (error) {
       this.logger.error(
         `Failed to persist audit entry action=${entry.action} resource=${entry.resource}`,
-        error instanceof Error ? error.stack : undefined,
+        error instanceof Error ? error.stack : undefined
       );
     }
   }
@@ -79,7 +79,7 @@ export class AuditLogService {
     } catch (error) {
       this.logger.error(
         `Failed to persist ${entries.length} audit entries`,
-        error instanceof Error ? error.stack : undefined,
+        error instanceof Error ? error.stack : undefined
       );
     }
   }
@@ -125,7 +125,7 @@ export class AuditLogService {
     return this.em.find(
       AuditLog,
       { resource, resourceId },
-      { orderBy: { createdAt: 'DESC' }, limit: 200 },
+      { orderBy: { createdAt: 'DESC' }, limit: 200 }
     );
   }
 
@@ -133,7 +133,7 @@ export class AuditLogService {
     return this.em.find(
       AuditLog,
       { action: { $in: [...SECURITY_EVENT_ACTIONS] } },
-      { orderBy: { createdAt: 'DESC' }, limit },
+      { orderBy: { createdAt: 'DESC' }, limit }
     );
   }
 
@@ -144,7 +144,9 @@ export class AuditLogService {
   async purgeOlderThan(retentionDays = 180): Promise<number> {
     const cutoff = new Date(Date.now() - retentionDays * 24 * 60 * 60 * 1000);
     const result = await this.em.nativeDelete(AuditLog, { createdAt: { $lt: cutoff } } as any);
-    this.logger.log(`Audit retention purge removed ${result} rows older than ${cutoff.toISOString()}`);
+    this.logger.log(
+      `Audit retention purge removed ${result} rows older than ${cutoff.toISOString()}`
+    );
     return result;
   }
 
