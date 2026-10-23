@@ -98,23 +98,20 @@ NEXT_PUBLIC_APP_URL=http://localhost:3000
 ### Database Management
 
 ```bash
-# Generate Prisma client
+# Generate Drizzle SQL from schema.ts (no database needed)
 npm run db:generate
 
-# Push schema changes (development)
-npm run db:push
-
-# Run migrations (production)
+# Apply Drizzle migrations, then reconcile MikroORM entities
 npm run db:migrate
 
-# Open Prisma Studio
+# Verify the Drizzle/MikroORM ownership boundary (offline)
+npm run schema:check
+
+# Open Drizzle Studio
 npm run db:studio
 
-# Seed database
+# Seed database (idempotent)
 npm run db:seed
-
-# Reset database (development only)
-npm run db:push --force-reset
 ```
 
 ---
@@ -133,8 +130,8 @@ npm run db:push --force-reset
 
 ```bash
 # 1. Build and push images
-docker build -t your-registry/dh-araria-backend:staging ./apps/backend
-docker build -t your-registry/dh-araria-frontend:staging ./apps/frontend
+docker build -f apps/backend/Dockerfile -t your-registry/dh-araria-backend:staging .
+docker build -f apps/frontend/Dockerfile -t your-registry/dh-araria-frontend:staging .
 docker push your-registry/dh-araria-backend:staging
 docker push your-registry/dh-araria-frontend:staging
 
@@ -310,39 +307,38 @@ kubectl apply -f k8s/production/ingress.yaml
 
 #### 6. Run Migrations
 
-Prisma owns **all** schema changes — Drizzle and MikroORM are query layers over
-the tables Prisma creates, and their own migration commands are intentionally not
-exposed. There is therefore exactly one migration step.
+Drizzle owns DDL for the 9 application tables; MikroORM owns the 5 clinical and
+audit tables. `db:migrate` performs both steps in order: it applies the committed
+Drizzle SQL, then reconciles the MikroORM entities with
+`updateSchema({ safe: true })`, which only adds missing tables/columns.
 
 ```bash
 # Wait for backend pods to be ready
 kubectl wait --for=condition=available deployment/backend -n production --timeout=300s
 
-# Apply pending migrations (idempotent; safe to re-run)
+# Apply pending migrations (safe to re-run)
 kubectl exec -it deployment/backend -n production -- npm run db:migrate:prod
 
 # Seed production data (first time only)
 kubectl exec -it deployment/backend -n production -- npm run db:seed
 ```
 
-> Running a `drizzle-kit push` or a MikroORM migration in production would fork
-> the schema. Neither tool is installed, and neither migration command is present
-> in `package.json`.
+> `drizzle-kit push` is a development shortcut only. Production schema changes
+> must ship as a generated file under `apps/backend/drizzle/`.
 
 #### Verification
 
 ```bash
-# Every table exists (both query layers share one physical schema)
+# Every table exists (9 Drizzle + 5 MikroORM)
 kubectl exec -it deployment/backend -n production -- psql -U postgres -d dh_araria -c "\dt"
 
 # JSONB column for FHIR R4
 kubectl exec -it deployment/backend -n production -- psql -U postgres -d dh_araria -c "\d fhir_bundles" | grep fhirJson
 
-# Read-only drift check: exits 0 in sync, 1 on drift, 2 if the DB is unreachable.
-# Safe to run post-deploy; it never writes DDL.
-kubectl exec -it deployment/backend -n production -- npm run mikro:schema:update
+# Ownership check: exits non-zero if the two schemas overlap or drift.
+kubectl exec -it deployment/backend -n production -- npm run schema:check
 
-# Health endpoint reports Prisma + Drizzle reachability and pool stats
+# Health endpoint reports Drizzle + MikroORM reachability and pool stats
 kubectl exec -it deployment/backend -n production -- \
   curl -s localhost:3001/api/v1/health | jq '.database'
 ```
@@ -352,8 +348,8 @@ Expected `database` block:
 ```json
 {
   "status": "up",
-  "prisma": "up",
   "drizzle": "up",
+  "mikro": "up",
   "drizzlePool": { "total": 0, "idle": 0, "waiting": 0 }
 }
 ```

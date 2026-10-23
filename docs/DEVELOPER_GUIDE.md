@@ -10,7 +10,7 @@ This guide provides comprehensive information for developers working on the DH A
 dh-araria/
 ├── apps/
 │   ├── frontend/          # Next.js 14 + React 18 + TypeScript
-│   └── backend/           # NestJS 10 + TypeScript + Prisma
+│   └── backend/           # NestJS 10 + TypeScript + Drizzle/MikroORM
 ├── packages/
 │   ├── shared/            # Shared types, constants, utilities
 │   └── ui/                # Reusable UI components (Tailwind + Radix)
@@ -40,7 +40,6 @@ dh-araria/
     "dbaeumer.vscode-eslint",
     "esbenp.prettier-vscode",
     "bradlc.vscode-tailwindcss",
-    "prisma.prisma",
     "usernamehw.errorlens",
     "streetsidesoftware.code-spell-checker",
     "ms-azuretools.vscode-docker"
@@ -433,7 +432,8 @@ apps/backend/
 │   │   ├── configuration.ts
 │   │   └── validation.ts
 │   ├── common/                 # Shared utilities
-│   │   ├── prisma/             # Prisma service
+│   │   ├── drizzle/           # Drizzle schema + owned tables
+│   │   ├── mikro/             # MikroORM config, entities, EntityManager
 │   │   ├── auth/               # JWT strategy, guards
 │   │   ├── decorators/         # Custom decorators
 │   │   ├── filters/            # Exception filters
@@ -449,9 +449,11 @@ apps/backend/
 │       ├── blood-bank/
 │       ├── grievances/
 │       ├── notices/
+│       ├── contact/
+│       ├── audit/
 │       └── health/
-├── prisma/
-│   └── schema.prisma           # Database schema
+├── drizzle/                    # Committed Drizzle SQL migrations
+├── scripts/                    # db-migrate, seed, schema-check
 ├── test/                       # E2E tests
 ├── package.json
 ├── tsconfig.json
@@ -555,60 +557,89 @@ export class NewFeatureController {
 
 ```typescript
 // modules/new-feature/new-feature.service.ts
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
-import { PrismaService } from '../../common/prisma/prisma.service';
+import { ConflictException, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { asc, count, desc, eq } from 'drizzle-orm';
+import type { AnyPgColumn } from 'drizzle-orm/pg-core';
+
 import { PaginationDto } from '../../common/dto/pagination.dto';
+import { DRIZZLE, type DrizzleDb } from '../../common/drizzle/drizzle.module';
+import { newId } from '../../common/drizzle/id';
+import { newFeatures } from '../../common/drizzle/schema';
+
 import { CreateNewFeatureDto } from './dto/create-new-feature.dto';
 import { UpdateNewFeatureDto } from './dto/update-new-feature.dto';
 
+/** Allow-list sort targets: `sortBy` arrives from the query string. */
+const SORTABLE: Record<string, AnyPgColumn> = {
+  name: newFeatures.name,
+  createdAt: newFeatures.createdAt,
+};
+
 @Injectable()
 export class NewFeatureService {
-  constructor(private prisma: PrismaService) {}
+  constructor(@Inject(DRIZZLE) private readonly db: DrizzleDb) {}
 
   async findAll(pagination: PaginationDto) {
-    const { page = 1, limit = 10, sortBy = 'createdAt', sortOrder = 'desc' } = pagination;
-    const skip = (page - 1) * limit;
+    const page = pagination.page ?? 1;
+    const limit = pagination.limit ?? 10;
+    const column = SORTABLE[pagination.sortBy ?? 'createdAt'] ?? newFeatures.createdAt;
 
-    const [items, total] = await Promise.all([
-      this.prisma.newFeature.findMany({
-        skip,
-        take: limit,
-        orderBy: { [sortBy]: sortOrder },
-      }),
-      this.prisma.newFeature.count(),
-    });
+    const [items, totals] = await Promise.all([
+      this.db
+        .select()
+        .from(newFeatures)
+        .orderBy(pagination.sortOrder === 'asc' ? asc(column) : desc(column))
+        .limit(limit)
+        .offset((page - 1) * limit),
+      this.db.select({ value: count() }).from(newFeatures),
+    ]);
+
+    const total = totals[0]?.value ?? 0;
 
     return {
       data: items,
       meta: { page, limit, total, totalPages: Math.ceil(total / limit) },
     };
   }
-
   async findById(id: string) {
-    const item = await this.prisma.newFeature.findUnique({ where: { id } });
+    const [item] = await this.db
+      .select()
+      .from(newFeatures)
+      .where(eq(newFeatures.id, id))
+      .limit(1);
     if (!item) throw new NotFoundException('Item not found');
     return item;
   }
 
   async create(data: CreateNewFeatureDto, userId: string) {
-    const existing = await this.prisma.newFeature.findUnique({
-      where: { uniqueField: data.uniqueField },
-    });
+    const [existing] = await this.db
+      .select({ id: newFeatures.id })
+      .from(newFeatures)
+      .where(eq(newFeatures.name, data.name))
+      .limit(1);
     if (existing) throw new ConflictException('Item already exists');
 
-    return this.prisma.newFeature.create({
-      data: { ...data, createdById: userId },
-    });
+    const [created] = await this.db
+      .insert(newFeatures)
+      .values({ ...data, id: newId(), createdById: userId })
+      .returning();
+    return created;
   }
 
   async update(id: string, data: UpdateNewFeatureDto) {
     await this.findById(id);
-    return this.prisma.newFeature.update({ where: { id }, data });
+    const [updated] = await this.db
+      .update(newFeatures)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(newFeatures.id, id))
+      .returning();
+    return updated;
   }
 
   async delete(id: string) {
     await this.findById(id);
-    return this.prisma.newFeature.delete({ where: { id } });
+    await this.db.delete(newFeatures).where(eq(newFeatures.id, id));
+    return { success: true };
   }
 }
 ```
@@ -857,13 +888,14 @@ without its data change.
 
 | Module / Service | Client | Reason |
 |------------------|--------|--------|
-| Auth, Users, Health | Prisma | Identity/session logic; owns the schema |
+| Auth, Users | Drizzle | Identity rows live in `users`, owned by `UsersService` |
 | Homepage / Landing Page | Drizzle | High traffic, simple queries |
 | Doctor Directory, Departments | Drizzle | Read-heavy, public access |
-| Basic Appointment Booking | Drizzle | High concurrency, simple CRUD |
+| Appointments | Drizzle | High concurrency, transactional booking |
 | Grievance Submission | Drizzle | Public-facing, moderate traffic |
 | Blood Bank Inventory | Drizzle | Real-time polling, simple reads |
 | Notices / Announcements | Drizzle | Read-heavy, public |
+| Contact messages | Drizzle | Public write, admin inbox |
 | **ABDM M2 (HIP)** | **MikroORM** | FHIR bundles, Fidelius encryption, atomic transactions |
 | **ABDM M3 (HIU)** | **MikroORM** | Consent management, audit trails |
 | **Clinical Records** | **MikroORM** | Complex transactions, audit logging |
@@ -871,34 +903,30 @@ without its data change.
 
 #### Database Commands
 
-Prisma owns all DDL. Drizzle and MikroORM are query layers over the tables it
-creates, so their migration commands are deliberately absent.
+Drizzle owns DDL for 9 tables and MikroORM owns 5; the boundary is enforced by
+`npm run schema:check` (offline).
 
 ```bash
 cd apps/backend
 
-npm run db:generate       # Regenerate the Prisma client
-npm run db:migrate        # Create + apply a migration (dev)
-npm run db:migrate:prod   # Apply pending migrations (prod, idempotent)
-npm run db:push           # Push schema without a migration file (dev only)
-npm run db:studio         # Prisma Studio
-npm run db:seed           # Seed reference data
+npm run db:generate       # Write a new SQL migration from schema.ts (no DB)
+npm run db:migrate        # Apply Drizzle SQL, then reconcile MikroORM (dev/prod)
+npm run db:migrate:prod   # Same script, used by the deployment pipeline
+npm run db:studio         # Drizzle Studio
+npm run db:seed           # Idempotent reference/demo data
 
-# Validate the Prisma schema (no database needed)
-npm run prisma:validate
-
-# Validate the MikroORM entities against the live database (read-only)
-npm run mikro:schema:update
-
-# Both at once
+# Ownership check — no database needed
 npm run schema:check
+
+# Compare MikroORM entities against a live database
+npm run schema:check:live
 
 # Shared PostgreSQL (docker-compose)
 docker-compose up -d postgres
 ```
 
-> `drizzle-kit` is not installed in this project, and there is no MikroORM
-> migration command. Prisma is the only tool that may change DDL.
+> `drizzle-kit push` is a development shortcut. Anything that reaches another
+> environment must be a committed file under `apps/backend/drizzle/`.
 
 #### Query Examples
 
@@ -1196,23 +1224,27 @@ export * from './utils';
 
 ## Database Migrations
 
-`prisma/schema.prisma` is the single source of truth for DDL. Drizzle and
-MikroORM are query layers that mirror the physical schema; neither owns
-migrations, and their migration commands are absent from `package.json` on
-purpose.
+Ownership is split and enforced by `npm run schema:check`
+(`docs/adr/0001-dual-orm-table-ownership.md`):
+
+- **Drizzle** owns DDL for `users`, `departments`, `doctors`, `time_slots`,
+  `appointments`, `blood_stock`, `grievances`, `notices`, `contact_messages`.
+- **MikroORM** owns `abha_profiles`, `care_contexts`, `fhir_bundles`,
+  `consent_artefacts`, `audit_logs`; `db:migrate` reconciles these with
+  `updateSchema({ safe: true })`.
 
 ### Changing a citizen-facing table
 
 ```bash
 cd apps/backend
 
-# 1. Edit prisma/schema.prisma
-# 2. Mirror the change into src/common/drizzle/schema.ts
-#    (same column names, same enum type names)
-# 3. Create + apply the migration
-npm run db:migrate
-# 4. Regenerate the Prisma client
+# 1. Edit src/common/drizzle/schema.ts
+# 2. Generate the SQL migration
 npm run db:generate
+# 3. Review the file under drizzle/, then apply it
+npm run db:migrate
+# 4. Re-check ownership (offline)
+npm run schema:check
 ```
 
 ### Changing a clinical / ABDM table
@@ -1220,11 +1252,10 @@ npm run db:generate
 ```bash
 cd apps/backend
 
-# 1. Edit prisma/schema.prisma (the DDL source of truth)
-# 2. Mirror the change into src/modules/abdm/entities/*.entity.ts
-# 3. Confirm the entities agree with the database (read-only)
-npm run mikro:schema:update
-# 4. Apply
+# 1. Edit src/modules/abdm/entities/*.entity.ts
+# 2. Confirm the entities agree with the live database
+npm run schema:check:live
+# 3. Apply the safe reconciliation
 npm run db:migrate
 ```
 
@@ -1232,54 +1263,51 @@ npm run db:migrate
 
 1. **Always review generated SQL** before applying
 2. **Use descriptive names** — `add_user_abha_id`, `add_audit_correlation_id`
-3. **Mirror, don't duplicate** — change `schema.prisma` first, then the query layer
+3. **Never cross the boundary** — a table belongs to exactly one ORM
 4. **Test on staging** before production
 5. **Backup before migration** in production
-6. **Never** hand-write DDL; there is no tool in this repo that will let you
+6. **Commit the generated file** — `drizzle-kit push` is a local shortcut only
 
 ### Seeding
 
-Seeding uses the Prisma client — one tool, one code path, no dual-ORM ceremony.
+Seeding uses Drizzle and is idempotent, so it is safe to re-run.
 
 ```typescript
-// apps/backend/prisma/seed.ts
-import { PrismaClient } from '@prisma/client';
-import * as bcrypt from 'bcrypt';
+// apps/backend/scripts/seed.ts
+import { users } from '../src/common/drizzle/schema';
+import { newId } from '../src/common/drizzle/id';
 
-const prisma = new PrismaClient();
+const existing = await db
+  .select({ id: users.id })
+  .from(users)
+  .where(eq(users.email, 'admin@dhararia.gov.in'))
+  .limit(1);
 
-async function main() {
-  const adminPassword = await bcrypt.hash('Admin@123', 12);
-
-  await prisma.user.upsert({
-    where: { email: 'admin@dhararia.gov.in' },
-    update: {},
-    create: {
-      email: 'admin@dhararia.gov.in',
-      password: adminPassword,
-      name: 'System Administrator',
-      phone: '+91-6453-222123',
-      role: 'ADMIN',
-      isActive: true,
-    },
+if (existing.length === 0) {
+  await db.insert(users).values({
+    id: newId(),
+    email: 'admin@dhararia.gov.in',
+    password: await bcrypt.hash('Admin@123', 12),
+    name: 'System Administrator',
+    phone: '+91-6453-222123',
+    role: 'ADMIN',
+    isActive: true,
   });
-
-  // Departments, doctors, blood stock, …
 }
+
+// Departments, doctors, blood stock, …
 ```
 
 ### Migration Commands Summary
 
 ```bash
-npm run db:generate        # Regenerate the Prisma client
-npm run db:migrate         # Create + apply a migration (dev)
-npm run db:migrate:prod    # Apply pending migrations (prod, idempotent)
-npm run db:push            # Push schema without a migration file (dev only)
-npm run db:studio          # Prisma Studio
-npm run db:seed            # Seed reference data
-npm run prisma:validate    # Validate prisma/schema.prisma (no DB required)
-npm run mikro:schema:update # Read-only MikroORM ↔ database drift check
-npm run schema:check       # Both of the above
+npm run db:generate        # Write a new SQL migration from schema.ts
+npm run db:migrate         # Apply Drizzle SQL, then reconcile MikroORM
+npm run db:migrate:prod    # Same, for the deployment pipeline
+npm run db:studio          # Drizzle Studio
+npm run db:seed            # Seed reference data (idempotent)
+npm run schema:check       # Offline ownership check (9 + 5, no overlap)
+npm run schema:check:live  # Compare MikroORM entities to a live database
 
 docker-compose up -d postgres
 ```
@@ -1386,7 +1414,7 @@ DATABASE_URL=postgresql://user:pass@prod-db:5432/dh_araria
 ### Database
 
 ```bash
-# Prisma Studio
+# Drizzle Studio
 cd apps/backend && npm run db:studio
 
 # Direct SQL

@@ -21,9 +21,11 @@ async function bootstrap() {
   app.useLogger(logger);
 
   const configService = app.get(ConfigService);
-  const port = configService.get<number>('PORT', 3001);
-  const nodeEnv = configService.get<string>('NODE_ENV', 'development');
-  const frontendUrl = configService.get<string>('FRONTEND_URL', 'http://localhost:3000');
+  // `configuration.ts` exposes nested keys (port/nodeEnv/frontendUrl). Reading
+  // the flat env names here would silently fall through to the defaults below.
+  const port = configService.get<number>('port', 3001);
+  const nodeEnv = configService.get<string>('nodeEnv', 'development');
+  const frontendUrl = configService.get<string>('frontendUrl', 'http://localhost:3000');
 
   // Security middleware
   app.use(
@@ -83,6 +85,8 @@ async function bootstrap() {
       .addTag('Blood Bank', 'Blood bank inventory')
       .addTag('Grievances', 'Grievance management')
       .addTag('Notices', 'Notices and announcements')
+      .addTag('Contact', 'Public contact messages')
+      .addTag('Audit', 'CERT-In audit trail')
       .addTag('Health', 'Health check endpoints')
       .build();
 

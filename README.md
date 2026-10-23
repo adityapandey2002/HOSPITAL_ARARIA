@@ -36,7 +36,7 @@ dh-araria/
 | **Styling** | Tailwind CSS, Radix UI | Responsive, accessible components |
 | **State** | React Hook Form, Zod, SWR | Form validation, data fetching |
 | **Backend** | NestJS 10, TypeScript | Microservices-ready API |
-| **Database** | PostgreSQL + Prisma ORM | Type-safe database access |
+| **Database** | PostgreSQL + Drizzle ORM + MikroORM | Type-safe access with a strict table-ownership split |
 | **Auth** | JWT + Passport.js | Secure authentication |
 | **Docs** | Swagger/OpenAPI | API documentation |
 | **Testing** | Jest, React Testing Library | Unit & integration tests |
@@ -63,10 +63,10 @@ cp apps/frontend/.env.example apps/frontend/.env.local
 # Configure database in apps/backend/.env
 # DATABASE_URL="postgresql://user:pass@localhost:5432/dh_araria"
 
-# Generate Prisma client and push schema
+# Generate and apply the database schema
 cd apps/backend
 npm run db:generate
-npm run db:push
+npm run db:migrate
 
 # (Optional) Seed database
 npm run db:seed
@@ -80,7 +80,7 @@ npm run dev
 - **Frontend**: http://localhost:3000
 - **Backend API**: http://localhost:3001/api/v1
 - **API Docs**: http://localhost:3001/api/docs
-- **Health Check**: http://localhost:3001/health/live
+- **Health Check**: http://localhost:3001/api/v1/health/live
 
 ## 📦 Available Scripts
 
@@ -96,11 +96,11 @@ npm run test             # Test all packages
 
 ### Backend Specific
 ```bash
-npm run db:generate      # Generate Prisma client
-npm run db:push          # Push schema to database
-npm run db:migrate       # Run migrations
-npm run db:studio        # Open Prisma Studio
+npm run db:generate      # Generate a Drizzle SQL migration
+npm run db:migrate       # Apply Drizzle + MikroORM schema
+npm run db:studio        # Open Drizzle Studio
 npm run db:seed          # Seed database
+npm run schema:check     # Verify the 9 + 5 table-ownership boundary
 npm run start:dev        # Start with hot reload
 npm run start:prod       # Production build
 ```
@@ -194,7 +194,7 @@ The backend provides comprehensive Swagger documentation at `/api/docs` with:
 - Helmet.js security headers
 - CORS configuration
 - Input validation with Zod/class-validator
-- SQL injection prevention via Prisma ORM
+- SQL injection prevention via parameterized Drizzle/MikroORM queries
 - CERT-In compliant logging (180-day retention ready)
 
 ## 🏛️ Compliance Standards
@@ -210,7 +210,7 @@ The backend provides comprehensive Swagger documentation at `/api/docs` with:
 
 ### Phase 1: MVP (Current) ✅
 - [x] Next.js frontend with Tailwind CSS
-- [x] NestJS backend with PostgreSQL/Prisma
+- [x] NestJS backend with PostgreSQL/Drizzle/MikroORM
 - [x] Authentication (JWT, registration, login)
 - [x] Doctor directory with search/filter
 - [x] Appointment booking flow

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   FileText,
   AlertTriangle,
@@ -19,100 +19,18 @@ import Link from 'next/link';
 import { formatDate } from '@dh-araria/shared/utils';
 import { cn } from '@dh-araria/shared/utils';
 import { Badge, Table } from '@dh-araria/ui/components';
+import { api } from '@/lib/api';
 
-const notices = [
-  {
-    id: '1',
-    title: 'Free Health Check-up Camp - World Health Day',
-    content:
-      'District Hospital Araria is organizing a free comprehensive health check-up camp on World Health Day (April 7th). Services include general consultation, blood sugar testing, blood pressure monitoring, and specialist referrals.',
-    category: 'PUBLIC_HEALTH',
-    priority: 'HIGH',
-    publishedAt: '2024-03-25',
-    expiresAt: '2024-04-07',
-    isPublished: true,
-    attachmentUrl: '/notices/health-camp-2024.pdf',
-  },
-  {
-    id: '2',
-    title: 'Recruitment: Staff Nurses & Pharmacists',
-    content:
-      'Applications are invited for the post of Staff Nurses (15 posts) and Pharmacists (5 posts) on contractual basis. Last date to apply: April 15, 2024. Download application form from the recruitment section.',
-    category: 'RECRUITMENT',
-    priority: 'HIGH',
-    publishedAt: '2024-03-20',
-    expiresAt: '2024-04-15',
-    isPublished: true,
-    attachmentUrl: '/notices/recruitment-nurses-2024.pdf',
-  },
-  {
-    id: '3',
-    title: 'OPD Schedule Change - Effective April 1st',
-    content:
-      'Please note that OPD timings for General Medicine and Pediatrics departments have been revised. New timings: Morning 9:00 AM - 1:00 PM, Evening 4:00 PM - 6:00 PM. Emergency services remain 24/7.',
-    category: 'SCHEDULE_CHANGE',
-    priority: 'MEDIUM',
-    publishedAt: '2024-03-28',
-    expiresAt: null,
-    isPublished: true,
-  },
-  {
-    id: '4',
-    title: 'Dengue Prevention Awareness Drive',
-    content:
-      'With the onset of monsoon, the hospital is conducting dengue prevention awareness sessions every Saturday at 10 AM in the OPD waiting area. Free dengue testing available for symptomatic patients.',
-    category: 'PUBLIC_HEALTH',
-    priority: 'MEDIUM',
-    publishedAt: '2024-03-15',
-    expiresAt: '2024-06-30',
-    isPublished: true,
-  },
-  {
-    id: '5',
-    title: 'Tender Notice: Medical Equipment Procurement',
-    content:
-      'Sealed tenders are invited for supply and installation of MRI Machine (1.5T), Digital X-Ray, and Ultrasound Machine. Tender documents available at hospital procurement office.',
-    category: 'TENDER',
-    priority: 'LOW',
-    publishedAt: '2024-03-10',
-    expiresAt: '2024-04-30',
-    isPublished: true,
-    attachmentUrl: '/notices/tender-medical-equipment.pdf',
-  },
-  {
-    id: '6',
-    title: 'COVID-19 Vaccination Drive - Booster Dose',
-    content:
-      'Free COVID-19 booster dose vaccination for eligible beneficiaries (18+ years) every Monday and Thursday at the Immunization Center. Bring Aadhaar and previous vaccination certificate.',
-    category: 'PUBLIC_HEALTH',
-    priority: 'HIGH',
-    publishedAt: '2024-03-05',
-    expiresAt: '2024-12-31',
-    isPublished: true,
-  },
-  {
-    id: '7',
-    title: 'Recruitment: Specialist Doctors (Contractual)',
-    content:
-      'Walk-in interview for Specialist Doctors in Cardiology, Neurology, Nephrology, and Oncology on April 20, 2024. Qualification: MD/DM/DNB in respective specialty. Age limit: 65 years.',
-    category: 'RECRUITMENT',
-    priority: 'HIGH',
-    publishedAt: '2024-04-01',
-    expiresAt: '2024-04-20',
-    isPublished: true,
-  },
-  {
-    id: '8',
-    title: 'Monsoon Preparedness Advisory',
-    content:
-      'All departments to ensure drainage clearance, stock essential medicines for water-borne diseases, and maintain 24/7 emergency readiness during monsoon season.',
-    category: 'PUBLIC_HEALTH',
-    priority: 'MEDIUM',
-    publishedAt: '2024-04-05',
-    expiresAt: '2024-09-30',
-    isPublished: true,
-  },
-];
+interface NoticeSummary {
+  id: string;
+  title: string;
+  content: string;
+  category: string;
+  priority: string;
+  publishedAt: string;
+  expiresAt?: string | null;
+  attachmentUrl?: string | null;
+}
 
 const categoryStyles = {
   GENERAL: 'bg-gray-100 text-gray-700',
@@ -164,9 +82,31 @@ const allCategories = [
 ];
 
 export function NoticesList() {
+  const [notices, setNotices] = useState<NoticeSummary[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [selectedPriority, setSelectedPriority] = useState('All');
+
+  useEffect(() => {
+    let cancelled = false;
+
+    api
+      .get<NoticeSummary[]>('/notices/published', { limit: 50 })
+      .then((response) => {
+        if (!cancelled && response.success) setNotices(response.data ?? []);
+      })
+      .catch(() => {
+        if (!cancelled) setNotices([]);
+      })
+      .finally(() => {
+        if (!cancelled) setIsLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const filteredNotices = notices.filter((notice) => {
     const matchesSearch =
@@ -217,6 +157,9 @@ export function NoticesList() {
 
         {/* Notices Grid */}
         <div className="mb-12 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {isLoading && (
+            <p className="col-span-full py-12 text-center text-gray-500">Loading notices…</p>
+          )}
           {filteredNotices.map((notice, index) => {
             const CategoryIcon = categoryIcons[notice.category as keyof typeof categoryIcons];
 
@@ -269,13 +212,7 @@ export function NoticesList() {
                 </div>
 
                 <div className="flex items-center gap-3 border-t border-gray-100 pt-3">
-                  <Link
-                    href={`/notices/${notice.id}`}
-                    className="inline-flex flex-1 items-center justify-center gap-1 text-sm font-medium text-primary-600 transition-colors hover:text-primary-700"
-                  >
-                    Read More
-                    <ChevronRight className="h-4 w-4" />
-                  </Link>
+                  <span className="flex-1 text-sm font-medium text-gray-500">Official Notice</span>
                   {notice.attachmentUrl && (
                     <a
                       href={notice.attachmentUrl}

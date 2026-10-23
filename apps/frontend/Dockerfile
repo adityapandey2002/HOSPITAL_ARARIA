@@ -1,54 +1,44 @@
-# Dockerfile for DH Araria Frontend
-# Multi-stage build for production optimization
+# Build from the repository root:
+#   docker build -f apps/frontend/Dockerfile -t dh-araria-frontend .
+# The frontend imports the workspace packages, so the build context is the
+# monorepo root rather than apps/frontend.
 
-# Base image
 FROM node:20-alpine AS base
-
-# Install dependencies only when needed
-FROM base AS deps
 WORKDIR /app
 
-# Copy package files
-COPY package.json package-lock.json* ./
+FROM base AS deps
+COPY package.json package-lock.json .npmrc ./
+COPY apps/backend/package.json apps/backend/package.json
+COPY apps/frontend/package.json apps/frontend/package.json
+COPY packages/shared/package.json packages/shared/package.json
+COPY packages/ui/package.json packages/ui/package.json
 RUN npm ci
 
-# Builder stage
-FROM base AS builder
-WORKDIR /app
-COPY --from=deps /app/node_modules ./node_modules
+FROM deps AS builder
 COPY . .
-
-# Generate Prisma client if needed (for shared package)
-# RUN npx prisma generate
-
-# Build application
 ENV NEXT_TELEMETRY_DISABLED=1
-RUN npm run build
+RUN npm run build --workspace=packages/shared
+RUN npm run build --workspace=packages/ui
+RUN npm run build --workspace=apps/frontend
 
-# Production image
 FROM base AS runner
-WORKDIR /app
-
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 
-# Create non-root user
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 nextjs
+RUN addgroup --system --gid 1001 nodejs \
+  && adduser --system --uid 1001 nextjs
 
-# Copy built application
-COPY --from=builder /app/public ./public
-COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+# `output: 'standalone'` in next.config.js emits a self-contained server under
+# .next/standalone, with the monorepo layout preserved (apps/frontend/server.js).
+COPY --from=builder /app/apps/frontend/public ./apps/frontend/public
+COPY --from=builder --chown=nextjs:nodejs /app/apps/frontend/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/apps/frontend/.next/static ./apps/frontend/.next/static
 
 USER nextjs
 
-# Expose port
 EXPOSE 3000
 
-# Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
   CMD wget --no-verbose --tries=1 --spider http://localhost:3000 || exit 1
 
-# Start application
-CMD ["node", "server.js"]
+CMD ["node", "apps/frontend/server.js"]

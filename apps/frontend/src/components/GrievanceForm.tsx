@@ -21,6 +21,7 @@ import {
 import { cn } from '@dh-araria/shared/utils';
 import { Button, Input, Select, Textarea } from '@dh-araria/ui/components';
 import { toast } from 'sonner';
+import { api, handleApiResponse } from '@/lib/api';
 
 const grievanceSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
@@ -61,20 +62,21 @@ export function GrievanceForm() {
   const onSubmit = async (data: GrievanceFormData) => {
     setIsSubmitting(true);
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+      const response = await api.submitGrievance(data);
+      const grievance = handleApiResponse(response);
 
-      const id = `GRS-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substr(2, 4).toUpperCase()}`;
-      setComplaintId(id);
+      setComplaintId(grievance.id);
       setSubmitted(true);
 
       toast.success('Grievance submitted successfully!', {
-        description: `Your complaint ID is ${id}. You can track status using this ID.`,
+        description: 'Your complaint is registered. Keep the reference number to track it.',
         duration: 10000,
       });
     } catch (error) {
       toast.error('Submission failed', {
-        description: 'Please try again or contact the hospital directly.',
+        description:
+          (error as { message?: string })?.message ||
+          'Please try again or contact the hospital directly.',
       });
     } finally {
       setIsSubmitting(false);
@@ -109,7 +111,7 @@ export function GrievanceForm() {
                 Your Complaint Reference Number
               </h3>
               <div className="text-center">
-                <p className="font-mono text-3xl font-bold tracking-wider text-primary-600">
+                <p className="break-all font-mono text-lg font-bold text-primary-600">
                   {complaintId}
                 </p>
                 <p className="mt-2 text-sm text-primary-700">Also sent to your email and SMS</p>

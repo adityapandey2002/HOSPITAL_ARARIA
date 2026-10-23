@@ -23,6 +23,7 @@ import Link from 'next/link';
 import { cn } from '@dh-araria/shared/utils';
 import { Button, Input, Textarea, Select } from '@dh-araria/ui/components';
 import { toast } from 'sonner';
+import { api, handleApiResponse } from '@/lib/api';
 
 const contactSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
@@ -115,14 +116,17 @@ export function ContactPage() {
   const onSubmit = async (data: ContactFormData) => {
     setIsSubmitting(true);
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+      const response = await api.submitContactMessage(data);
+      handleApiResponse(response);
+
       setSubmitted(true);
       toast.success('Message sent successfully!', {
         description: 'We will get back to you within 24-48 hours.',
       });
     } catch (error) {
       toast.error('Failed to send message', {
-        description: 'Please try again or contact us directly.',
+        description:
+          (error as { message?: string })?.message || 'Please try again or contact us directly.',
       });
     } finally {
       setIsSubmitting(false);

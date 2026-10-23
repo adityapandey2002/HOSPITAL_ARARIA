@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -18,6 +18,8 @@ import {
 import { cn } from '@dh-araria/shared/utils';
 import { Button, Input, Select, Textarea } from '@dh-araria/ui/components';
 import { toast } from 'sonner';
+import { api, handleApiResponse } from '@/lib/api';
+import { useAuth } from '@/context/AuthContext';
 
 const appointmentSchema = z.object({
   departmentId: z.string().min(1, 'Please select a department'),
@@ -31,58 +33,6 @@ const appointmentSchema = z.object({
 
 type AppointmentFormData = z.infer<typeof appointmentSchema>;
 
-const departments = [
-  { id: 'general-medicine', name: 'General Medicine' },
-  { id: 'pediatrics', name: 'Pediatrics' },
-  { id: 'obstetrics-gynecology', name: 'Obstetrics & Gynecology' },
-  { id: 'orthopedics', name: 'Orthopedics' },
-  { id: 'surgery', name: 'General Surgery' },
-  { id: 'ophthalmology', name: 'Ophthalmology' },
-  { id: 'ent', name: 'ENT' },
-  { id: 'dermatology', name: 'Dermatology' },
-  { id: 'psychiatry', name: 'Psychiatry' },
-  { id: 'radiology', name: 'Radiology' },
-  { id: 'dental', name: 'Dental Surgery' },
-  { id: 'physiotherapy', name: 'Physiotherapy' },
-];
-
-const doctorsByDepartment: Record<
-  string,
-  { id: string; name: string; specialization: string; fee: number }[]
-> = {
-  'general-medicine': [
-    { id: '1', name: 'Dr. Rajesh Kumar', specialization: 'Cardiology', fee: 500 },
-    { id: '7', name: 'Dr. Manoj Kumar', specialization: 'Neurology', fee: 500 },
-  ],
-  pediatrics: [{ id: '4', name: 'Dr. Sunita Devi', specialization: 'Pediatrics', fee: 350 }],
-  'obstetrics-gynecology': [
-    { id: '2', name: 'Dr. Priya Sharma', specialization: 'Gynecology & Obstetrics', fee: 400 },
-  ],
-  orthopedics: [{ id: '3', name: 'Dr. Amit Singh', specialization: 'Orthopedics', fee: 600 }],
-  surgery: [{ id: '5', name: 'Dr. Vikash Patel', specialization: 'General Surgery', fee: 450 }],
-  dermatology: [{ id: '6', name: 'Dr. Anjali Verma', specialization: 'Dermatology', fee: 400 }],
-  ophthalmology: [{ id: '8', name: 'Dr. Rekha Sinha', specialization: 'Ophthalmology', fee: 400 }],
-};
-
-const timeSlots = [
-  '09:00',
-  '09:30',
-  '10:00',
-  '10:30',
-  '11:00',
-  '11:30',
-  '12:00',
-  '12:30',
-  '13:00',
-  '13:30',
-  '14:00',
-  '14:30',
-  '15:00',
-  '15:30',
-  '16:00',
-  '16:30',
-];
-
 const appointmentTypes = [
   { value: 'OPD', label: 'OPD Consultation', description: 'In-person consultation at hospital' },
   {
@@ -93,15 +43,38 @@ const appointmentTypes = [
   { value: 'FOLLOW_UP', label: 'Follow-up Visit', description: 'Follow-up for existing treatment' },
 ];
 
+interface DepartmentOption {
+  id: string;
+  name: string;
+}
+
+interface DoctorOption {
+  id: string;
+  name: string;
+  specialization: string;
+  consultationFee: number;
+  departmentId: string;
+}
+
+interface SlotOption {
+  startTime: string;
+  endTime: string;
+}
+
 export function AppointmentBooking() {
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [departments, setDepartments] = useState<DepartmentOption[]>([]);
+  const [doctors, setDoctors] = useState<DoctorOption[]>([]);
+  const [slots, setSlots] = useState<SlotOption[]>([]);
+  const { isAuthenticated } = useAuth();
 
   const {
     register,
     handleSubmit,
     watch,
     setValue,
+    reset,
     formState: { errors },
   } = useForm<AppointmentFormData>({
     resolver: zodResolver(appointmentSchema),
@@ -111,8 +84,77 @@ export function AppointmentBooking() {
   });
 
   const selectedDepartment = watch('departmentId');
-  const availableDoctors = doctorsByDepartment[selectedDepartment] || [];
-  const selectedDoctor = availableDoctors.find((d) => d.id === watch('doctorId'));
+  const selectedDoctorId = watch('doctorId');
+  const appointmentDate = watch('appointmentDate');
+
+  const availableDoctors = doctors.filter((doctor) => doctor.departmentId === selectedDepartment);
+  const selectedDoctor = availableDoctors.find((d) => d.id === selectedDoctorId);
+
+  // Directory data comes from the API; the old hard-coded ids ("1",
+  // "general-medicine") never matched the UUIDs stored in PostgreSQL.
+  useEffect(() => {
+    let cancelled = false;
+    api
+      .get<DepartmentOption[]>('/departments')
+      .then((response) => {
+        if (!cancelled && response.success) setDepartments(response.data ?? []);
+      })
+      .catch(() => {
+        if (!cancelled) setDepartments([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!selectedDepartment) {
+      setDoctors([]);
+      return;
+    }
+
+    let cancelled = false;
+    api
+      .get<DoctorOption[]>('/doctors', {
+        departmentId: selectedDepartment,
+        isActive: true,
+        limit: 100,
+      })
+      .then((response) => {
+        if (!cancelled && response.success) setDoctors(response.data ?? []);
+      })
+      .catch(() => {
+        if (!cancelled) setDoctors([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedDepartment]);
+
+  // Slots depend on both the doctor and the weekday, so they are fetched after
+  // a date is chosen rather than rendered from a static list.
+  useEffect(() => {
+    if (!selectedDoctorId || !appointmentDate) {
+      setSlots([]);
+      return;
+    }
+
+    let cancelled = false;
+    api
+      .get<SlotOption[]>(`/doctors/${selectedDoctorId}/slots`, { date: appointmentDate })
+      .then((response) => {
+        if (!cancelled && response.success) {
+          setSlots(response.data ?? []);
+          setValue('startTime', '');
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setSlots([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedDoctorId, appointmentDate, setValue]);
 
   const nextStep = () => {
     if (currentStep < 4) setCurrentStep(currentStep + 1);
@@ -123,20 +165,37 @@ export function AppointmentBooking() {
   };
 
   const onSubmit = async (data: AppointmentFormData) => {
+    if (!isAuthenticated) {
+      toast.error('Please sign in to book', {
+        description: 'Appointments are linked to your patient account. Sign in and try again.',
+      });
+      return;
+    }
+
     setIsSubmitting(true);
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+      const response = await api.bookAppointment({
+        doctorId: data.doctorId,
+        appointmentDate: data.appointmentDate,
+        startTime: data.startTime,
+        type: data.type,
+        reason: data.reason,
+        notes: data.notes,
+      });
+      const appointment = handleApiResponse(response);
 
       toast.success('Appointment booked successfully!', {
-        description: `Your appointment has been confirmed. Token number will be sent via SMS.`,
+        description: `Token number ${appointment.tokenNumber}. Please arrive 15 minutes early.`,
       });
 
-      // Reset form
+      reset({ type: 'OPD' });
+      setSlots([]);
       setCurrentStep(1);
     } catch (error) {
       toast.error('Booking failed', {
-        description: 'Please try again or contact the hospital directly.',
+        description:
+          (error as { message?: string })?.message ||
+          'Please try again or contact the hospital directly.',
       });
     } finally {
       setIsSubmitting(false);
@@ -280,7 +339,7 @@ export function AppointmentBooking() {
                             <h3 className="font-semibold text-gray-900">{doctor.name}</h3>
                             <p className="text-sm text-primary-600">{doctor.specialization}</p>
                             <p className="mt-1 text-xs text-gray-500">
-                              ₹{doctor.fee} • Consultation fee
+                              ₹{doctor.consultationFee} • Consultation fee
                             </p>
                           </div>
                         </div>
@@ -336,21 +395,29 @@ export function AppointmentBooking() {
                   <fieldset>
                     <legend className="form-label">Available Time Slots</legend>
                     <div className="flex flex-wrap gap-2">
-                      {timeSlots.map((slot) => (
-                        <button
-                          key={slot}
-                          type="button"
-                          onClick={() => setValue('startTime', slot)}
-                          className={cn(
-                            'rounded-lg border px-4 py-2 text-sm font-medium transition-all',
-                            watch('startTime') === slot
-                              ? 'border-primary-600 bg-primary-600 text-white'
-                              : 'border-gray-200 bg-white text-gray-700 hover:border-primary-300'
-                          )}
-                        >
-                          {formatTime(slot)}
-                        </button>
-                      ))}
+                      {slots.length === 0 ? (
+                        <p className="text-sm text-gray-500">
+                          {selectedDoctorId && appointmentDate
+                            ? 'No slots are available for this doctor on the selected date.'
+                            : 'Choose a date to see available slots.'}
+                        </p>
+                      ) : (
+                        slots.map((slot) => (
+                          <button
+                            key={slot.startTime}
+                            type="button"
+                            onClick={() => setValue('startTime', slot.startTime)}
+                            className={cn(
+                              'rounded-lg border px-4 py-2 text-sm font-medium transition-all',
+                              watch('startTime') === slot.startTime
+                                ? 'border-primary-600 bg-primary-600 text-white'
+                                : 'border-gray-200 bg-white text-gray-700 hover:border-primary-300'
+                            )}
+                          >
+                            {formatTime(slot.startTime)}
+                          </button>
+                        ))
+                      )}
                     </div>
                     {errors.startTime && <p className="form-error">{errors.startTime.message}</p>}
                   </fieldset>
@@ -418,7 +485,9 @@ export function AppointmentBooking() {
                         </div>
                         <div>
                           <span className="text-primary-700">Fee:</span>
-                          <p className="font-medium text-primary-900">₹{selectedDoctor.fee}</p>
+                          <p className="font-medium text-primary-900">
+                            ₹{selectedDoctor.consultationFee}
+                          </p>
                         </div>
                       </div>
                     </div>

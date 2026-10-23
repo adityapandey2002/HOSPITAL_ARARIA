@@ -2,6 +2,7 @@ import { Controller, Get, Post, Put, Delete, Param, Body, Query, UseGuards } fro
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 
 import { DoctorsService } from './doctors.service';
+import { CreateDoctorDto, UpdateDoctorDto } from './dto/doctor.dto';
 import { PaginationDto } from '../../common/dto/pagination.dto';
 import { JwtAuthGuard } from '../../modules/auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/auth/roles.guard';
@@ -27,10 +28,16 @@ export class DoctorsController {
   async findAll(
     @Query() pagination: PaginationDto,
     @Query('departmentId') departmentId?: string,
-    @Query('isActive') isActive?: boolean,
+    @Query('isActive') isActive?: string,
     @Query('search') search?: string
   ) {
-    return this.doctorsService.findAll(pagination, { departmentId, isActive, search });
+    // Query strings arrive as text; `eq(boolean, "false")` would match nothing.
+    const active = isActive === undefined ? undefined : isActive === 'true';
+    return this.doctorsService.findAll(pagination, {
+      departmentId,
+      isActive: active,
+      search,
+    });
   }
 
   @Get(':id')
@@ -57,8 +64,8 @@ export class DoctorsController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Create doctor profile (Admin only)' })
   @ApiResponse({ status: 201, description: 'Doctor created successfully' })
-  async create(@Body() data: any) {
-    return this.doctorsService.create(data);
+  async create(@Body() dto: CreateDoctorDto) {
+    return this.doctorsService.create(dto);
   }
 
   @Put(':id')
@@ -67,8 +74,8 @@ export class DoctorsController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Update doctor (Admin only)' })
   @ApiResponse({ status: 200, description: 'Doctor updated successfully' })
-  async update(@Param('id') id: string, @Body() data: any) {
-    return this.doctorsService.update(id, data);
+  async update(@Param('id') id: string, @Body() dto: UpdateDoctorDto) {
+    return this.doctorsService.update(id, dto);
   }
 
   @Delete(':id')

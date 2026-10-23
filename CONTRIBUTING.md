@@ -196,7 +196,7 @@ All UI changes must meet **WCAG 2.2 Level AA** and **GIGW 3.0** standards:
 
 - No hardcoded secrets/tokens
 - Input validation on all endpoints
-- Parameterized queries (Prisma ORM)
+- Parameterized queries (Drizzle / MikroORM)
 - Proper authentication/authorization
 - Rate limiting on all endpoints
 - Security headers (Helmet.js)

@@ -6,6 +6,13 @@
 > discrepancy is flagged explicitly.
 >
 > Verification date: 2026-10-08 · Commit: `f5fccfe` (plus uncommitted working-tree changes)
+>
+> **Superseded (ORM):** since this snapshot the backend dropped Prisma entirely.
+> It now runs on Drizzle (DDL owner for 9 tables) and MikroORM (5 tables), with
+> the boundary enforced by `npm run schema:check`. Any Prisma references below —
+> the data-model tables, the source-tree map, migration instructions and risks
+> #14–#18 — are historical. See `docs/adr/0001-dual-orm-table-ownership.md` and
+> `AGENTS.md` for the current contract.
 
 ---
 

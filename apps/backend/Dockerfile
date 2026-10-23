@@ -1,59 +1,48 @@
-# Dockerfile for DH Araria Backend
-# Multi-stage build for production optimization
+# Build from the repository root:
+#   docker build -f apps/backend/Dockerfile -t dh-araria-backend .
+# The build needs the workspace manifests because the backend imports
+# @dh-araria/shared, so a per-app context cannot resolve it.
 
-# Base image
 FROM node:20-alpine AS base
-
-# Install dependencies only when needed
-FROM base AS deps
 RUN apk add --no-cache libc6-compat openssl
 WORKDIR /app
 
-# Copy package files
-COPY package.json package-lock.json* ./
-COPY prisma ./prisma/
+FROM base AS deps
+# bcrypt ships a native addon and alpine has no prebuilt binary for it.
+RUN apk add --no-cache python3 make g++
 
-# Install dependencies
+COPY package.json package-lock.json .npmrc ./
+COPY apps/backend/package.json apps/backend/package.json
+COPY apps/frontend/package.json apps/frontend/package.json
+COPY packages/shared/package.json packages/shared/package.json
+COPY packages/ui/package.json packages/ui/package.json
 RUN npm ci
 
-# Generate Prisma client
-RUN npx prisma generate
-
-# Builder stage
-FROM base AS builder
-WORKDIR /app
-COPY --from=deps /app/node_modules ./node_modules
+FROM deps AS builder
 COPY . .
+RUN npm run build --workspace=packages/shared
+RUN npm run build --workspace=apps/backend
 
-# Build application
-RUN npm run build
-
-# Production image
 FROM base AS runner
-WORKDIR /app
-
 ENV NODE_ENV=production
 
-# Create non-root user
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 nestjs
+RUN addgroup --system --gid 1001 nodejs \
+  && adduser --system --uid 1001 nestjs
 
-# Copy built application
-COPY --from=builder /app/dist ./dist
+# The workspace symlink @dh-araria/shared -> ../../packages/shared must resolve,
+# so both node_modules and packages/shared travel together. The backend folder
+# keeps drizzle/ and scripts/ available for `npm run db:migrate` in the pod.
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/package.json ./package.json
-COPY --from=builder /app/prisma ./prisma
+COPY --from=builder /app/apps/backend ./apps/backend
+COPY --from=builder /app/packages/shared ./packages/shared
 
-# Change ownership
 RUN chown -R nestjs:nodejs /app
 USER nestjs
 
-# Expose port
 EXPOSE 3001
 
-# Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-  CMD wget --no-verbose --tries=1 --spider http://localhost:3001/health/live || exit 1
+  CMD wget --no-verbose --tries=1 --spider http://localhost:3001/api/v1/health/live || exit 1
 
-# Start application
-CMD ["node", "dist/main.js"]
+CMD ["node", "apps/backend/dist/main.js"]

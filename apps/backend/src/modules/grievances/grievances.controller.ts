@@ -13,13 +13,19 @@ import {
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 
 import { GrievancesService } from './grievances.service';
+import {
+  AssignGrievanceDto,
+  CreateGrievanceDto,
+  UpdateGrievanceDto,
+  UpdateGrievanceStatusDto,
+} from './dto/grievance.dto';
 import { PaginationDto } from '../../common/dto/pagination.dto';
 import { JwtAuthGuard } from '../../modules/auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/auth/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { Public } from '../../common/decorators/public.decorator';
-import { UserRole, GrievanceStatus, GrievanceCategory } from '@prisma/client';
+import { UserRole, GrievanceStatus, GrievanceCategory, isStaffRole } from '@dh-araria/shared';
 
 @ApiTags('Grievances')
 @Controller('grievances')
@@ -84,7 +90,7 @@ export class GrievancesController {
     @CurrentUser('role') userRole: string
   ) {
     const grievance = await this.grievancesService.findById(id);
-    if (userRole !== 'ADMIN' && userRole !== 'STAFF' && grievance.userId !== userId) {
+    if (!isStaffRole(userRole) && grievance.userId !== userId) {
       throw new ForbiddenException('Not authorized to view this grievance');
     }
     return grievance;
@@ -94,8 +100,8 @@ export class GrievancesController {
   @Public()
   @ApiOperation({ summary: 'Submit new grievance' })
   @ApiResponse({ status: 201, description: 'Grievance submitted successfully' })
-  async create(@Body() data: any, @CurrentUser('id') userId?: string) {
-    return this.grievancesService.create(data, userId);
+  async create(@Body() dto: CreateGrievanceDto, @CurrentUser('id') userId?: string) {
+    return this.grievancesService.create(dto, userId);
   }
 
   @Put(':id')
@@ -105,11 +111,11 @@ export class GrievancesController {
   @ApiResponse({ status: 200, description: 'Grievance updated successfully' })
   async update(
     @Param('id') id: string,
-    @Body() data: any,
+    @Body() dto: UpdateGrievanceDto,
     @CurrentUser('id') userId: string,
     @CurrentUser('role') userRole: string
   ) {
-    return this.grievancesService.update(id, data, userId, userRole);
+    return this.grievancesService.update(id, dto, userId, userRole);
   }
 
   @Put(':id/status')
@@ -120,12 +126,11 @@ export class GrievancesController {
   @ApiResponse({ status: 200, description: 'Status updated successfully' })
   async updateStatus(
     @Param('id') id: string,
-    @Body('status') status: GrievanceStatus,
-    @Body('resolution') resolution: string | undefined,
+    @Body() dto: UpdateGrievanceStatusDto,
     @CurrentUser('id') userId: string,
     @CurrentUser('role') userRole: string
   ) {
-    return this.grievancesService.updateStatus(id, status, userId, userRole, resolution);
+    return this.grievancesService.updateStatus(id, dto.status, userId, userRole, dto.resolution);
   }
 
   @Put(':id/assign')
@@ -136,11 +141,11 @@ export class GrievancesController {
   @ApiResponse({ status: 200, description: 'Grievance assigned successfully' })
   async assign(
     @Param('id') id: string,
-    @Body('assigneeId') assigneeId: string,
+    @Body() dto: AssignGrievanceDto,
     @CurrentUser('id') userId: string,
     @CurrentUser('role') userRole: string
   ) {
-    return this.grievancesService.assign(id, assigneeId, userId, userRole);
+    return this.grievancesService.assign(id, dto.assigneeId, userId, userRole);
   }
 
   @Delete(':id')

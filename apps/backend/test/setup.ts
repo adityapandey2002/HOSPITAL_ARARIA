@@ -1,5 +1,4 @@
 // Test setup file for backend
-import { PrismaClient } from '@prisma/client';
 
 // Global test setup
 beforeAll(async () => {

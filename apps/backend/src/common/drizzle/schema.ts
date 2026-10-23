@@ -1,21 +1,18 @@
 /**
- * Drizzle schema — citizen-facing tables.
+ * Drizzle schema — the 9 application tables owned by Drizzle.
  *
- * IMPORTANT: `prisma/schema.prisma` is the single source of truth for DDL.
- * This file mirrors the *physical* PostgreSQL schema that Prisma migrations
- * create, so Drizzle can query those tables without owning any migrations of
- * its own (`npm run db:migrate` remains Prisma's job).
+ * This file is the DDL source of truth for these tables: `drizzle-kit generate`
+ * diffs it against the database and writes SQL into `drizzle/`. The other five
+ * tables (`abha_profiles`, `care_contexts`, `fhir_bundles`, `consent_artefacts`,
+ * `audit_logs`) are owned by MikroORM and must never appear here.
+ * See docs/adr/0001-dual-orm-table-ownership.md.
  *
- * Rules that keep the two in sync (see docs/ARCHITECTURE.md):
- *  - Table names come from Prisma `@@map(...)` → snake_case.
- *  - Column names come from Prisma field names → camelCase.
- *  - Prisma `String`  → `text`, `Int` → `integer`, `Float` → `real`,
- *    `Boolean` → `boolean`, `DateTime` → `timestamp`, `Json` → `jsonb`,
- *    `String[]` → `text[]`.
- *  - Prisma enum type names are used verbatim (`UserRole`, `BloodGroup`, …) so
- *    both clients bind to the same PostgreSQL enum type.
- *  - `@default(cuid())` has no database default, so IDs are generated in the
- *    application with cuid2 (see `createId`).
+ * Conventions:
+ *  - Table names are snake_case; column names are camelCase.
+ *  - PostgreSQL enum type names are used verbatim (`UserRole`, `BloodGroup`, …)
+ *    and the values match `packages/shared` exactly.
+ *  - IDs are generated in the application with `newId()` (see `./id`), because
+ *    `drizzle-kit` emits no database-side default for them.
  */
 import { sql } from 'drizzle-orm';
 import {
@@ -31,7 +28,7 @@ import {
 } from 'drizzle-orm/pg-core';
 
 // ---------------------------------------------------------------------------
-// Enums (type names must match Prisma exactly)
+// Enums (type names are part of the database contract)
 // ---------------------------------------------------------------------------
 
 export const userRoleEnum = pgEnum('UserRole', ['PATIENT', 'DOCTOR', 'ADMIN', 'STAFF']);
@@ -101,6 +98,13 @@ export const noticeCategoryEnum = pgEnum('NoticeCategory', [
 ]);
 
 export const noticePriorityEnum = pgEnum('NoticePriority', ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL']);
+
+export const contactMessageStatusEnum = pgEnum('ContactMessageStatus', [
+  'NEW',
+  'IN_PROGRESS',
+  'RESOLVED',
+  'CLOSED',
+]);
 
 // ---------------------------------------------------------------------------
 // Tables
@@ -324,6 +328,26 @@ export const notices = pgTable(
   })
 );
 
+export const contactMessages = pgTable(
+  'contact_messages',
+  {
+    id: text('id').primaryKey(),
+    name: text('name').notNull(),
+    email: text('email').notNull(),
+    phone: text('phone'),
+    subject: text('subject').notNull(),
+    message: text('message').notNull(),
+    status: contactMessageStatusEnum('status').notNull().default('NEW'),
+    createdAt: timestamp('createdAt', { mode: 'date' }).notNull().defaultNow(),
+    updatedAt: timestamp('updatedAt', { mode: 'date' }).notNull().defaultNow(),
+  },
+  (t) => ({
+    emailIdx: index('contact_messages_email_idx').on(t.email),
+    statusIdx: index('contact_messages_status_idx').on(t.status),
+    createdAtIdx: index('contact_messages_createdAt_idx').on(t.createdAt),
+  })
+);
+
 // ---------------------------------------------------------------------------
 // Row types
 // ---------------------------------------------------------------------------
@@ -344,3 +368,5 @@ export type GrievanceRow = typeof grievances.$inferSelect;
 export type NewGrievanceRow = typeof grievances.$inferInsert;
 export type NoticeRow = typeof notices.$inferSelect;
 export type NewNoticeRow = typeof notices.$inferInsert;
+export type ContactMessageRow = typeof contactMessages.$inferSelect;
+export type NewContactMessageRow = typeof contactMessages.$inferInsert;

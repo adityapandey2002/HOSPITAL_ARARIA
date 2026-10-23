@@ -20,39 +20,39 @@ export class ConsentArtefact {
   @Property()
   @Unique()
   @Index({ name: 'consent_artefacts_consentId_idx' })
-  consentId: string;
+  consentId!: string;
 
   @Property()
   @Index({ name: 'consent_artefacts_patientId_idx' })
-  patientId: string;
+  patientId!: string;
 
   /** HIP this consent is addressed to (one per facility). */
   @Property()
   @Index({ name: 'consent_artefacts_hipId_idx' })
-  hipId: string;
+  hipId!: string;
 
   /** HIU the citizen authorised to read. */
   @Property()
   @Index({ name: 'consent_artefacts_hiuId_idx' })
-  hiuId: string;
+  hiuId!: string;
 
   /** e.g. `TREATMENT`, `DIAGNOSIS`, `EMERGENCY`. */
   @Property()
-  purpose: string;
+  purpose!: string;
 
   /** ABDM `HI.type` codes, e.g. `ALL`, `LAB_REPORTS`, `PRESCRIPTIONS`. */
   @Property({ type: 'text[]' })
   hiTypes: string[] = [];
 
   @Property()
-  dateRangeStart: Date;
+  dateRangeStart!: Date;
 
   @Property()
-  dateRangeEnd: Date;
+  dateRangeEnd!: Date;
 
   /** ABDM mandates erasure no later than 90 days after `dateRangeEnd`. */
   @Property()
-  dataEraseAt: Date;
+  dataEraseAt!: Date;
 
   @Property({ default: 'PENDING' })
   @Index({ name: 'consent_artefacts_status_idx' })
@@ -60,7 +60,7 @@ export class ConsentArtefact {
 
   /** The signed artefact exactly as the gateway returned it (audit evidence). */
   @Property({ type: 'jsonb' })
-  consentJson: Record<string, unknown>;
+  consentJson!: Record<string, unknown>;
 
   @Property({ onCreate: () => new Date() })
   createdAt: Date = new Date();

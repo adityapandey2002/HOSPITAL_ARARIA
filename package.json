@@ -19,10 +19,14 @@
     "test": "npm run test --workspaces",
     "db:generate": "npm run db:generate --workspace=apps/backend",
     "db:push": "npm run db:push --workspace=apps/backend",
-    "db:studio": "npm run db:studio --workspace=apps/backend"
+    "db:migrate": "npm run db:migrate --workspace=apps/backend",
+    "db:seed": "npm run db:seed --workspace=apps/backend",
+    "db:studio": "npm run db:studio --workspace=apps/backend",
+    "schema:check": "npm run schema:check --workspace=apps/backend"
   },
   "devDependencies": {
     "concurrently": "^8.2.2",
+    "drizzle-orm": "^0.33.0",
     "typescript": "^5.4.5"
   },
   "engines": {

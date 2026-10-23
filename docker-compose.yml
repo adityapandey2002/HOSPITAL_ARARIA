@@ -14,8 +14,8 @@ services:
       - ./init-scripts:/docker-entrypoint-initdb.d
     ports:
       - "${DB_PORT:-5432}:5432"
-    # The backend opens three pools against this instance (Prisma 10, Drizzle 20,
-    # MikroORM 20 = 50). 200 leaves room for migrations, psql and PgBouncer.
+    # The backend opens two pools against this instance (Drizzle 20 +
+    # MikroORM 20 = 40). 200 leaves room for migrations, psql and PgBouncer.
     command:
       - postgres
       - -c
@@ -50,15 +50,15 @@ services:
   # Backend API
   backend:
     build:
-      context: ./apps/backend
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: apps/backend/Dockerfile
       target: runner
     container_name: dh-araria-backend
     environment:
       NODE_ENV: ${NODE_ENV:-development}
       PORT: 3001
       FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
-      DATABASE_URL: postgresql://${DB_USERNAME:-postgres}:${DB_PASSWORD:-postgres}@postgres:5432/${DB_NAME:-dh_araria}?schema=public
+      DATABASE_URL: postgresql://${DB_USERNAME:-postgres}:${DB_PASSWORD:-postgres}@postgres:5432/${DB_NAME:-dh_araria}
       DB_HOST: postgres
       DB_PORT: 5432
       DB_USERNAME: ${DB_USERNAME:-postgres}
@@ -89,8 +89,8 @@ services:
   # Frontend
   frontend:
     build:
-      context: ./apps/frontend
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: apps/frontend/Dockerfile
       target: runner
     container_name: dh-araria-frontend
     environment:

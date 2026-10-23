@@ -27,18 +27,18 @@ export class FhirBundle {
   @Property()
   @Unique()
   @Index({ name: 'fhir_bundles_bundleId_idx' })
-  bundleId: string;
+  bundleId!: string;
 
   @Property({ default: 'Bundle' })
   resourceType: string = 'Bundle';
 
   /** `document` | `collection` | `searchset` | `message` | `transaction` … */
   @Property()
-  bundleType: string;
+  bundleType!: string;
 
   @Property()
   @Index({ name: 'fhir_bundles_patientId_idx' })
-  patientId: string;
+  patientId!: string;
 
   @Property({ nullable: true })
   @Index({ name: 'fhir_bundles_careContextId_idx' })
@@ -46,7 +46,7 @@ export class FhirBundle {
 
   /** The FHIR R4 resource graph itself. */
   @Property({ type: 'jsonb' })
-  fhirJson: Record<string, unknown>;
+  fhirJson!: Record<string, unknown>;
 
   /** Fidelius ciphertext (base64), ready for gateway transmission. */
   @Property({ type: 'text', nullable: true })

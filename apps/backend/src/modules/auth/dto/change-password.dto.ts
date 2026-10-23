@@ -5,7 +5,7 @@ export class ChangePasswordDto {
   @ApiProperty({ example: 'CurrentPass123!' })
   @IsString()
   @MinLength(1)
-  currentPassword: string;
+  currentPassword!: string;
 
   @ApiProperty({ example: 'NewSecurePass123!', minLength: 8, maxLength: 50 })
   @IsString()
@@ -15,5 +15,5 @@ export class ChangePasswordDto {
     message:
       'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character',
   })
-  newPassword: string;
+  newPassword!: string;
 }

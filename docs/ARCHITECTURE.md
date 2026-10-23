@@ -81,18 +81,17 @@ C4Component
     Component(grievances, "Grievances Module", "NestJS Module", "Submission, tracking, CPGRAMS integration")
     Component(notices, "Notices Module", "NestJS Module", "CRUD, publishing, categories")
     Component(health, "Health Module", "NestJS Module", "Liveness/readiness probes")
-    Component(common, "Common Module", "NestJS Module", "PrismaService, DrizzleModule, MikroModule, AuditModule, Guards, Filters")
+    Component(common, "Common Module", "NestJS Module", "DrizzleModule, MikroModule, AuditModule, Guards, Filters")
     Component(abdm, "ABDM Module", "NestJS Module", "M2 HIP / M3 HIU, consent gating, audit trail")
 
-    ComponentDb(prisma, "Prisma", "ORM", "Auth, Users, Health; owns DDL")
-    ComponentDb(drizzle, "Drizzle", "ORM", "Citizen-facing modules, SQL-first")
-    ComponentDb(mikro, "MikroORM", "ORM", "Clinical/ABDM, Unit of Work")
+    ComponentDb(drizzle, "Drizzle", "ORM", "Owns DDL for 9 application tables")
+    ComponentDb(mikro, "MikroORM", "ORM", "Clinical/ABDM, Unit of Work, owns 5 tables")
     ComponentDb(postgres, "PostgreSQL", "Database", "Single engine; JSONB for FHIR R4")
     ComponentDb(cache, "Redis Client", "Cache", "Sessions, rate limiting")
 
-    Rel(auth, prisma, "Uses")
-    Rel(users, prisma, "Uses")
-    Rel(health, prisma, "Uses")
+    Rel(auth, users, "Uses UsersService")
+    Rel(health, drizzle, "Pings")
+    Rel(health, mikro, "Pings")
     Rel(doctors, drizzle, "Uses")
     Rel(departments, drizzle, "Uses")
     Rel(appointments, drizzle, "Uses")
@@ -102,7 +101,6 @@ C4Component
     Rel(abdm, mikro, "Uses")
     Rel(abdm, common, "Uses AuditLogService")
 
-    Rel(prisma, postgres, "Reads/writes")
     Rel(drizzle, postgres, "Reads/writes")
     Rel(mikro, postgres, "Reads/writes")
 
@@ -120,27 +118,49 @@ We use PostgreSQL as our single database engine for the entire project. For stan
 
 The `FhirBundle` entity uses a `JSONB` column to store complete FHIR R4 bundles:
 
-```prisma
-// prisma/schema.prisma — source of truth for all DDL
-model FhirBundle {
-  id              String   @id @default(uuid())
-  bundleId        String   @unique
-  resourceType    String   @default("Bundle")
-  bundleType      String
-  patientId       String
-  careContextId   String?
-  fhirJson        Json     // JSONB column for the full FHIR R4 bundle
-  encryptedData   String?
-  encryptionKey   String?
-  status          String   @default("PENDING")
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+```ts
+// apps/backend/src/modules/abdm/entities/fhir-bundle.entity.ts — MikroORM owns this table
+export type FhirBundleStatus = 'PENDING' | 'ENCRYPTED' | 'PUSHED' | 'DELIVERED' | 'FAILED';
 
-  @@index([bundleId])
-  @@index([patientId])
-  @@index([careContextId])
-  @@index([status])
-  @@map("fhir_bundles")
+@Entity({ tableName: 'fhir_bundles' })
+export class FhirBundle {
+  @PrimaryKey()
+  id: string = newId();
+
+  @Property()
+  @Unique()
+  bundleId!: string;
+
+  @Property({ default: 'Bundle' })
+  resourceType: string = 'Bundle';
+
+  @Property()
+  bundleType!: string;
+
+  @Property()
+  patientId!: string;
+
+  @Property({ nullable: true })
+  careContextId?: string;
+
+  /** The FHIR R4 resource graph itself. */
+  @Property({ type: 'jsonb' })
+  fhirJson!: Record<string, unknown>;
+
+  @Property({ type: 'text', nullable: true })
+  encryptedData?: string;
+
+  @Property({ nullable: true })
+  encryptionKey?: string;
+
+  @Property({ default: 'PENDING' })
+  status: FhirBundleStatus = 'PENDING';
+
+  @Property({ onCreate: () => new Date() })
+  createdAt: Date = new Date();
+
+  @Property({ onUpdate: () => new Date() })
+  updatedAt: Date = new Date();
 }
 ```
 
@@ -152,35 +172,33 @@ This approach provides:
 
 ### Data Access Strategy
 
-PostgreSQL is the **single** database engine. Three clients talk to it, each
-with its own connection pool:
+PostgreSQL is the **single** database engine. Two ORMs talk to it, each with
+its own connection pool and a non-overlapping set of tables:
 
 | Client | Owns | Rationale |
 |--------|------|-----------|
-| **Prisma** (`PrismaService`) | Auth, Users, Health | Retained for identity/session logic; also the **only** tool allowed to emit DDL |
-| **Drizzle ORM** | Citizen-facing modules (departments, notices, blood bank, grievances, doctors, appointments) | SQL-first, near-zero abstraction overhead for high-traffic public endpoints |
-| **MikroORM** | Clinical / ABDM (ABDM M2 HIP, M3 HIU) | Strict Unit of Work so a FHIR bundle, its consent artefact and its audit rows commit atomically |
+| **Drizzle ORM** | 9 tables: users, departments, doctors, time_slots, appointments, blood_stock, grievances, notices, contact_messages | SQL-first, near-zero abstraction overhead for the high-traffic public endpoints; owns DDL for its tables |
+| **MikroORM** | 5 tables: abha_profiles, care_contexts, fhir_bundles, consent_artefacts, audit_logs | Strict Unit of Work so a FHIR bundle, its consent artefact and its audit rows commit atomically |
 
-#### One schema, three clients: how drift is prevented
+#### One schema, two DDL owners: how drift is prevented
 
-`prisma/schema.prisma` is the single source of truth for **DDL**. Drizzle and
-MikroORM are *query* layers over tables Prisma created. Concretely:
+Ownership is enforced mechanically rather than by convention
+(`docs/adr/0001-dual-orm-table-ownership.md`):
 
-- `prisma/schema.prisma` → the only file `npm run db:migrate` acts on.
-- `src/common/drizzle/schema.ts` mirrors the *physical* schema (Prisma field
-  names, `@@map` table names, Prisma's enum type names like `BloodGroup`).
-- `src/modules/abdm/entities/*.entity.ts` mirror the clinical tables.
-- `drizzle-kit` is not a dependency at all, and MikroORM migration commands are
-  **deliberately not** exposed as npm scripts. Running either would fork the
-  schema away from `schema.prisma`.
-- `npm run mikro:schema:update` is a read-only drift check: it introspects the
-  live database and prints the DDL the entities expect, writing nothing.
-  `npm run prisma:validate` checks the schema file itself. `npm run schema:check`
-  runs both.
+- `src/common/drizzle/schema.ts` → `drizzle-kit generate` writes the SQL in
+  `apps/backend/drizzle/`. Those migrations are committed and applied by
+  `npm run db:migrate`.
+- `src/common/mikro/mikro.config.ts` and the ABDM entities are reconciled by
+  `updateSchema({ safe: true })` in the same `db:migrate` script.
+- `npm run schema:check` reads both schemas **offline** and fails if a table
+  appears in both, if a Drizzle migration touches a Mikro-owned table, or if the
+  counts drift from 9 + 5.
+- `npm run schema:check:live` additionally compares the entities against a live
+  database.
 
-Primary keys are `String @default(uuid())`. Prisma generates the value in its
-query engine, so Drizzle and MikroORM mint their own with Node's built-in
-`crypto.randomUUID()` via `src/common/drizzle/id.ts`.
+Primary keys are text UUIDs minted in the application with Node's built-in
+`crypto.randomUUID()` via `src/common/drizzle/id.ts`, because `drizzle-kit`
+emits no database-side default for them.
 
 #### Drizzle ORM (Citizen-Facing Services)
 
@@ -329,13 +347,14 @@ a best-effort side effect.
 
 | Module / Service | Client | Reason |
 |------------------|--------|--------|
-| Auth, Users, Health | Prisma | Identity/session logic; owns the schema |
+| Auth, Users | Drizzle | Identity rows live in `users`, owned by `UsersService` |
 | Homepage / Landing Page | Drizzle | High traffic, simple queries |
 | Doctor Directory, Departments | Drizzle | Read-heavy, public access |
-| Basic Appointment Booking | Drizzle | High concurrency, simple CRUD |
+| Appointments | Drizzle | High concurrency, transactional booking |
 | Grievance Submission | Drizzle | Public-facing, moderate traffic |
 | Blood Bank Inventory | Drizzle | Real-time polling, simple reads |
 | Notices / Announcements | Drizzle | Read-heavy, public |
+| Contact messages | Drizzle | Public write, admin inbox |
 | **ABDM M2 (HIP)** | **MikroORM** | **FHIR bundles, Fidelius encryption, atomic transactions** |
 | **ABDM M3 (HIU)** | **MikroORM** | **Consent management, audit trails** |
 | **Clinical Records** | **MikroORM** | **Complex transactions, audit logging** |
@@ -343,15 +362,14 @@ a best-effort side effect.
 
 ### Shared Database Connection & Pool Budget
 
-All three clients hit the same PostgreSQL instance with separate pools, so their
+Both clients hit the same PostgreSQL instance with separate pools, so their
 sizes must sum below the server's `max_connections`:
 
 | Client | Default pool | Env var |
 |--------|--------------|---------|
-| Prisma | 10 | `DB_POOL_SIZE` |
 | Drizzle | 20 | `DRIZZLE_POOL_SIZE` |
 | MikroORM | 20 | `MIKRO_POOL_SIZE` |
-| **Total** | **50** | (headroom to 200 for migrations and `psql`) |
+| **Total** | **40** | (headroom to 200 for migrations and `psql`) |
 
 ```yaml
 # docker-compose.yml (shared postgres)
@@ -374,7 +392,7 @@ services:
       - log_min_duration_statement=500
 ```
 
-`GET /api/v1/health` reports Prisma and Drizzle reachability plus live Drizzle
+`GET /api/v1/health` reports Drizzle and MikroORM reachability plus live Drizzle
 pool stats, so a saturated pool surfaces as an unhealthy pod rather than a
 stream of 500s.
 
@@ -555,7 +573,7 @@ C4Deployment
    - CORS policy (whitelist only)
    - Rate limiting (100 req/min general, 10 req/min auth)
    - Input validation (Zod/class-validator)
-   - SQL injection prevention (Prisma ORM)
+   - SQL injection prevention (parameterized Drizzle / MikroORM queries)
    - XSS prevention (React auto-escaping)
 
 4. **Data Layer**

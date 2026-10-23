@@ -1,6 +1,7 @@
 import { ForbiddenException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { and, asc, count, desc, eq, gte, ilike, isNull, or } from 'drizzle-orm';
 import type { AnyPgColumn } from 'drizzle-orm/pg-core';
+import { isStaffRole } from '@dh-araria/shared';
 
 import { PaginationDto } from '../../common/dto/pagination.dto';
 import { DRIZZLE, type DrizzleDb } from '../../common/drizzle/drizzle.module';
@@ -23,8 +24,6 @@ export interface NoticeFilters {
   language?: string;
   search?: string;
 }
-
-const STAFF_ROLES = new Set(['ADMIN', 'STAFF']);
 
 @Injectable()
 export class NoticesService {
@@ -116,7 +115,7 @@ export class NoticesService {
     userId: string,
     userRole: string
   ): Promise<NoticeRow> {
-    if (!STAFF_ROLES.has(userRole)) {
+    if (!isStaffRole(userRole)) {
       throw new ForbiddenException('Not authorized to update notices');
     }
 
@@ -134,7 +133,7 @@ export class NoticesService {
   }
 
   async delete(id: string, userId: string, userRole: string): Promise<{ success: true }> {
-    if (!STAFF_ROLES.has(userRole)) {
+    if (!isStaffRole(userRole)) {
       throw new ForbiddenException('Not authorized to delete notices');
     }
 

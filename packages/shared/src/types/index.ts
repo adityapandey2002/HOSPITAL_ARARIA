@@ -18,6 +18,19 @@ export enum UserRole {
   STAFF = 'STAFF',
 }
 
+/**
+ * Roles that may act on behalf of the hospital.
+ *
+ * This is the single definition of "staff". Services compare against
+ * `isStaffRole()` rather than spelling out `'ADMIN' || 'STAFF'`, so adding a
+ * role (or changing the policy) is one edit.
+ */
+export const STAFF_ROLES: readonly UserRole[] = [UserRole.ADMIN, UserRole.STAFF];
+
+export function isStaffRole(role: string | undefined | null): boolean {
+  return role === UserRole.ADMIN || role === UserRole.STAFF;
+}
+
 export interface Doctor {
   id: string;
   userId: string;
@@ -117,9 +130,9 @@ export enum BloodGroup {
 /**
  * Human-readable labels for `BloodGroup`.
  *
- * The database stores Prisma-safe identifiers (`A_POSITIVE`) because Postgres /
- * Prisma enum values cannot contain `+`/`-`. Always render `BLOOD_GROUP_LABELS`
- * rather than the raw enum value so citizens see `A+`.
+ * The database stores identifiers (`A_POSITIVE`) because Postgres enum values
+ * cannot contain `+`/`-`. Always render `BLOOD_GROUP_LABELS` rather than the
+ * raw enum value so citizens see `A+`.
  */
 export const BLOOD_GROUP_LABELS: Record<BloodGroup, string> = {
   [BloodGroup.A_POSITIVE]: 'A+',
@@ -215,6 +228,38 @@ export enum NoticePriority {
   MEDIUM = 'MEDIUM',
   HIGH = 'HIGH',
   CRITICAL = 'CRITICAL',
+}
+
+/** Subject lines offered by the public contact form. */
+export const CONTACT_SUBJECTS = [
+  'GENERAL',
+  'APPOINTMENT',
+  'BILLING',
+  'MEDICAL_RECORDS',
+  'COMPLAINT',
+  'FEEDBACK',
+  'OTHER',
+] as const;
+
+export type ContactSubject = (typeof CONTACT_SUBJECTS)[number];
+
+export enum ContactMessageStatus {
+  NEW = 'NEW',
+  IN_PROGRESS = 'IN_PROGRESS',
+  RESOLVED = 'RESOLVED',
+  CLOSED = 'CLOSED',
+}
+
+export interface ContactMessage {
+  id: string;
+  name: string;
+  email: string;
+  phone?: string;
+  subject: ContactSubject;
+  message: string;
+  status: ContactMessageStatus;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export interface ContactInfo {

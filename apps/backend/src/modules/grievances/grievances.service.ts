@@ -1,6 +1,7 @@
 import { ForbiddenException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { and, asc, count, desc, eq } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
+import { UserRole, isStaffRole } from '@dh-araria/shared';
 
 import { PaginationDto } from '../../common/dto/pagination.dto';
 import { DRIZZLE, type DrizzleDb } from '../../common/drizzle/drizzle.module';
@@ -18,8 +19,6 @@ export interface GrievanceFilters {
   category?: string;
   assignedTo?: string;
 }
-
-const STAFF_ROLES = new Set(['ADMIN', 'STAFF']);
 
 type Select = typeof grievances.$inferSelect;
 type Insert = typeof grievances.$inferInsert;
@@ -137,7 +136,7 @@ export class GrievancesService {
   async update(id: string, data: Partial<Insert>, userId: string, userRole: string) {
     const grievance = await this.findById(id);
 
-    if (!STAFF_ROLES.has(userRole) && grievance.userId !== userId) {
+    if (!isStaffRole(userRole) && grievance.userId !== userId) {
       throw new ForbiddenException('Not authorized to update this grievance');
     }
 
@@ -157,7 +156,7 @@ export class GrievancesService {
     userRole: string,
     resolution?: string
   ) {
-    if (!STAFF_ROLES.has(userRole)) {
+    if (!isStaffRole(userRole)) {
       throw new ForbiddenException('Not authorized to update status');
     }
 
@@ -179,7 +178,7 @@ export class GrievancesService {
   }
 
   async assign(id: string, assigneeId: string, userId: string, userRole: string) {
-    if (!STAFF_ROLES.has(userRole)) {
+    if (!isStaffRole(userRole)) {
       throw new ForbiddenException('Not authorized to assign grievances');
     }
 
@@ -200,7 +199,7 @@ export class GrievancesService {
     const grievance = await this.findById(id);
 
     // Admins may remove any grievance; citizens may withdraw their own.
-    if (userRole !== 'ADMIN' && grievance.userId !== userId) {
+    if (userRole !== UserRole.ADMIN && grievance.userId !== userId) {
       throw new ForbiddenException('Not authorized to delete this grievance');
     }
 

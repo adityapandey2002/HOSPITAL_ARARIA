@@ -1,0 +1,19 @@
+# Keep the image build context small and, more importantly, stop the host's
+# Windows node_modules and build output from overwriting the Linux ones inside
+# the builder stage.
+node_modules
+**/node_modules
+dist
+**/dist
+.next
+**/.next
+coverage
+**/coverage
+.git
+.gitignore
+.env
+.env.*
+!.env.example
+npm-debug.log*
+*.tsbuildinfo
+docs

@@ -169,6 +169,14 @@ class ApiClient {
     return this.post('/auth/change-password', { currentPassword, newPassword });
   }
 
+  async forgotPassword(email: string) {
+    return this.post<{ message: string; resetToken?: string }>('/auth/forgot-password', { email });
+  }
+
+  async resetPassword(token: string, newPassword: string) {
+    return this.post<{ message: string }>('/auth/reset-password', { token, newPassword });
+  }
+
   // Doctors
   async getDoctors(params?: Record<string, unknown>) {
     return this.get<any[]>('/doctors', params);
@@ -228,6 +236,17 @@ class ApiClient {
 
   async getGrievance(id: string) {
     return this.get<any>(`/grievances/${id}`);
+  }
+
+  // Contact
+  async submitContactMessage(data: {
+    name: string;
+    email: string;
+    phone?: string;
+    subject: string;
+    message: string;
+  }) {
+    return this.post<{ id: string }>('/contact', data);
   }
 
   // Notices

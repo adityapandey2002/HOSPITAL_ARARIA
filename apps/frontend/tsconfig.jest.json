@@ -8,7 +8,12 @@
     "moduleResolution": "node",
     "noEmit": false,
     "isolatedModules": false,
-    "incremental": false
+    "incremental": false,
+    // ts-jest type-checks each test file against this program. `jest.setup.ts`
+    // lives outside `include`, so its `@testing-library/jest-dom` import never
+    // reaches the test files. Declaring the augmentation here makes the
+    // toBeInTheDocument / toBeDisabled / toHaveClass matchers visible.
+    "types": ["jest", "node", "@testing-library/jest-dom"]
   },
-  "include": ["next-env.d.ts", "src/**/*.ts", "src/**/*.tsx"]
+  "include": ["next-env.d.ts", "src/**/*.ts", "src/**/*.tsx", "jest.setup.ts"]
 }

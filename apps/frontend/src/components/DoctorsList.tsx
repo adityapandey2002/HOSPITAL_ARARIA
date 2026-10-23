@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Stethoscope,
   Search,
@@ -16,161 +16,109 @@ import {
 import Link from 'next/link';
 import { cn } from '@dh-araria/shared/utils';
 import { Avatar } from '@dh-araria/ui/components';
+import { api } from '@/lib/api';
 
-const doctors = [
-  {
-    id: '1',
-    name: 'Dr. Rajesh Kumar',
-    specialization: 'Cardiology',
-    qualification: 'MD, DM (Cardiology), FACC',
-    experience: 15,
-    department: 'Cardiology',
-    rating: 4.9,
-    reviewCount: 245,
-    imageUrl: null,
-    availableDays: ['Mon', 'Wed', 'Fri'],
-    availableTime: '10:00 AM - 1:00 PM',
-    consultationFee: 500,
-    languages: ['English', 'Hindi', 'Maithili'],
-    procedures: ['Angiography', 'Angioplasty', 'Pacemaker', 'Echo'],
-  },
-  {
-    id: '2',
-    name: 'Dr. Priya Sharma',
-    specialization: 'Gynecology & Obstetrics',
-    qualification: 'MS (OBG), DNB, MRCOG',
-    experience: 12,
-    department: 'Obstetrics & Gynecology',
-    rating: 4.8,
-    reviewCount: 189,
-    imageUrl: null,
-    availableDays: ['Tue', 'Thu', 'Sat'],
-    availableTime: '10:00 AM - 1:00 PM',
-    consultationFee: 400,
-    languages: ['English', 'Hindi', 'Bengali'],
-    procedures: ['Normal Delivery', 'C-Section', 'Hysterectomy', 'Laparoscopy'],
-  },
-  {
-    id: '3',
-    name: 'Dr. Amit Singh',
-    specialization: 'Orthopedics',
-    qualification: 'MS (Ortho), MCh (Joint Replacement)',
-    experience: 18,
-    department: 'Orthopedics',
-    rating: 4.9,
-    reviewCount: 312,
-    imageUrl: null,
-    availableDays: ['Mon', 'Tue', 'Thu'],
-    availableTime: '10:00 AM - 1:00 PM',
-    consultationFee: 600,
-    languages: ['English', 'Hindi', 'Punjabi'],
-    procedures: ['Knee Replacement', 'Hip Replacement', 'Arthroscopy', 'Trauma'],
-  },
-  {
-    id: '4',
-    name: 'Dr. Sunita Devi',
-    specialization: 'Pediatrics',
-    qualification: 'MD (Pediatrics), DNB',
-    experience: 10,
-    department: 'Pediatrics',
-    rating: 4.7,
-    reviewCount: 156,
-    imageUrl: null,
-    availableDays: ['Mon', 'Wed', 'Fri', 'Sat'],
-    availableTime: '9:00 AM - 12:00 PM',
-    consultationFee: 350,
-    languages: ['English', 'Hindi', 'Maithili'],
-    procedures: ['Vaccination', 'Neonatal Care', 'Growth Monitoring', 'Asthma'],
-  },
-  {
-    id: '5',
-    name: 'Dr. Vikash Patel',
-    specialization: 'General Surgery',
-    qualification: 'MS (General Surgery), FIAGES',
-    experience: 14,
-    department: 'General Surgery',
-    rating: 4.8,
-    reviewCount: 203,
-    imageUrl: null,
-    availableDays: ['Tue', 'Thu', 'Sat'],
-    availableTime: '10:00 AM - 1:00 PM',
-    consultationFee: 450,
-    languages: ['English', 'Hindi', 'Gujarati'],
-    procedures: ['Laparoscopic Surgery', 'Hernia', 'Gallbladder', 'Appendix'],
-  },
-  {
-    id: '6',
-    name: 'Dr. Anjali Verma',
-    specialization: 'Dermatology',
-    qualification: 'MD (Dermatology), DVD',
-    experience: 8,
-    department: 'Dermatology',
-    rating: 4.6,
-    reviewCount: 98,
-    imageUrl: null,
-    availableDays: ['Mon', 'Fri'],
-    availableTime: '11:00 AM - 2:00 PM',
-    consultationFee: 400,
-    languages: ['English', 'Hindi'],
-    procedures: ['Laser Therapy', 'Chemical Peels', 'Acne Treatment', 'Psoriasis'],
-  },
-  {
-    id: '7',
-    name: 'Dr. Manoj Kumar',
-    specialization: 'Neurology',
-    qualification: 'DM (Neurology), MD (Medicine)',
-    experience: 11,
-    department: 'General Medicine',
-    rating: 4.7,
-    reviewCount: 134,
-    imageUrl: null,
-    availableDays: ['Tue', 'Fri'],
-    availableTime: '10:00 AM - 1:00 PM',
-    consultationFee: 500,
-    languages: ['English', 'Hindi'],
-    procedures: ['Stroke Management', 'Epilepsy', 'Migraine', 'Neuropathy'],
-  },
-  {
-    id: '8',
-    name: 'Dr. Rekha Sinha',
-    specialization: 'Ophthalmology',
-    qualification: 'MS (Ophthalmology), FRCS',
-    experience: 16,
-    department: 'Ophthalmology',
-    rating: 4.8,
-    reviewCount: 178,
-    imageUrl: null,
-    availableDays: ['Mon', 'Wed', 'Sat'],
-    availableTime: '9:00 AM - 12:00 PM',
-    consultationFee: 400,
-    languages: ['English', 'Hindi', 'Bengali'],
-    procedures: ['Cataract Surgery', 'Glaucoma', 'Retina', 'LASIK'],
-  },
-];
+interface ApiSlot {
+  dayOfWeek: number;
+  startTime: string;
+  endTime: string;
+}
 
-const departments = [
-  'All Departments',
-  'Cardiology',
-  'Obstetrics & Gynecology',
-  'Orthopedics',
-  'Pediatrics',
-  'General Surgery',
-  'Dermatology',
-  'General Medicine',
-  'Ophthalmology',
-  'Neurology',
-  'ENT',
-  'Psychiatry',
-  'Radiology',
-  'Anesthesiology',
-  'Dental Surgery',
-  'Physiotherapy',
-];
+interface ApiDoctor {
+  id: string;
+  name: string;
+  specialization: string;
+  qualification: string;
+  experience: number;
+  consultationFee: number;
+  rating: number;
+  reviewCount: number;
+  languages: string[];
+  imageUrl?: string | null;
+  department: { id: string; name: string };
+  timeSlots?: ApiSlot[];
+}
+
+interface DoctorCard {
+  id: string;
+  name: string;
+  specialization: string;
+  qualification: string;
+  experience: number;
+  consultationFee: number;
+  rating: number;
+  reviewCount: number;
+  languages: string[];
+  imageUrl?: string | null;
+  department: string;
+  availableDays: string[];
+  availableTime: string;
+}
+
+const DAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+function toDoctorCard(doctor: ApiDoctor): DoctorCard {
+  const slots = doctor.timeSlots ?? [];
+  const days = Array.from(new Set(slots.map((slot) => DAY_LABELS[slot.dayOfWeek] ?? ''))).filter(
+    Boolean
+  );
+  const start = slots.reduce(
+    (min, slot) => (slot.startTime < min ? slot.startTime : min),
+    slots[0]?.startTime ?? ''
+  );
+  const end = slots.reduce(
+    (max, slot) => (slot.endTime > max ? slot.endTime : max),
+    slots[0]?.endTime ?? ''
+  );
+
+  return {
+    id: doctor.id,
+    name: doctor.name,
+    specialization: doctor.specialization,
+    qualification: doctor.qualification,
+    experience: doctor.experience,
+    consultationFee: Number(doctor.consultationFee),
+    rating: Number(doctor.rating) || 0,
+    reviewCount: doctor.reviewCount ?? 0,
+    languages: doctor.languages ?? [],
+    imageUrl: doctor.imageUrl,
+    department: doctor.department.name,
+    availableDays: days,
+    availableTime: start && end ? `${start} - ${end}` : 'By appointment',
+  };
+}
 
 export function DoctorsList() {
+  const [doctors, setDoctors] = useState<DoctorCard[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedDepartment, setSelectedDepartment] = useState('All Departments');
   const [sortBy, setSortBy] = useState<'rating' | 'experience' | 'fee'>('rating');
+
+  useEffect(() => {
+    let cancelled = false;
+
+    api
+      .get<ApiDoctor[]>('/doctors', { limit: 100 })
+      .then((response) => {
+        if (!cancelled && response.success) setDoctors((response.data ?? []).map(toDoctorCard));
+      })
+      .catch(() => {
+        if (!cancelled) setDoctors([]);
+      })
+      .finally(() => {
+        if (!cancelled) setIsLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const departments = [
+    'All Departments',
+    ...Array.from(new Set(doctors.map((doctor) => doctor.department))).sort(),
+  ];
 
   const filteredDoctors = doctors
     .filter((doctor) => {
@@ -242,7 +190,11 @@ export function DoctorsList() {
         </div>
 
         {/* Doctors Grid */}
-        {filteredDoctors.length > 0 ? (
+        {isLoading ? (
+          <div className="py-16 text-center">
+            <p className="text-gray-500">Loading doctors…</p>
+          </div>
+        ) : filteredDoctors.length > 0 ? (
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {filteredDoctors.map((doctor, index) => (
               <article
@@ -283,7 +235,9 @@ export function DoctorsList() {
                   <div className="flex items-center gap-2">
                     <Clock className="h-4 w-4 text-gray-400" />
                     <span>
-                      {doctor.availableDays.join(', ')} • {doctor.availableTime}
+                      {doctor.availableDays.length > 0
+                        ? `${doctor.availableDays.join(', ')} • ${doctor.availableTime}`
+                        : 'By appointment'}
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
@@ -311,7 +265,7 @@ export function DoctorsList() {
 
                 <div className="border-t border-gray-100 pt-4">
                   <Link
-                    href={`/doctors/${doctor.id}`}
+                    href="/appointments"
                     className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-primary-600 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-primary-700"
                   >
                     <HeartPulse className="h-4 w-4" />

@@ -14,6 +14,7 @@ import { ConfigService } from '@nestjs/config';
 import { drizzle, NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { Pool, PoolConfig } from 'pg';
 
+import { tlsOptions } from '../../config/database-url';
 import * as schema from './schema';
 
 export type DrizzleDb = NodePgDatabase<typeof schema>;
@@ -38,7 +39,7 @@ export class DrizzleService implements OnModuleDestroy {
       max: config.get<number>('orm.drizzlePoolSize', 20),
       idleTimeoutMillis: 30_000,
       connectionTimeoutMillis: 5_000,
-      ssl: config.get<boolean>('database.ssl') ? { rejectUnauthorized: false } : undefined,
+      ssl: tlsOptions(config.get<boolean>('database.ssl', false)),
     };
 
     this.pool = new Pool(poolConfig);

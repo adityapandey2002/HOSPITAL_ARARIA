@@ -2,6 +2,7 @@ import { Controller, Get, Post, Put, Delete, Param, Body, Query, UseGuards } fro
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 
 import { NoticesService } from './notices.service';
+import { CreateNoticeDto, UpdateNoticeDto } from './dto/notice.dto';
 import { PaginationDto } from '../../common/dto/pagination.dto';
 import { JwtAuthGuard } from '../../modules/auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/auth/roles.guard';
@@ -33,14 +34,15 @@ export class NoticesController {
     @Query() pagination: PaginationDto,
     @Query('category') category?: NoticeCategory,
     @Query('priority') priority?: NoticePriority,
-    @Query('isPublished') isPublished?: boolean,
+    @Query('isPublished') isPublished?: string,
     @Query('language') language?: string,
     @Query('search') search?: string
   ) {
     return this.noticesService.findAll(pagination, {
       category,
       priority,
-      isPublished,
+      // Query strings arrive as text; `eq(boolean, "false")` would match nothing.
+      isPublished: isPublished === undefined ? undefined : isPublished === 'true',
       language,
       search,
     });
@@ -87,8 +89,8 @@ export class NoticesController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Create notice (Admin/Staff)' })
   @ApiResponse({ status: 201, description: 'Notice created successfully' })
-  async create(@Body() data: any, @CurrentUser('id') userId: string) {
-    return this.noticesService.create(data, userId);
+  async create(@Body() dto: CreateNoticeDto, @CurrentUser('id') userId: string) {
+    return this.noticesService.create(this.toNoticePatch(dto), userId);
   }
 
   @Put(':id')
@@ -99,11 +101,21 @@ export class NoticesController {
   @ApiResponse({ status: 200, description: 'Notice updated successfully' })
   async update(
     @Param('id') id: string,
-    @Body() data: any,
+    @Body() dto: UpdateNoticeDto,
     @CurrentUser('id') userId: string,
     @CurrentUser('role') userRole: string
   ) {
-    return this.noticesService.update(id, data, userId, userRole);
+    return this.noticesService.update(id, this.toNoticePatch(dto), userId, userRole);
+  }
+
+  /** ISO strings from JSON become `Date`s, which is what the Drizzle columns use. */
+  private toNoticePatch(dto: CreateNoticeDto | UpdateNoticeDto) {
+    const { publishedAt, expiresAt, ...rest } = dto;
+    return {
+      ...rest,
+      ...(publishedAt !== undefined ? { publishedAt: new Date(publishedAt) } : {}),
+      ...(expiresAt !== undefined ? { expiresAt: new Date(expiresAt) } : {}),
+    };
   }
 
   @Delete(':id')

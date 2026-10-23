@@ -2,12 +2,13 @@ import { Controller, Get, Put, Delete, Param, Body, Query, UseGuards } from '@ne
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 
 import { UsersService } from './users.service';
+import { AdminUpdateUserDto, UpdateProfileDto } from './dto/user.dto';
 import { PaginationDto } from '../../common/dto/pagination.dto';
 import { JwtAuthGuard } from '../../modules/auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/auth/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
-import { UserRole } from '@prisma/client';
+import { UserRole } from '@dh-araria/shared';
 
 @ApiTags('Users')
 @Controller('users')
@@ -38,11 +39,8 @@ export class UsersController {
   @Put('profile')
   @ApiOperation({ summary: 'Update current user profile' })
   @ApiResponse({ status: 200, description: 'Profile updated successfully' })
-  async updateProfile(
-    @CurrentUser('id') userId: string,
-    @Body() data: { name?: string; phone?: string }
-  ) {
-    return this.usersService.updateProfile(userId, data);
+  async updateProfile(@CurrentUser('id') userId: string, @Body() dto: UpdateProfileDto) {
+    return this.usersService.updateProfile(userId, dto);
   }
 
   @Get(':id')
@@ -59,11 +57,8 @@ export class UsersController {
   @ApiOperation({ summary: 'Update user (Admin only)' })
   @ApiResponse({ status: 200, description: 'User updated successfully' })
   @ApiResponse({ status: 404, description: 'User not found' })
-  async update(
-    @Param('id') id: string,
-    @Body() data: { name?: string; phone?: string; role?: UserRole; isActive?: boolean }
-  ) {
-    return this.usersService.update(id, data);
+  async update(@Param('id') id: string, @Body() dto: AdminUpdateUserDto) {
+    return this.usersService.update(id, dto);
   }
 
   @Delete(':id')

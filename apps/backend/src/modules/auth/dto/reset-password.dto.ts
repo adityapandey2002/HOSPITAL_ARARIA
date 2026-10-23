@@ -5,7 +5,7 @@ export class ResetPasswordDto {
   @ApiProperty({ example: 'reset-token-from-email' })
   @IsString()
   @MinLength(1)
-  token: string;
+  token!: string;
 
   @ApiProperty({ example: 'NewSecurePass123!', minLength: 8, maxLength: 50 })
   @IsString()
@@ -15,5 +15,5 @@ export class ResetPasswordDto {
     message:
       'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character',
   })
-  newPassword: string;
+  newPassword!: string;
 }

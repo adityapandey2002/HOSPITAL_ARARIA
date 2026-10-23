@@ -1,7 +1,21 @@
-import { Controller, Get, Post, Put, Delete, Param, Body, Query, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Put,
+  Delete,
+  Param,
+  Body,
+  Query,
+  UseGuards,
+  BadRequestException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 
 import { AppointmentsService } from './appointments.service';
+import { CreateAppointmentDto, UpdateAppointmentDto } from './dto/appointment.dto';
+import { UpdateAppointmentStatusDto } from './dto/appointment-status.dto';
 import { PaginationDto } from '../../common/dto/pagination.dto';
 import { JwtAuthGuard } from '../../modules/auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/auth/roles.guard';
@@ -9,7 +23,7 @@ import { Roles } from '../../common/decorators/roles.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { Public } from '../../common/decorators/public.decorator';
 import { UserRole } from '@dh-araria/shared';
-import { AppointmentStatus } from '@dh-araria/shared';
+import { AppointmentStatus, isStaffRole } from '@dh-araria/shared';
 
 @ApiTags('Appointments')
 @Controller('appointments')
@@ -74,33 +88,50 @@ export class AppointmentsController {
   @Get(':id')
   @ApiOperation({ summary: 'Get appointment by ID' })
   @ApiResponse({ status: 200, description: 'Appointment retrieved successfully' })
-  async findById(@Param('id') id: string) {
-    return this.appointmentsService.findById(id);
+  async findById(
+    @Param('id') id: string,
+    @CurrentUser('id') userId: string,
+    @CurrentUser('role') userRole: string
+  ) {
+    const appointment = await this.appointmentsService.findById(id);
+    // A patient may only read their own appointment. Staff and doctors need
+    // the full record to run the clinic day.
+    if (appointment.patientId !== userId && !isStaffRole(userRole) && userRole !== 'DOCTOR') {
+      throw new ForbiddenException('Not authorized to view this appointment');
+    }
+    return appointment;
   }
 
   @Post()
   @Public()
   @ApiOperation({ summary: 'Book new appointment' })
   @ApiResponse({ status: 201, description: 'Appointment booked successfully' })
-  async create(@Body() data: any, @CurrentUser('id') patientId?: string) {
-    // If not authenticated, patientId will be undefined - handle in service
-    return this.appointmentsService.create(data, patientId || data.patientId);
+  async create(@Body() dto: CreateAppointmentDto, @CurrentUser('id') patientId?: string) {
+    // A logged-in patient books for themselves. A guest must identify the
+    // patient record explicitly; the service can then validate the foreign key.
+    const resolvedPatientId = patientId ?? dto.patientId;
+    if (!resolvedPatientId) {
+      throw new BadRequestException(
+        'patientId is required when booking without an authenticated session'
+      );
+    }
+    return this.appointmentsService.create(dto, resolvedPatientId);
   }
 
   @Put(':id')
   @Roles(UserRole.ADMIN, UserRole.STAFF)
   @ApiOperation({ summary: 'Update appointment (Admin/Staff only)' })
   @ApiResponse({ status: 200, description: 'Appointment updated successfully' })
-  async update(@Param('id') id: string, @Body() data: any) {
-    return this.appointmentsService.update(id, data);
+  async update(@Param('id') id: string, @Body() dto: UpdateAppointmentDto) {
+    return this.appointmentsService.update(id, dto);
   }
 
   @Put(':id/status')
   @Roles(UserRole.ADMIN, UserRole.STAFF, UserRole.DOCTOR)
   @ApiOperation({ summary: 'Update appointment status' })
   @ApiResponse({ status: 200, description: 'Status updated successfully' })
-  async updateStatus(@Param('id') id: string, @Body('status') status: AppointmentStatus) {
-    return this.appointmentsService.updateStatus(id, status);
+  async updateStatus(@Param('id') id: string, @Body() dto: UpdateAppointmentStatusDto) {
+    return this.appointmentsService.updateStatus(id, dto.status);
   }
 
   @Delete(':id')

@@ -105,7 +105,7 @@ export class DepartmentsService {
     return { ...department, doctors: staff, timeSlots: slots };
   }
 
-  async create(data: NewDepartmentRow): Promise<DepartmentRow> {
+  async create(data: Omit<NewDepartmentRow, 'id'>): Promise<DepartmentRow> {
     const existing = await this.db
       .select({ id: departments.id })
       .from(departments)
@@ -116,13 +116,13 @@ export class DepartmentsService {
 
     const [created] = await this.db
       .insert(departments)
-      .values({ ...data, id: data.id ?? newId() })
+      .values({ ...data, id: newId() })
       .returning();
 
     return created;
   }
 
-  async update(id: string, data: Partial<NewDepartmentRow>): Promise<DepartmentRow> {
+  async update(id: string, data: Partial<Omit<NewDepartmentRow, 'id'>>): Promise<DepartmentRow> {
     await this.findById(id);
 
     if (data.name) {

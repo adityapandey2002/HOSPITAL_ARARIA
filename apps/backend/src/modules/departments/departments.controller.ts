@@ -2,6 +2,7 @@ import { Controller, Get, Post, Put, Delete, Param, Body, Query, UseGuards } fro
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 
 import { DepartmentsService } from './departments.service';
+import { CreateDepartmentDto, UpdateDepartmentDto } from './dto/department.dto';
 import { PaginationDto } from '../../common/dto/pagination.dto';
 import { JwtAuthGuard } from '../../modules/auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/auth/roles.guard';
@@ -36,8 +37,8 @@ export class DepartmentsController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Create department (Admin only)' })
   @ApiResponse({ status: 201, description: 'Department created successfully' })
-  async create(@Body() data: any) {
-    return this.departmentsService.create(data);
+  async create(@Body() dto: CreateDepartmentDto) {
+    return this.departmentsService.create(dto);
   }
 
   @Put(':id')
@@ -46,8 +47,8 @@ export class DepartmentsController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Update department (Admin only)' })
   @ApiResponse({ status: 200, description: 'Department updated successfully' })
-  async update(@Param('id') id: string, @Body() data: any) {
-    return this.departmentsService.update(id, data);
+  async update(@Param('id') id: string, @Body() dto: UpdateDepartmentDto) {
+    return this.departmentsService.update(id, dto);
   }
 
   @Delete(':id')

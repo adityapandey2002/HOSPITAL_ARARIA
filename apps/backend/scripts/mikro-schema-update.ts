@@ -1,14 +1,14 @@
 /**
  * MikroORM ↔ PostgreSQL schema drift check.
  *
- * Prisma remains the system of record for DDL (`npm run db:migrate`), so this
- * script never writes anything. It introspects the live database and prints the
- * DDL that the entities in `src/modules/abdm/entities` expect — if that output is
- * non-empty, the entities and the database have drifted and a matching Prisma
- * migration is missing.
+ * MikroORM owns the DDL for the five clinical/audit tables (see
+ * docs/adr/0001-dual-orm-table-ownership.md). This script never writes: it
+ * introspects the live database and prints the DDL the entities in
+ * `src/modules/abdm/entities` and `src/common/mikro/entities` expect. Non-empty
+ * output means the entities and the database have drifted.
  *
  * Requires a reachable database, because the comparison is against the real
- * schema rather than the Prisma file.
+ * schema rather than the entity files alone.
  *
  *   npm run mikro:schema:update
  */
@@ -45,9 +45,9 @@ async function main(): Promise<number> {
     console.error('DRIFT DETECTED — the database does not match the MikroORM entities:\n');
     console.error(trimmed);
     console.error(
-      '\nDo not apply this DDL directly. Add a matching migration to prisma/schema.prisma',
+      '\nDo not apply this DDL by hand in production. Capture it as the MikroORM-owned',
     );
-    console.error('and run "npm run db:migrate", then mirror it in the entity files.');
+    console.error('schema change it represents, then re-run this check.');
     return 1;
   } finally {
     await orm.close(true);
@@ -60,7 +60,7 @@ main()
     if (error instanceof Error && 'code' in error && error.code === 'ECONNREFUSED') {
       console.error(
         'Cannot reach PostgreSQL — start it with "docker-compose up -d postgres" ' +
-          'and set DB_HOST/DB_PORT/DB_NAME, then re-run this check.',
+          'or point DATABASE_URL at a reachable server, then re-run this check.',
       );
       process.exit(2);
     }

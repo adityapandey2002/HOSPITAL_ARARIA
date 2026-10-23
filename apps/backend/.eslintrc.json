@@ -14,7 +14,7 @@
   "parserOptions": {
     "ecmaVersion": "latest",
     "sourceType": "module",
-    "project": "./tsconfig.json"
+    "project": "./tsconfig.eslint.json"
   },
   "plugins": [
     "@typescript-eslint",
@@ -33,7 +33,6 @@
     "dist/",
     "build/",
     "*.config.js",
-    "*.config.ts",
-    "prisma/"
+    "*.config.ts"
   ]
 }

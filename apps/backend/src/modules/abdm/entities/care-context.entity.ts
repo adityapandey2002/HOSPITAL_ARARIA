@@ -18,36 +18,36 @@ export class CareContext {
   id: string = newId();
 
   @ManyToOne(() => AbhaProfile, { cascade: [Cascade.PERSIST], fieldName: 'abhaProfileId' })
-  abhaProfile: AbhaProfile;
+  abhaProfile!: AbhaProfile;
 
   @Property()
   @Index({ name: 'care_contexts_abhaProfileId_idx' })
-  abhaProfileId: string;
+  abhaProfileId!: string;
 
   /** Human-facing reference printed on the OPD slip, e.g. `CC/2026/000123`. */
   @Property()
   @Unique()
   @Index({ name: 'care_contexts_referenceNumber_idx' })
-  referenceNumber: string;
+  referenceNumber!: string;
 
   /** Display name shown in the ABDM PHR (Personal Health Record) app. */
   @Property()
-  displayName: string;
+  displayName!: string;
 
   @Property()
-  facilityName: string;
+  facilityName!: string;
 
   /** ABDM HIP identifier issued to this hospital. */
   @Property()
   @Index({ name: 'care_contexts_facilityId_idx' })
-  facilityId: string;
+  facilityId!: string;
 
   /** `OPDC`, `IPD`, `EMERGENCY`, `LAB`, … */
   @Property()
-  careContextType: string;
+  careContextType!: string;
 
   @Property()
-  startDate: Date;
+  startDate!: Date;
 
   @Property({ nullable: true })
   endDate?: Date;

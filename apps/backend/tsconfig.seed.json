@@ -1,7 +1,7 @@
 {
   // Dedicated config for `npm run db:seed`.
   //
-  // The seed lives in prisma/ (outside the backend's rootDir of ./src) and is
+  // The seed lives in scripts/ (outside the backend's rootDir of ./src) and is
   // run through ts-node, so it needs its own rootDir and file set. This also
   // avoids passing --compiler-options on the command line, which Windows
   // cmd.exe mangles by stripping the inner double quotes.
@@ -10,9 +10,12 @@
     "module": "commonjs",
     "rootDir": ".",
     "noEmit": false,
+    // `emitDecoratorMetadata` + `declaration` are only needed for the Nest
+    // build; the seed never imports a decorated class, so switch them off to
+    // keep ts-node fast.
     "declaration": false,
     "declarationMap": false,
     "sourceMap": false
   },
-  "include": ["prisma/**/*.ts"]
+  "include": ["scripts/**/*.ts"]
 }

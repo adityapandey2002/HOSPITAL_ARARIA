@@ -7,13 +7,9 @@ import { Public } from '../../common/decorators/public.decorator';
 import { PaginationDto } from '../../common/dto/pagination.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
-import {
-  BLOOD_COMPONENT_TYPES,
-  BLOOD_GROUPS,
-  BloodBankService,
-  type BloodComponentTypeValue,
-  type BloodGroupValue,
-} from './blood-bank.service';
+import { AdjustBloodStockDto, SetBloodStockDto } from './dto/blood-stock.dto';
+
+import { BLOOD_COMPONENT_TYPES, BLOOD_GROUPS, BloodBankService } from './blood-bank.service';
 
 @ApiTags('Blood Bank')
 @Controller('blood-bank')
@@ -55,15 +51,8 @@ export class BloodBankController {
   @Roles(UserRole.ADMIN, UserRole.STAFF)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Adjust blood stock by a relative amount (Admin/Staff only)' })
-  async updateStock(
-    @Body()
-    data: {
-      bloodGroup: BloodGroupValue;
-      componentType: BloodComponentTypeValue;
-      units: number;
-    }
-  ) {
-    return this.bloodBankService.updateStock(data.bloodGroup, data.componentType, data.units);
+  async updateStock(@Body() dto: AdjustBloodStockDto) {
+    return this.bloodBankService.updateStock(dto.bloodGroup, dto.componentType, dto.units);
   }
 
   @Put('stock')
@@ -71,15 +60,8 @@ export class BloodBankController {
   @Roles(UserRole.ADMIN, UserRole.STAFF)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Set blood stock to an absolute quantity (Admin/Staff only)' })
-  async setStock(
-    @Body()
-    data: {
-      bloodGroup: BloodGroupValue;
-      componentType: BloodComponentTypeValue;
-      units: number;
-    }
-  ) {
-    return this.bloodBankService.setStock(data.bloodGroup, data.componentType, data.units);
+  async setStock(@Body() dto: SetBloodStockDto) {
+    return this.bloodBankService.setStock(dto.bloodGroup, dto.componentType, dto.units);
   }
 }
 

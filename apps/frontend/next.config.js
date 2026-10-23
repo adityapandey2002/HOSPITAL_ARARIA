@@ -1,6 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  // Required by apps/frontend/Dockerfile: emits .next/standalone/server.js
+  output: 'standalone',
   transpilePackages: ['@dh-araria/ui', '@dh-araria/shared'],
   experimental: {
     optimizePackageImports: ['lucide-react'],

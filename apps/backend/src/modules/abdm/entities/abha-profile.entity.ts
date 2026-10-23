@@ -3,8 +3,8 @@
  * Account) identity, used as the patient identifier for consent-scoped sharing.
  *
  * Implemented with MikroORM (rather than Drizzle) because ABHA writes touch
- * identity data and must be auditable and transactional. Column names mirror
- * `prisma/schema.prisma`, which owns the migrations.
+ * identity data and must be auditable and transactional. MikroORM owns the DDL
+ * for this table; see docs/adr/0001-dual-orm-table-ownership.md.
  */
 import { Entity, Index, PrimaryKey, Property, Unique } from '@mikro-orm/core';
 
@@ -19,29 +19,29 @@ export class AbhaProfile {
   @Property()
   @Unique()
   @Index({ name: 'abha_profiles_abhaId_idx' })
-  abhaId: string;
+  abhaId!: string;
 
   /** Local `users.id` this profile is linked to. */
   @Property()
   @Unique()
   @Index({ name: 'abha_profiles_userId_idx' })
-  userId: string;
+  userId!: string;
 
   /** ABDM "health ID" handle, still accepted by the gateway. */
   @Property()
   @Unique()
   @Index({ name: 'abha_profiles_healthId_idx' })
-  healthId: string;
+  healthId!: string;
 
   @Property()
-  name: string;
+  name!: string;
 
   /** M | F | O | U (per ABDM spec). */
   @Property()
-  gender: string;
+  gender!: string;
 
   @Property()
-  dateOfBirth: Date;
+  dateOfBirth!: Date;
 
   @Property({ nullable: true })
   phone?: string;

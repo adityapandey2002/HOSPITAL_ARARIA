@@ -2,9 +2,9 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { ScheduleModule } from '@nestjs/schedule';
-import { TerminusModule } from '@nestjs/terminus';
 import { APP_GUARD } from '@nestjs/core';
 
+import { RolesGuard } from './common/auth/roles.guard';
 import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
 import { DoctorsModule } from './modules/doctors/doctors.module';
@@ -13,6 +13,8 @@ import { AppointmentsModule } from './modules/appointments/appointments.module';
 import { BloodBankModule } from './modules/blood-bank/blood-bank.module';
 import { GrievancesModule } from './modules/grievances/grievances.module';
 import { NoticesModule } from './modules/notices/notices.module';
+import { ContactModule } from './modules/contact/contact.module';
+import { AuditQueryModule } from './modules/audit/audit.module';
 import { HealthModule } from './modules/health/health.module';
 import { AbdmModule } from './modules/abdm/abdm.module';
 import { CommonModule } from './common/common.module';
@@ -47,10 +49,7 @@ import { validationSchema } from './config/validation';
     // Scheduling
     ScheduleModule.forRoot(),
 
-    // Health checks
-    TerminusModule,
-
-    // Common module (Prisma + Drizzle + MikroORM + audit)
+    // Common module (Drizzle + MikroORM + audit)
     CommonModule,
 
     // Feature modules
@@ -62,7 +61,9 @@ import { validationSchema } from './config/validation';
     BloodBankModule,
     GrievancesModule,
     NoticesModule,
+    ContactModule,
     HealthModule,
+    AuditQueryModule,
 
     // ABDM (clinical / MikroORM-backed)
     AbdmModule,
@@ -71,6 +72,15 @@ import { validationSchema } from './config/validation';
     {
       provide: APP_GUARD,
       useClass: ThrottlerGuard,
+    },
+    // Registered globally so `@Roles(...)` is always enforced. It returns true
+    // when a route declares no roles, and was previously a plain provider that
+    // only ran where a controller remembered to list it — which six routes did
+    // not, exposing admin appointment data and blood-stock writes to any
+    // authenticated patient.
+    {
+      provide: APP_GUARD,
+      useClass: RolesGuard,
     },
   ],
 })

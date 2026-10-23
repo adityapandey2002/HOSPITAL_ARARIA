@@ -3,157 +3,297 @@ import {
   NotFoundException,
   ConflictException,
   BadRequestException,
+  ForbiddenException,
+  Inject,
 } from '@nestjs/common';
-import { PrismaService } from '../../common/prisma/prisma.service';
+import { and, asc, count, desc, eq, gte, inArray, lt } from 'drizzle-orm';
+import type { AnyPgColumn } from 'drizzle-orm/pg-core';
+import { AppointmentStatus, AppointmentType, isStaffRole } from '@dh-araria/shared';
+
 import { PaginationDto } from '../../common/dto/pagination.dto';
-import { AppointmentStatus, AppointmentType } from '@dh-araria/shared';
+import { DRIZZLE, type DrizzleDb } from '../../common/drizzle/drizzle.module';
+import { newId } from '../../common/drizzle/id';
+import { appointments, departments, doctors, timeSlots, users } from '../../common/drizzle/schema';
+import { addUtcDays, startOfUtcDay } from '../../common/utils/date';
+
+/** Allow-listed sort targets — `sortBy` arrives from the query string. */
+const SORTABLE: Record<string, AnyPgColumn> = {
+  appointmentDate: appointments.appointmentDate,
+  createdAt: appointments.createdAt,
+  status: appointments.status,
+  tokenNumber: appointments.tokenNumber,
+};
+
+/** Statuses that occupy a slot. Cancelled / completed rows do not. */
+const ACTIVE_STATUSES: AppointmentStatus[] = [
+  AppointmentStatus.PENDING,
+  AppointmentStatus.CONFIRMED,
+];
+
+/**
+ * Every appointment response uses this one shape. Prisma previously returned
+ * three different projections, one of which (`patient: true`) leaked the
+ * password hash — so a single projection is both simpler and safer.
+ */
+const APPOINTMENT_DETAIL = {
+  id: appointments.id,
+  patientId: appointments.patientId,
+  doctorId: appointments.doctorId,
+  departmentId: appointments.departmentId,
+  appointmentDate: appointments.appointmentDate,
+  startTime: appointments.startTime,
+  endTime: appointments.endTime,
+  status: appointments.status,
+  type: appointments.type,
+  reason: appointments.reason,
+  notes: appointments.notes,
+  abhaId: appointments.abhaId,
+  tokenNumber: appointments.tokenNumber,
+  createdAt: appointments.createdAt,
+  updatedAt: appointments.updatedAt,
+  patient: {
+    id: users.id,
+    name: users.name,
+    email: users.email,
+    phone: users.phone,
+    abhaId: users.abhaId,
+  },
+  doctor: {
+    id: doctors.id,
+    name: doctors.name,
+    specialization: doctors.specialization,
+    departmentId: doctors.departmentId,
+    consultationFee: doctors.consultationFee,
+  },
+  department: {
+    id: departments.id,
+    name: departments.name,
+  },
+} as const;
+
+export interface AppointmentFilters {
+  patientId?: string;
+  doctorId?: string;
+  departmentId?: string;
+  status?: AppointmentStatus;
+  type?: AppointmentType;
+  /** Inclusive lower bound (calendar day). */
+  dateFrom?: string | Date;
+  /** Inclusive upper bound (calendar day). */
+  dateTo?: string | Date;
+}
+
+export interface CreateAppointmentInput {
+  doctorId: string;
+  appointmentDate: string | Date;
+  startTime: string;
+  endTime?: string;
+  type?: AppointmentType;
+  reason?: string;
+  notes?: string;
+  abhaId?: string;
+}
+
+export interface UpdateAppointmentInput {
+  appointmentDate?: string | Date;
+  startTime?: string;
+  endTime?: string;
+  status?: AppointmentStatus;
+  type?: AppointmentType;
+  reason?: string;
+  notes?: string;
+  abhaId?: string;
+}
 
 @Injectable()
 export class AppointmentsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(@Inject(DRIZZLE) private readonly db: DrizzleDb) {}
 
-  async findAll(pagination: PaginationDto, filters?: any) {
-    const { page = 1, limit = 10, sortBy = 'appointmentDate', sortOrder = 'desc' } = pagination;
-    const skip = (page - 1) * limit;
+  async findAll(pagination: PaginationDto, filters: AppointmentFilters = {}) {
+    const page = pagination.page ?? 1;
+    const limit = pagination.limit ?? 10;
+    const offset = (page - 1) * limit;
+    const column = SORTABLE[pagination.sortBy ?? 'appointmentDate'] ?? appointments.appointmentDate;
+    const orderBy = pagination.sortOrder === 'asc' ? asc(column) : desc(column);
 
-    const where: any = {};
-    if (filters?.patientId) where.patientId = filters.patientId;
-    if (filters?.doctorId) where.doctorId = filters.doctorId;
-    if (filters?.departmentId) where.departmentId = filters.departmentId;
-    if (filters?.status) where.status = filters.status;
-    if (filters?.type) where.type = filters.type;
-    if (filters?.dateFrom || filters?.dateTo) {
-      where.appointmentDate = {};
-      if (filters.dateFrom) where.appointmentDate.gte = new Date(filters.dateFrom);
-      if (filters.dateTo) where.appointmentDate.lte = new Date(filters.dateTo);
+    const conditions = [];
+    if (filters.patientId) conditions.push(eq(appointments.patientId, filters.patientId));
+    if (filters.doctorId) conditions.push(eq(appointments.doctorId, filters.doctorId));
+    if (filters.departmentId) conditions.push(eq(appointments.departmentId, filters.departmentId));
+    if (filters.status) conditions.push(eq(appointments.status, filters.status));
+    if (filters.type) conditions.push(eq(appointments.type, filters.type));
+
+    // Half-open day windows: `dateTo` is inclusive for the caller but expressed
+    // as `< next midnight`, so the whole final day is covered.
+    if (filters.dateFrom) {
+      conditions.push(gte(appointments.appointmentDate, startOfUtcDay(filters.dateFrom)));
+    }
+    if (filters.dateTo) {
+      conditions.push(
+        lt(appointments.appointmentDate, addUtcDays(startOfUtcDay(filters.dateTo), 1))
+      );
     }
 
-    const [appointments, total] = await Promise.all([
-      this.prisma.appointment.findMany({
-        where,
-        skip,
-        take: limit,
-        orderBy: { [sortBy]: sortOrder },
-        include: {
-          patient: { select: { id: true, name: true, email: true, phone: true } },
-          doctor: { select: { id: true, name: true, specialization: true, departmentId: true } },
-          department: { select: { id: true, name: true } },
-        },
-      }),
-      this.prisma.appointment.count({ where }),
+    const where = conditions.length > 0 ? and(...conditions) : undefined;
+
+    const [rows, totals] = await Promise.all([
+      this.db
+        .select(APPOINTMENT_DETAIL)
+        .from(appointments)
+        .innerJoin(users, eq(appointments.patientId, users.id))
+        .innerJoin(doctors, eq(appointments.doctorId, doctors.id))
+        .innerJoin(departments, eq(appointments.departmentId, departments.id))
+        .where(where)
+        .orderBy(orderBy)
+        .limit(limit)
+        .offset(offset),
+      this.db.select({ value: count() }).from(appointments).where(where),
     ]);
 
-    return {
-      data: appointments,
-      meta: { page, limit, total, totalPages: Math.ceil(total / limit) },
-    };
+    const total = totals[0]?.value ?? 0;
+    return { data: rows, meta: { page, limit, total, totalPages: Math.ceil(total / limit) } };
   }
 
   async findById(id: string) {
-    const appointment = await this.prisma.appointment.findUnique({
-      where: { id },
-      include: {
-        patient: { select: { id: true, name: true, email: true, phone: true, abhaId: true } },
-        doctor: {
-          select: {
-            id: true,
-            name: true,
-            specialization: true,
-            departmentId: true,
-            consultationFee: true,
-          },
-        },
-        department: { select: { id: true, name: true } },
-      },
-    });
+    const [appointment] = await this.db
+      .select(APPOINTMENT_DETAIL)
+      .from(appointments)
+      .innerJoin(users, eq(appointments.patientId, users.id))
+      .innerJoin(doctors, eq(appointments.doctorId, doctors.id))
+      .innerJoin(departments, eq(appointments.departmentId, departments.id))
+      .where(eq(appointments.id, id))
+      .limit(1);
+
     if (!appointment) throw new NotFoundException('Appointment not found');
     return appointment;
   }
 
-  async create(data: any, patientId: string) {
-    // Check if doctor exists and is active
-    const doctor = await this.prisma.doctor.findUnique({
-      where: { id: data.doctorId },
-      include: { timeSlots: true, department: true },
-    });
-    if (!doctor || !doctor.isActive) throw new NotFoundException('Doctor not found or inactive');
+  /**
+   * Books a slot.
+   *
+   * The whole invariant runs inside one transaction: an inactive doctor, an
+   * unavailable slot, a double-booking and the token number are all checked and
+   * written together. `SELECT ... FOR UPDATE` on the doctor row serialises
+   * concurrent bookings for the same doctor, which is what makes the
+   * double-booking check meaningful — without it two requests can both read
+   * "no conflict" and both insert.
+   */
+  async create(data: CreateAppointmentInput, patientId: string) {
+    const appointmentDate = startOfUtcDay(data.appointmentDate);
+    const dayOfWeek = appointmentDate.getUTCDay();
 
-    // Check if time slot is available
-    const appointmentDate = new Date(data.appointmentDate);
-    const dayOfWeek = appointmentDate.getDay();
-    const timeSlot = doctor.timeSlots.find(
-      (slot) =>
-        slot.dayOfWeek === dayOfWeek && slot.startTime === data.startTime && slot.isAvailable
-    );
-    if (!timeSlot) throw new BadRequestException('Selected time slot is not available');
+    const createdId = await this.db.transaction(async (tx) => {
+      const [doctor] = await tx
+        .select({
+          id: doctors.id,
+          departmentId: doctors.departmentId,
+          isActive: doctors.isActive,
+        })
+        .from(doctors)
+        .where(eq(doctors.id, data.doctorId))
+        .for('update');
 
-    // Check for conflicting appointments
-    const conflicting = await this.prisma.appointment.findFirst({
-      where: {
-        doctorId: data.doctorId,
-        appointmentDate,
-        startTime: data.startTime,
-        status: { in: [AppointmentStatus.PENDING, AppointmentStatus.CONFIRMED] },
-      },
-    });
-    if (conflicting) throw new ConflictException('Time slot already booked');
+      if (!doctor || !doctor.isActive) {
+        throw new NotFoundException('Doctor not found or inactive');
+      }
 
-    // Generate token number
-    const todaysAppointments = await this.prisma.appointment.count({
-      where: {
-        doctorId: data.doctorId,
-        appointmentDate,
-        status: { in: [AppointmentStatus.PENDING, AppointmentStatus.CONFIRMED] },
-      },
+      const [slot] = await tx
+        .select({ id: timeSlots.id })
+        .from(timeSlots)
+        .where(
+          and(
+            eq(timeSlots.doctorId, data.doctorId),
+            eq(timeSlots.dayOfWeek, dayOfWeek),
+            eq(timeSlots.startTime, data.startTime),
+            eq(timeSlots.isAvailable, true)
+          )
+        )
+        .limit(1);
+
+      if (!slot) throw new BadRequestException('Selected time slot is not available');
+
+      const active = and(
+        eq(appointments.doctorId, data.doctorId),
+        eq(appointments.appointmentDate, appointmentDate),
+        inArray(appointments.status, ACTIVE_STATUSES)
+      );
+
+      const [conflicting] = await tx
+        .select({ id: appointments.id })
+        .from(appointments)
+        .where(and(active, eq(appointments.startTime, data.startTime)))
+        .limit(1);
+
+      if (conflicting) throw new ConflictException('Time slot already booked');
+
+      const [totals] = await tx.select({ value: count() }).from(appointments).where(active);
+
+      const [created] = await tx
+        .insert(appointments)
+        .values({
+          id: newId(),
+          patientId,
+          doctorId: data.doctorId,
+          departmentId: doctor.departmentId,
+          appointmentDate,
+          startTime: data.startTime,
+          endTime: data.endTime ?? this.calculateEndTime(data.startTime, 20),
+          status: AppointmentStatus.PENDING,
+          type: data.type ?? AppointmentType.OPD,
+          reason: data.reason,
+          notes: data.notes,
+          abhaId: data.abhaId,
+          tokenNumber: (totals?.value ?? 0) + 1,
+        })
+        .returning({ id: appointments.id });
+
+      return created.id;
     });
 
-    return this.prisma.appointment.create({
-      data: {
-        patientId,
-        doctorId: data.doctorId,
-        departmentId: doctor.departmentId,
-        appointmentDate,
-        startTime: data.startTime,
-        endTime: data.endTime || this.calculateEndTime(data.startTime, 20),
-        status: AppointmentStatus.PENDING,
-        type: data.type || AppointmentType.OPD,
-        reason: data.reason,
-        notes: data.notes,
-        abhaId: data.abhaId,
-        tokenNumber: todaysAppointments + 1,
-      },
-      include: {
-        patient: { select: { id: true, name: true, email: true, phone: true } },
-        doctor: { select: { id: true, name: true, specialization: true } },
-        department: { select: { id: true, name: true } },
-      },
-    });
+    return this.findById(createdId);
   }
 
-  async update(id: string, data: any) {
+  async update(id: string, data: UpdateAppointmentInput) {
     await this.findById(id);
-    return this.prisma.appointment.update({ where: { id }, data });
+
+    const patch: Record<string, unknown> = { ...data };
+    if (data.appointmentDate) {
+      patch.appointmentDate = startOfUtcDay(data.appointmentDate);
+    }
+    patch.updatedAt = new Date();
+
+    const [updated] = await this.db
+      .update(appointments)
+      .set(patch)
+      .where(eq(appointments.id, id))
+      .returning({ id: appointments.id });
+
+    return this.findById(updated.id);
   }
 
   async updateStatus(id: string, status: AppointmentStatus) {
-    return this.prisma.appointment.update({
-      where: { id },
-      data: { status },
-      include: { patient: true, doctor: true, department: true },
-    });
+    await this.findById(id);
+
+    await this.db
+      .update(appointments)
+      .set({ status, updatedAt: new Date() })
+      .where(eq(appointments.id, id));
+
+    return this.findById(id);
   }
 
   async cancel(id: string, userId: string, userRole: string) {
     const appointment = await this.findById(id);
-    if (appointment.patientId !== userId && userRole !== 'ADMIN' && userRole !== 'DOCTOR') {
-      throw new BadRequestException('Not authorized to cancel this appointment');
+    if (appointment.patientId !== userId && !isStaffRole(userRole) && userRole !== 'DOCTOR') {
+      throw new ForbiddenException('Not authorized to cancel this appointment');
     }
     return this.updateStatus(id, AppointmentStatus.CANCELLED);
   }
 
   async delete(id: string) {
     await this.findById(id);
-    return this.prisma.appointment.delete({ where: { id } });
+    await this.db.delete(appointments).where(eq(appointments.id, id));
+    return { success: true };
   }
 
   async getMyAppointments(patientId: string, pagination: PaginationDto) {
@@ -161,11 +301,13 @@ export class AppointmentsService {
   }
 
   async getDoctorAppointments(doctorId: string, pagination: PaginationDto, date?: string) {
-    const filters: any = { doctorId };
+    const filters: AppointmentFilters = { doctorId };
     if (date) {
-      const appointmentDate = new Date(date);
-      filters.dateFrom = appointmentDate;
-      filters.dateTo = appointmentDate;
+      // One calendar day, expressed as an inclusive range. The previous version
+      // passed the same instant as both bounds, so it matched only appointments
+      // stored at exactly midnight.
+      filters.dateFrom = date;
+      filters.dateTo = date;
     }
     return this.findAll(pagination, filters);
   }

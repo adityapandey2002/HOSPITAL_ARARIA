@@ -688,29 +688,42 @@ GET /api/v1/health
 {
   "status": "ok",
   "info": {
-    "database": { "status": "up" },
-    "memory_heap": { "status": "up" },
-    "memory_rss": { "status": "up" },
-    "disk": { "status": "up" }
+    "database": {
+      "status": "up",
+      "drizzle": "up",
+      "mikro": "up",
+      "drizzlePool": { "total": 1, "idle": 1, "waiting": 0 }
+    }
   },
-  "details": { ... }
+  "error": {},
+  "details": { "database": { "...": "same object" } }
 }
 ```
+
+`GET /api/v1/health/live` is a dependency-free liveness probe that returns
+`{ "status": "ok", "timestamp": "..." }`.
 
 ---
 
 ## Webhooks (Phase 3 - ABDM)
 
-### ABDM Webhook Endpoints
+### Inbound callbacks
+
+The ABDM gateway callbacks (`on-discover`, `on-request`, `on-notify`,
+`on-consent`) are **not implemented yet**. They require an ABDM sandbox
+enrolment, the gateway's signing certificate and a verified request-signature
+scheme, none of which exist in this repository. Do not expose placeholder
+routes: an unverified callback that writes clinical data would be worse than a
+404.
+
+### Available ABDM routes
 
 ```http
-POST /api/v1/abdm/on-discover
-POST /api/v1/abdm/on-request
-POST /api/v1/abdm/on-notify
-POST /api/v1/abdm/on-consent
+GET  /api/v1/abdm/bundles/:id          # Fetch one stored FHIR bundle (staff only)
+POST /api/v1/abdm/consents/:id/revoke  # Revoke a consent artefact (staff only)
 ```
 
-These endpoints will be implemented in Phase 3 for ABDM integration.
+Both are guarded by JWT authentication and write to the audit trail.
 
 ---
 

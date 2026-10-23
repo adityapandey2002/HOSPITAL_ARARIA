@@ -4,15 +4,26 @@ import * as Joi from 'joi';
 export const validationSchema = Joi.object({
   // Application
   PORT: Joi.number().default(3001),
-  NODE_ENV: Joi.string().valid('development', 'production', 'test').default('development'),
+  NODE_ENV: Joi.string()
+    .valid('development', 'production', 'test', 'staging')
+    .default('development'),
   FRONTEND_URL: Joi.string().uri().default('http://localhost:3000'),
 
-  // Database
-  DB_HOST: Joi.string().default('localhost'),
-  DB_PORT: Joi.number().default(5432),
-  DB_USERNAME: Joi.string().default('postgres'),
-  DB_PASSWORD: Joi.string().default('postgres'),
-  DB_NAME: Joi.string().default('dh_araria'),
+  // Database — DATABASE_URL is the single required scheme. DB_* remain as
+  // optional explicit overrides for the local docker-compose PostgreSQL.
+  DATABASE_URL: Joi.string()
+    .pattern(/^postgres(ql)?:\/\//)
+    .required()
+    .messages({
+      'any.required':
+        'DATABASE_URL is required. Set it in apps/backend/.env, e.g. postgresql://user:password@host:5432/database',
+      'string.pattern.base': 'DATABASE_URL must start with postgresql:// or postgres://',
+    }),
+  DB_HOST: Joi.string().optional(),
+  DB_PORT: Joi.number().optional(),
+  DB_USERNAME: Joi.string().optional(),
+  DB_PASSWORD: Joi.string().allow('').optional(),
+  DB_NAME: Joi.string().optional(),
   // TLS toggle. Leave unset to auto-detect: enabled for any non-localhost host
   // (Supabase/Neon/Railway all require TLS), disabled for a local devserver.
   DB_SSL: Joi.boolean().optional(),

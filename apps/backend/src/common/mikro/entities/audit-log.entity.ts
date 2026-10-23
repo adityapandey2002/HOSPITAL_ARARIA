@@ -6,8 +6,9 @@
  * Rows here are append-only: no service updates or deletes them, and
  * `AuditLogService.purgeOlderThan()` performs the single scheduled retention cut.
  *
- * The physical column names mirror `prisma/schema.prisma` (camelCase columns,
- * snake_case table) because Prisma owns the DDL migrations.
+ * The physical column names are camelCase and the table name is snake_case,
+ * matching the Drizzle-owned application tables and the conventions recorded in
+ * docs/adr/0001-dual-orm-table-ownership.md.
  */
 import { Entity, Index, PrimaryKey, Property } from '@mikro-orm/core';
 
@@ -21,12 +22,12 @@ export class AuditLog {
   /** e.g. `FHIR_BUNDLE_CREATE`, `LOGIN_FAILED`, `APPOINTMENT_CANCEL`. */
   @Property()
   @Index({ name: 'audit_logs_action_idx' })
-  action: string;
+  action!: string;
 
   /** e.g. `FhirBundle`, `ConsentArtefact`, `User`. */
   @Property()
   @Index({ name: 'audit_logs_resource_idx' })
-  resource: string;
+  resource!: string;
 
   @Property({ nullable: true })
   @Index({ name: 'audit_logs_resourceId_idx' })

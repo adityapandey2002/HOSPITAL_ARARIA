@@ -53,8 +53,8 @@ coverage/
 *.sqlite
 *.db
 
-# Prisma
-prisma/migrations/
+# Drizzle migration history is source — it must be committed.
+# (Nothing here should exclude apps/backend/drizzle/.)
 
 # Docker
 .docker/
