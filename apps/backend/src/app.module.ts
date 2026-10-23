@@ -5,6 +5,7 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { APP_GUARD } from '@nestjs/core';
 
 import { RolesGuard } from './common/auth/roles.guard';
+import { JwtAuthGuard } from './modules/auth/guards/jwt-auth.guard';
 import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
 import { DoctorsModule } from './modules/doctors/doctors.module';
@@ -72,6 +73,13 @@ import { validationSchema } from './config/validation';
     {
       provide: APP_GUARD,
       useClass: ThrottlerGuard,
+    },
+    // Authenticate first (JwtAuthGuard skips @Public() routes), then authorize.
+    // Order matters: JwtAuthGuard must run before RolesGuard so request.user is
+    // populated before role checks.
+    {
+      provide: APP_GUARD,
+      useClass: JwtAuthGuard,
     },
     // Registered globally so `@Roles(...)` is always enforced. It returns true
     // when a route declares no roles, and was previously a plain provider that

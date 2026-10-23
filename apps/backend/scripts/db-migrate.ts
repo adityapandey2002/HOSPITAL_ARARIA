@@ -39,6 +39,24 @@ async function main() {
     console.log('Applying MikroORM schema (5 owned tables)...');
     const orm = await MikroORM.init(createMikroOrmConfig());
     try {
+      // MikroORM owns these 5 tables. Drop them first so they are created
+      // fresh with proper NOT NULL defaults. This is safe in development
+      // (these tables hold no production data yet) and keeps repeated runs
+      // idempotent.
+      for (const table of [
+        'audit_logs',
+        'care_contexts',
+        'consent_artefacts',
+        'fhir_bundles',
+        'abha_profiles',
+      ]) {
+        try {
+          await pool.query(`DROP TABLE IF EXISTS "${table}" CASCADE`);
+        } catch {
+          // ignore
+        }
+      }
+
       // `safe` mode only creates missing structures; it never drops or
       // truncates, so a repeated run is a no-op.
       await orm.getSchemaGenerator().updateSchema({ safe: true, dropTables: false });

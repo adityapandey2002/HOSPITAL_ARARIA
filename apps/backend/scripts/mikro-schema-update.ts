@@ -26,6 +26,10 @@ import {
   FhirBundle,
 } from '../src/modules/abdm/entities';
 
+// Load .env so DATABASE_URL / DB_* are available to resolveDatabaseConnection.
+import { config as loadEnv } from 'dotenv';
+loadEnv();
+
 async function main(): Promise<number> {
   const orm = await MikroORM.init(
     createMikroOrmConfig({

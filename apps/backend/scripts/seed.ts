@@ -261,6 +261,8 @@ async function main() {
           endTime: '13:00',
           isAvailable: true,
           maxAppointments: 20,
+          createdAt: new Date(),
+          updatedAt: new Date(),
         }))
       )
       .onConflictDoNothing();
@@ -272,7 +274,14 @@ async function main() {
       const unitsAvailable = Math.floor(Math.random() * 40) + 10;
       await db
         .insert(schema.bloodStock)
-        .values({ id: newId(), bloodGroup, componentType, unitsAvailable })
+        .values({
+          id: newId(),
+          bloodGroup,
+          componentType,
+          unitsAvailable,
+          createdAt: new Date(),
+          lastUpdated: new Date(),
+        })
         .onConflictDoUpdate({
           target: [schema.bloodStock.bloodGroup, schema.bloodStock.componentType],
           set: { unitsAvailable, lastUpdated: new Date() },
@@ -325,6 +334,8 @@ async function main() {
       isPublished: true,
       language: 'en',
       authorId: admin.id,
+      createdAt: new Date(),
+      updatedAt: new Date(),
     });
   }
   console.log(`  notices: ${noticesData.length}`);

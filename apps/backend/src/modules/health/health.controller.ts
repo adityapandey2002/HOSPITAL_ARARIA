@@ -4,6 +4,7 @@ import { MikroORM } from '@mikro-orm/core';
 
 import { DrizzleService } from '../../common/drizzle/drizzle.service';
 import { MIKRO_ORM } from '../../common/mikro/mikro.module';
+import { Public } from '../../common/decorators/public.decorator';
 
 interface HealthDetail {
   status: 'up' | 'down';
@@ -68,6 +69,7 @@ export class HealthController {
   constructor(private readonly database: DatabaseHealthIndicator) {}
 
   @Get()
+  @Public()
   @ApiOperation({ summary: 'Health check endpoint' })
   @ApiResponse({ status: 200, description: 'Service is healthy' })
   @ApiResponse({ status: 503, description: 'Service is unhealthy' })
@@ -76,6 +78,7 @@ export class HealthController {
   }
 
   @Get('ready')
+  @Public()
   @ApiOperation({ summary: 'Readiness check endpoint' })
   @ApiResponse({ status: 200, description: 'Service is ready' })
   @ApiResponse({ status: 503, description: 'Service is not ready' })
@@ -84,6 +87,7 @@ export class HealthController {
   }
 
   @Get('live')
+  @Public()
   @ApiOperation({ summary: 'Liveness check endpoint' })
   @ApiResponse({ status: 200, description: 'Service is alive' })
   async live() {
