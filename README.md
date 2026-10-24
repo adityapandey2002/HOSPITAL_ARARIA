@@ -225,8 +225,8 @@ read it in a scoped inbox.
 | Route | Audience | Purpose |
 |-------|----------|---------|
 | `/feedback` | Public | The general form; the department is chosen from the active list |
-| `/feedback/[departmentId]` | Public | The same form with one department preselected — the link for a QR code or printed notice |
-| `/feedback/inbox` | Staff, signed in | Filters, stats, acknowledge/resolve, share links, access grants. `noindex`; redirects to `/login?redirect=/feedback/inbox` |
+| `/feedback/[departmentId]` | Public | The same form with one department preselected — a stable URL for printed notices |
+| `/feedback/inbox` | Staff, signed in | Filters, stats, acknowledge/resolve, access grants. `noindex`; redirects to `/login?redirect=/feedback/inbox` |
 
 Visibility has two layers:
 
