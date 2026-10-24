@@ -44,8 +44,16 @@ jobs:
       - name: Type-check shared package
         run: npm run build --workspace=packages/shared
 
+      - name: Lint backend
+        run: npm run lint --workspace=apps/backend
+
       - name: Build backend
         run: npm run build:backend
+
+      # Next 16 no longer lints during `next build`, so the frontend config
+      # would otherwise be unenforced on pull requests.
+      - name: Lint frontend
+        run: npm run lint --workspace=apps/frontend
 
       - name: Build frontend
         run: npm run build:frontend

@@ -16,6 +16,26 @@
       "package": "zod",
       "reason": "The fix requires zod 4.6.7, which is not published (latest 4.6.5). zod is used only for frontend form validation with bounded string fields; the backend re-validates every request with class-validator DTOs and Joi configuration validation, so an oversized-collection memory DoS cannot cross the trust boundary.",
       "expires": "2027-01-31"
+    },
+    {
+      "package": "body-parser",
+      "reason": "GHSA-27r3-jxmh-p828 (trailing bytes after a compressed body) is fixed in body-parser 2.4.0, which is not published (latest 2.3.0). Express 5 requires the 2.x line, so downgrading is not an option. Compensating control: both body parsers are mounted explicitly in src/bootstrap.ts with a 100 kB limit, so the decompressed body a single request can produce is bounded, and the Vercel function is capped at 30 s and 1024 MB. Revisit when 2.4.0 is published.",
+      "expires": "2027-01-31"
+    },
+    {
+      "package": "express",
+      "reason": "Reported only transitively: Express 5 is flagged because it depends on the vulnerable body-parser. No advisory names Express itself. The same 100 kB parser limit and 30 s serverless timeout documented for body-parser apply. Tracked through the body-parser entry so it disappears when that upgrade lands.",
+      "expires": "2027-01-31"
+    },
+    {
+      "package": "@nestjs/platform-express",
+      "reason": "Aggregate finding: the package is flagged only because it pulls Express 5 and body-parser 2.x. 11.2.5 is the newest release outside the separately flagged `<=11.1.14` and `11.2.6 - 12.0.0-alpha.7` ranges; 12.x would force TypeScript 6. Tracked through the body-parser entry.",
+      "expires": "2027-01-31"
+    },
+    {
+      "package": "multer",
+      "reason": "The newest advisory (GHSA-q7qp-rjg7-q26m) covers <2.5.0 and 2.5.0 is not published (latest 2.4.0), so no 2.x upgrade clears it and Nest pins multer 2.2.0 exactly. Compensating control: the backend exposes no upload endpoint at all - there is no FileInterceptor, FilesInterceptor or UploadedFile in apps/backend/src - so multer's multipart parser never runs. Revisit when 2.5.0 is published or an upload feature is added.",
+      "expires": "2027-01-31"
     }
   ]
 }

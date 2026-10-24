@@ -99,9 +99,15 @@ export class AuthService {
 
   async refreshTokens(refreshToken: string) {
     try {
-      const payload = this.jwtService.verify(refreshToken, {
+      const payload: TokenPayload = this.jwtService.verify(refreshToken, {
         secret: this.configService.get<string>('jwt.secret'),
       });
+
+      // Reject an access token presented at the refresh endpoint. The check is
+      // inside the try so every failure returns the same 401 shape.
+      if (payload.typ !== 'refresh') {
+        throw new UnauthorizedException('Invalid refresh token');
+      }
 
       const user = await this.usersService.findByIdOrNull(payload.sub);
 
@@ -168,11 +174,13 @@ export class AuthService {
 
     const token = this.signResetToken(user.id, user.email, user.password);
 
-    // No SMTP transport is wired up yet. Log the token in development so the
-    // flow is usable, and in development only return it to the caller; staging
-    // and production never expose it.
+    // No SMTP transport is wired up yet. A reset token is a bearer credential
+    // for the account, so it is only ever surfaced in development -- neither
+    // the log line nor the response may carry it in staging or production.
     const nodeEnv = this.configService.get<string>('nodeEnv', 'development');
-    this.logger.debug(`Password reset token for ${user.email}: ${token}`);
+    if (nodeEnv === 'development') {
+      this.logger.debug(`Password reset token for ${user.email}: ${token}`);
+    }
 
     return {
       success: true,
@@ -232,16 +240,20 @@ export class AuthService {
   }
 
   private async generateTokens(userId: string, email: string, role: string) {
-    const payload: TokenPayload = {
+    const claims = {
       sub: userId,
       email,
       role,
     };
 
-    const accessToken = this.jwtService.sign(payload);
-    const refreshToken = this.jwtService.sign(payload, {
-      expiresIn: this.configService.get<JwtSignOptions['expiresIn']>('jwt.refreshTokenExpiry'),
-    });
+    // The two tokens differ only by lifetime and by this `typ` claim; both
+    // verifiers (JwtStrategy for access, refreshTokens for refresh) reject the
+    // wrong one, so a stolen refresh token cannot be used to call the API.
+    const accessToken = this.jwtService.sign({ ...claims, typ: 'access' } satisfies TokenPayload);
+    const refreshToken = this.jwtService.sign(
+      { ...claims, typ: 'refresh' } satisfies TokenPayload,
+      { expiresIn: this.configService.get<JwtSignOptions['expiresIn']>('jwt.refreshTokenExpiry') }
+    );
 
     return {
       accessToken,

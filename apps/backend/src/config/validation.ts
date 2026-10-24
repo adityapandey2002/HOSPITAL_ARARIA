@@ -15,7 +15,8 @@ export const validationSchema = Joi.object({
         .split(',')
         .map((origin) => origin.trim())
         .filter(Boolean);
-      const valid = origins.length > 0 && origins.every((origin) => /^https?:\/\/[^\s]+$/.test(origin));
+      const valid =
+        origins.length > 0 && origins.every((origin) => /^https?:\/\/[^\s]+$/.test(origin));
       return valid ? value : helpers.error('string.uri');
     }, 'comma-separated URL list')
     .default('http://localhost:3000'),

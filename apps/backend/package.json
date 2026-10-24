@@ -9,7 +9,7 @@
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/main",
-    "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
+    "lint": "eslint \"{src,apps,libs,test}/**/*.ts\"",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
@@ -24,7 +24,8 @@
     "bootstrap:admin": "ts-node -P tsconfig.seed.json scripts/bootstrap-admin.ts",
     "schema:check": "ts-node -P tsconfig.seed.json scripts/schema-check.ts",
     "schema:check:live": "ts-node -P tsconfig.seed.json scripts/mikro-schema-update.ts",
-    "mikro:schema:update": "ts-node -P tsconfig.seed.json scripts/mikro-schema-update.ts"
+    "mikro:schema:update": "ts-node -P tsconfig.seed.json scripts/mikro-schema-update.ts",
+    "lint:fix": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix"
   },
   "dependencies": {
     "@dh-araria/shared": "*",

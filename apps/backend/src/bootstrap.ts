@@ -1,7 +1,7 @@
 /**
  * Shared application bootstrap.
  *
- * `main.ts` builds the app and listens on a port; `api/index.ts` builds the same
+ * `main.ts` builds the app and listens on a port; `api/index.js` builds the same
  * app and hands its Express instance to Vercel's Node runtime. Keeping the
  * middleware/prefix/pipe/filter wiring here means the two deployment shapes can
  * never drift apart.
@@ -32,6 +32,10 @@ export interface CreateAppOptions {
 export async function createApp(options: CreateAppOptions = {}): Promise<NestExpressApplication> {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     bufferLogs: true,
+    // The default parsers are registered with Nest's implicit 100 kB limit.
+    // Disabling them and mounting our own below keeps the limit a deliberate,
+    // reviewable number instead of a framework default that can drift.
+    bodyParser: false,
   });
 
   app.useLogger(new Logger('Bootstrap'));
@@ -60,6 +64,14 @@ export async function createApp(options: CreateAppOptions = {}): Promise<NestExp
   );
 
   app.use(compression());
+
+  // Request bodies on this API are small: the largest public payload is a
+  // feedback comment capped at 2000 characters, and every other DTO is
+  // shorter. A 100 kB ceiling bounds decompression work per request, which is
+  // the mitigating control for the unfixed body-parser advisory (see
+  // docs/SECURITY.md), and it fails fast with a 413 instead of buffering.
+  app.useBodyParser('json', { limit: '100kb' });
+  app.useBodyParser('urlencoded', { limit: '100kb', extended: true });
 
   // CORS configuration. FRONTEND_URL may be a comma-separated list so the
   // Vercel preview deployment and the production domain can both be allowed.

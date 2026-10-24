@@ -32,10 +32,7 @@
     "typescript": "^5.4.5"
   },
   "overrides": {
-    "multer": "^2.4.0",
-    "tar": "^7.5.22",
     "lodash": "^4.18.1",
-    "js-yaml@^4": "^4.3.2",
     "postcss@^8": "^8.5.29"
   },
   "engines": {
