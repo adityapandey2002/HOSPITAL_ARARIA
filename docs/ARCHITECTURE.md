@@ -777,10 +777,9 @@ advisory and confirm the effective limits in the Vercel dashboard.
    - Graceful degradation
 
 ### Implementation Stack
-- **Radix UI Primitives** - Accessible component foundations
-- **Tailwind CSS** - Utility-first with accessibility utilities
-- **axe-core** - Automated testing in CI
-- **Manual testing** - NVDA/JAWS + keyboard-only
+- **Tailwind CSS** - Utility-first styling with contrast and focus utilities
+- **React Testing Library + Jest** - Component tests, including label and keyboard assertions
+- **Manual testing** - keyboard-only and screen-reader checks (NVDA/JAWS); no axe automation is wired up yet
 
 ## Integration Architecture
 
@@ -788,8 +787,8 @@ advisory and confirm the effective limits in the Vercel dashboard.
 - Next.js frontend and NestJS API as two Vercel projects in `bom1`
 - Supabase PostgreSQL with the 11 + 5 table split
 - Internal JWT authentication (HS256)
-- Uploads written to the function filesystem, which is ephemeral on Vercel;
-  there is no object-storage backend yet
+- No file-upload endpoint and no object storage; `UPLOAD_PATH` is configured but
+  unused, and Vercel's function filesystem is ephemeral
 - External DPI integrations are not enabled: the clients and configuration keys
   exist, but no production credentials are set
 
