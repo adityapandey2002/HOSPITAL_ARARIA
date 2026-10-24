@@ -62,8 +62,8 @@ grants. There is no separate `HM` role in the database.
 
 `/feedback/<departmentId>` is the stable URL for one department's form, so it
 can be printed on a notice or sent to a patient. `/feedback` lists the active
-departments. There is no per-submission link and no share button; "link" always
-means the department form.
+departments. There is no per-submission link; the staff inbox's **Public
+feedback links** panel copies this URL. "Link" always means the department form.
 
 ### Honeypot
 
