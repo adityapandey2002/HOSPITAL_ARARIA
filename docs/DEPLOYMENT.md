@@ -25,9 +25,11 @@ It must never import from `src/`: Vercel transpiles TypeScript functions without
 `emitDecoratorMetadata`, which breaks Nest's dependency injection. `nest build`,
 run by the project's build command, emits the decorator metadata first.
 
-> The Kubernetes, Terraform and Nginx artefacts that earlier drafts of this
-> document described were never committed to this repository. They are not part
-> of this deployment path and nothing in the repo references them.
+> The Kubernetes and Terraform artefacts that earlier drafts of this document
+> described were never committed. A legacy `nginx/nginx.conf` and the `nginx`
+> service in `docker-compose.yml` remain for the old container stack, but the
+> Vercel deployment does not use them. `nginx/ssl/` and `nginx/conf.d/` are
+> absent, so that compose profile is not runnable as committed.
 
 ## Prerequisites
 
