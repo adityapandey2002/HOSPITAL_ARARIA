@@ -25,7 +25,7 @@ import { PgTable } from 'drizzle-orm/pg-core';
 import { createMikroOrmConfig } from '../src/common/mikro/mikro.config';
 import * as drizzleSchema from '../src/common/drizzle/schema';
 
-const EXPECTED_DRIZZLE_TABLES = 9;
+const EXPECTED_DRIZZLE_TABLES = 11;
 const EXPECTED_MIKRO_TABLES = 5;
 
 function drizzleTableNames(): Set<string> {

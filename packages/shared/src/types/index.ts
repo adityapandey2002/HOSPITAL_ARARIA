@@ -262,6 +262,82 @@ export interface ContactMessage {
   updatedAt: Date;
 }
 
+/**
+ * Department feedback.
+ *
+ * `departmentName` is populated by the API so the inbox does not need a second
+ * request per row. Contact fields are absent when the citizen submitted
+ * anonymously.
+ */
+export interface Feedback {
+  id: string;
+  departmentId: string;
+  departmentName?: string;
+  serviceArea: FeedbackServiceArea;
+  rating: number;
+  cleanliness?: number | null;
+  staffBehaviour?: number | null;
+  waitTime?: number | null;
+  comment?: string | null;
+  name?: string | null;
+  phone?: string | null;
+  email?: string | null;
+  status: FeedbackStatus;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export enum FeedbackServiceArea {
+  OPD = 'OPD',
+  EMERGENCY = 'EMERGENCY',
+  PHARMACY = 'PHARMACY',
+  LABORATORY = 'LABORATORY',
+  RADIOLOGY = 'RADIOLOGY',
+  BILLING = 'BILLING',
+  ADMISSION = 'ADMISSION',
+  OTHER = 'OTHER',
+}
+
+export enum FeedbackStatus {
+  NEW = 'NEW',
+  ACKNOWLEDGED = 'ACKNOWLEDGED',
+  RESOLVED = 'RESOLVED',
+}
+
+/** A department head / nodal officer's grant to read one department. */
+export interface FeedbackAccessGrant {
+  id: string;
+  userId: string;
+  userName?: string;
+  userEmail?: string;
+  departmentId: string;
+  departmentName?: string;
+  grantedBy?: string | null;
+  createdAt: Date;
+}
+
+/** What the signed-in user may read. `all` is true for ADMIN (HM). */
+export interface FeedbackScope {
+  all: boolean;
+  departments: Array<{ id: string; name: string }>;
+}
+
+export interface FeedbackStats {
+  total: number;
+  averageRating: number;
+  averageCleanliness: number | null;
+  averageStaffBehaviour: number | null;
+  averageWaitTime: number | null;
+  byStatus: Record<FeedbackStatus, number>;
+  ratingDistribution: Record<'1' | '2' | '3' | '4' | '5', number>;
+  byDepartment: Array<{
+    departmentId: string;
+    departmentName: string;
+    total: number;
+    averageRating: number;
+  }>;
+}
+
 export interface ContactInfo {
   address: string;
   phone: string[];

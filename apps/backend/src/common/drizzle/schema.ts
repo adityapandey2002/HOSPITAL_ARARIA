@@ -1,11 +1,12 @@
 /**
- * Drizzle schema — the 9 application tables owned by Drizzle.
+ * Drizzle schema — the 11 application tables owned by Drizzle.
  *
  * This file is the DDL source of truth for these tables: `drizzle-kit generate`
  * diffs it against the database and writes SQL into `drizzle/`. The other five
  * tables (`abha_profiles`, `care_contexts`, `fhir_bundles`, `consent_artefacts`,
  * `audit_logs`) are owned by MikroORM and must never appear here.
- * See docs/adr/0001-dual-orm-table-ownership.md.
+ * See docs/adr/0001-dual-orm-table-ownership.md and
+ * docs/adr/0002-feedback-table-ownership.md.
  *
  * Conventions:
  *  - Table names are snake_case; column names are camelCase.
@@ -17,6 +18,7 @@
 import { sql } from 'drizzle-orm';
 import {
   boolean,
+  check,
   index,
   integer,
   pgEnum,
@@ -105,6 +107,19 @@ export const contactMessageStatusEnum = pgEnum('ContactMessageStatus', [
   'RESOLVED',
   'CLOSED',
 ]);
+
+export const feedbackServiceAreaEnum = pgEnum('FeedbackServiceArea', [
+  'OPD',
+  'EMERGENCY',
+  'PHARMACY',
+  'LABORATORY',
+  'RADIOLOGY',
+  'BILLING',
+  'ADMISSION',
+  'OTHER',
+]);
+
+export const feedbackStatusEnum = pgEnum('FeedbackStatus', ['NEW', 'ACKNOWLEDGED', 'RESOLVED']);
 
 // ---------------------------------------------------------------------------
 // Tables
@@ -348,6 +363,86 @@ export const contactMessages = pgTable(
   })
 );
 
+/**
+ * Citizen feedback about one department visit.
+ *
+ * Submitted without authentication from the public link. Contact fields are
+ * optional; the response is anonymous unless the citizen chooses to leave them.
+ * Reads are restricted to HM (ADMIN) and to users granted access to the
+ * department (see `feedbackViewers`).
+ */
+export const feedback = pgTable(
+  'feedback',
+  {
+    id: text('id').primaryKey(),
+    departmentId: text('departmentId')
+      .notNull()
+      .references(() => departments.id, { onDelete: 'restrict' }),
+    serviceArea: feedbackServiceAreaEnum('serviceArea').notNull().default('OPD'),
+    /** Overall rating, 1 (very poor) to 5 (excellent). */
+    rating: integer('rating').notNull(),
+    /** Optional criterion ratings, 1–5. */
+    cleanliness: integer('cleanliness'),
+    staffBehaviour: integer('staffBehaviour'),
+    waitTime: integer('waitTime'),
+    comment: text('comment'),
+    name: text('name'),
+    phone: text('phone'),
+    email: text('email'),
+    status: feedbackStatusEnum('status').notNull().default('NEW'),
+    createdAt: timestamp('createdAt', { mode: 'date' }).notNull().defaultNow(),
+    updatedAt: timestamp('updatedAt', { mode: 'date' }).notNull().defaultNow(),
+  },
+  (t) => ({
+    ratingCheck: check('feedback_rating_check', sql`${t.rating} between 1 and 5`),
+    cleanlinessCheck: check(
+      'feedback_cleanliness_check',
+      sql`${t.cleanliness} is null or ${t.cleanliness} between 1 and 5`
+    ),
+    staffBehaviourCheck: check(
+      'feedback_staff_behaviour_check',
+      sql`${t.staffBehaviour} is null or ${t.staffBehaviour} between 1 and 5`
+    ),
+    waitTimeCheck: check(
+      'feedback_wait_time_check',
+      sql`${t.waitTime} is null or ${t.waitTime} between 1 and 5`
+    ),
+    departmentIdIdx: index('feedback_departmentId_idx').on(t.departmentId),
+    statusIdx: index('feedback_status_idx').on(t.status),
+    serviceAreaIdx: index('feedback_serviceArea_idx').on(t.serviceArea),
+    createdAtIdx: index('feedback_createdAt_idx').on(t.createdAt),
+  })
+);
+
+/**
+ * Per-department read access for department heads and nodal officers.
+ *
+ * ADMIN bypasses this table and sees every department. A user may hold grants
+ * for several departments; the pair (userId, departmentId) is unique.
+ */
+export const feedbackViewers = pgTable(
+  'feedback_viewers',
+  {
+    id: text('id').primaryKey(),
+    userId: text('userId')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    departmentId: text('departmentId')
+      .notNull()
+      .references(() => departments.id, { onDelete: 'cascade' }),
+    grantedBy: text('grantedBy').references(() => users.id, { onDelete: 'set null' }),
+    createdAt: timestamp('createdAt', { mode: 'date' }).notNull().defaultNow(),
+  },
+  (t) => ({
+    userDepartmentUnique: uniqueIndex('feedback_viewers_userId_departmentId_key').on(
+      t.userId,
+      t.departmentId
+    ),
+    userIdIdx: index('feedback_viewers_userId_idx').on(t.userId),
+    departmentIdIdx: index('feedback_viewers_departmentId_idx').on(t.departmentId),
+  })
+);
+
 // ---------------------------------------------------------------------------
 // Row types
 // ---------------------------------------------------------------------------
@@ -370,3 +465,7 @@ export type NoticeRow = typeof notices.$inferSelect;
 export type NewNoticeRow = typeof notices.$inferInsert;
 export type ContactMessageRow = typeof contactMessages.$inferSelect;
 export type NewContactMessageRow = typeof contactMessages.$inferInsert;
+export type FeedbackRow = typeof feedback.$inferSelect;
+export type NewFeedbackRow = typeof feedback.$inferInsert;
+export type FeedbackViewerRow = typeof feedbackViewers.$inferSelect;
+export type NewFeedbackViewerRow = typeof feedbackViewers.$inferInsert;

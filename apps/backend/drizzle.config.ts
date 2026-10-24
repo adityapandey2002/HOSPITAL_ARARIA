@@ -1,5 +1,5 @@
 /**
- * drizzle-kit configuration — DDL owner for the 9 application tables.
+ * drizzle-kit configuration — DDL owner for the 11 application tables.
  *
  * Ownership contract: docs/adr/0001-dual-orm-table-ownership.md.
  * This tool must never be pointed at the 5 MikroORM-managed tables

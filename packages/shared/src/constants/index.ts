@@ -158,6 +158,31 @@ export const NOTICE_PRIORITY_COLORS: Record<string, string> = {
   CRITICAL: 'red',
 };
 
+export const FEEDBACK_SERVICE_AREA_LABELS: Record<string, string> = {
+  OPD: 'OPD Consultation',
+  EMERGENCY: 'Emergency Care',
+  PHARMACY: 'Pharmacy',
+  LABORATORY: 'Laboratory',
+  RADIOLOGY: 'Radiology / Imaging',
+  BILLING: 'Billing & Payments',
+  ADMISSION: 'Admission / Discharge',
+  OTHER: 'Other Service',
+};
+
+export const FEEDBACK_STATUS_LABELS: Record<string, string> = {
+  NEW: 'New',
+  ACKNOWLEDGED: 'Acknowledged',
+  RESOLVED: 'Resolved',
+};
+
+export const FEEDBACK_RATING_LABELS: Record<number, string> = {
+  1: 'Very poor',
+  2: 'Poor',
+  3: 'Average',
+  4: 'Good',
+  5: 'Excellent',
+};
+
 export const WORKING_HOURS = {
   opd: 'Monday - Saturday: 9:00 AM - 4:00 PM',
   emergency: '24 Hours / 7 Days',

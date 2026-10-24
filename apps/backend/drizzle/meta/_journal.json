@@ -15,6 +15,13 @@
       "when": 1792688055057,
       "tag": "0001_quick_aqueduct",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1792839749040,
+      "tag": "0002_massive_red_wolf",
+      "breakpoints": true
     }
   ]
 }
