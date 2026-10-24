@@ -54,6 +54,18 @@ async function ensureUser(
 }
 
 async function main() {
+  // The seed creates accounts with published demo passwords. Running it against
+  // production would hand out known credentials, so require an explicit,
+  // deliberate override and refuse by default.
+  if (process.env.NODE_ENV === 'production' && process.env.ALLOW_PROD_SEED !== 'true') {
+    console.error(
+      'Refusing to seed a production database.\n' +
+        'The seed creates demo accounts with published passwords.\n' +
+        'Set ALLOW_PROD_SEED=true only if you have replaced those credentials.'
+    );
+    process.exit(1);
+  }
+
   const connection = resolveDatabaseConnection(process.env);
   const pool = new Pool({
     host: connection.host,

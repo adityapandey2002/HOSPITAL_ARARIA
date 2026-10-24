@@ -12,6 +12,7 @@ import { ApiError } from '@dh-araria/shared';
 @Catch()
 export class HttpExceptionFilter implements ExceptionFilter {
   private readonly logger = new Logger(HttpExceptionFilter.name);
+  private readonly isProduction = process.env.NODE_ENV === 'production';
 
   catch(exception: unknown, host: ArgumentsHost) {
     const ctx = host.switchToHttp();
@@ -41,6 +42,14 @@ export class HttpExceptionFilter implements ExceptionFilter {
       this.logger.error(`Unhandled error: ${exception.message}`, exception.stack);
     } else {
       this.logger.error('Unknown exception', exception);
+    }
+
+    // Never return internal messages, error class names or driver details to a
+    // production client. The log above keeps the diagnosable version.
+    if (this.isProduction && status >= 500) {
+      message = 'Internal server error';
+      errorCode = 'INTERNAL_ERROR';
+      details = undefined;
     }
 
     // Log error for debugging
