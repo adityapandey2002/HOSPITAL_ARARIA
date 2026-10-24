@@ -1,0 +1,138 @@
+/**
+ * Shared application bootstrap.
+ *
+ * `main.ts` builds the app and listens on a port; `api/index.ts` builds the same
+ * app and hands its Express instance to Vercel's Node runtime. Keeping the
+ * middleware/prefix/pipe/filter wiring here means the two deployment shapes can
+ * never drift apart.
+ */
+import { VersioningType, ValidationPipe, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { NestFactory } from '@nestjs/core';
+import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import type { NestExpressApplication } from '@nestjs/platform-express';
+import helmet from 'helmet';
+import compression from 'compression';
+import * as cors from 'cors';
+
+import { AppModule } from './app.module';
+import { HttpExceptionFilter } from './common/filters/http-exception.filter';
+import { TransformInterceptor } from './common/interceptors/transform.interceptor';
+import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
+
+export interface CreateAppOptions {
+  /**
+   * Initialise the Nest container before returning. Serverless callers must set
+   * this because nothing will call `listen()`; the port-based entry point lets
+   * `listen()` do it.
+   */
+  init?: boolean;
+}
+
+export async function createApp(options: CreateAppOptions = {}): Promise<NestExpressApplication> {
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
+    bufferLogs: true,
+  });
+
+  app.useLogger(new Logger('Bootstrap'));
+
+  const configService = app.get(ConfigService);
+  // `configuration.ts` exposes nested keys (port/nodeEnv/frontendUrl). Reading
+  // the flat env names here would silently fall through to the defaults below.
+  const nodeEnv = configService.get<string>('nodeEnv', 'development');
+  const frontendUrls = resolveFrontendOrigins(
+    configService.get<string>('frontendUrl', 'http://localhost:3000')
+  );
+
+  // Security middleware
+  app.use(
+    helmet({
+      contentSecurityPolicy: nodeEnv === 'production' ? undefined : false,
+      crossOriginEmbedderPolicy: false,
+    })
+  );
+
+  app.use(compression());
+
+  // CORS configuration. FRONTEND_URL may be a comma-separated list so the
+  // Vercel preview deployment and the production domain can both be allowed.
+  app.enableCors({
+    origin: frontendUrls,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+    credentials: true,
+    maxAge: 86400, // 24 hours
+  });
+
+  // Global prefix and versioning
+  app.setGlobalPrefix('api');
+  app.enableVersioning({
+    type: VersioningType.URI,
+    defaultVersion: '1',
+  });
+
+  // Global pipes
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
+      transformOptions: {
+        enableImplicitConversion: true,
+      },
+      disableErrorMessages: nodeEnv === 'production',
+    })
+  );
+
+  // Global filters and interceptors
+  app.useGlobalFilters(new HttpExceptionFilter());
+  app.useGlobalInterceptors(new TransformInterceptor(), new LoggingInterceptor());
+
+  // Swagger documentation
+  if (nodeEnv !== 'production') {
+    const config = new DocumentBuilder()
+      .setTitle('DH Araria Hospital API')
+      .setDescription('API documentation for District Hospital Araria Portal')
+      .setVersion('1.0')
+      .addBearerAuth({ type: 'http', scheme: 'bearer', bearerFormat: 'JWT' }, 'JWT-auth')
+      .addTag('Auth', 'Authentication endpoints')
+      .addTag('Users', 'User management')
+      .addTag('Doctors', 'Doctor management')
+      .addTag('Departments', 'Department management')
+      .addTag('Appointments', 'Appointment booking')
+      .addTag('Blood Bank', 'Blood bank inventory')
+      .addTag('Grievances', 'Grievance management')
+      .addTag('Feedback', 'Public department feedback')
+      .addTag('Notices', 'Notices and announcements')
+      .addTag('Contact', 'Public contact messages')
+      .addTag('Audit', 'CERT-In audit trail')
+      .addTag('Health', 'Health check endpoints')
+      .build();
+
+    const document = SwaggerModule.createDocument(app, config);
+    SwaggerModule.setup('api/docs', app, document, {
+      swaggerOptions: {
+        persistAuthorization: true,
+      },
+    });
+  }
+
+  if (options.init) {
+    await app.init();
+  }
+
+  return app;
+}
+
+/**
+ * FRONTEND_URL is a single origin in development and may be a comma-separated
+ * allowlist in deployment (production domain + Vercel preview URL).
+ */
+function resolveFrontendOrigins(value: string): string | string[] {
+  const origins = value
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+
+  return origins.length > 1 ? origins : origins[0];
+}

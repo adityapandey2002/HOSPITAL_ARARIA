@@ -21,6 +21,8 @@
     "db:migrate:prod": "ts-node -P tsconfig.seed.json scripts/db-migrate.ts",
     "db:studio": "drizzle-kit studio",
     "db:seed": "ts-node -P tsconfig.seed.json scripts/seed.ts",
+    "bootstrap:admin": "ts-node -P tsconfig.seed.json scripts/bootstrap-admin.ts",
+    "type-check:api": "tsc -p tsconfig.vercel.json",
     "schema:check": "ts-node -P tsconfig.seed.json scripts/schema-check.ts",
     "schema:check:live": "ts-node -P tsconfig.seed.json scripts/mikro-schema-update.ts",
     "mikro:schema:update": "ts-node -P tsconfig.seed.json scripts/mikro-schema-update.ts"

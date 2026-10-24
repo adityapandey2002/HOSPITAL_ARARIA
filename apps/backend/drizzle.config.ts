@@ -7,9 +7,11 @@
  */
 import { defineConfig } from 'drizzle-kit';
 
-import { resolveDatabaseConnection } from './src/config/database-url';
+import { resolveMigrationConnection } from './src/config/database-url';
 
-const db = resolveDatabaseConnection(process.env);
+// DDL must use the direct/session connection: Supabase's transaction pooler
+// (port 6543) does not support the session semantics drizzle-kit needs.
+const db = resolveMigrationConnection(process.env);
 
 const connectionString =
   `postgresql://${encodeURIComponent(db.user)}:${encodeURIComponent(db.password)}` +

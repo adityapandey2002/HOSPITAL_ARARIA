@@ -91,3 +91,29 @@ export function resolveDatabaseConnection(
 export function tlsOptions(ssl: boolean): { rejectUnauthorized: false } | undefined {
   return ssl ? { rejectUnauthorized: false } : undefined;
 }
+
+/**
+ * Connection used by schema tooling (drizzle-kit, `db:migrate`).
+ *
+ * Supabase exposes two endpoints for the same database: a transaction pooler
+ * (port 6543) for application traffic and a direct/session connection (port
+ * 5432) for DDL. Migrations and `drizzle-kit` must use the direct one — DDL
+ * through a transaction pooler fails or leaks session state. Set
+ * `DATABASE_MIGRATION_URL` to the direct URL; it falls back to `DATABASE_URL`
+ * so local development needs one variable.
+ */
+export function resolveMigrationConnection(
+  env: NodeJS.ProcessEnv = process.env
+): DatabaseConnection {
+  const url = env.DATABASE_MIGRATION_URL ?? env.DATABASE_URL;
+  return resolveDatabaseConnection({ ...env, DATABASE_URL: url });
+}
+
+/**
+ * True when the process is a short-lived function instance. Both Vercel and
+ * AWS Lambda set a marker; the pool defaults shrink so N instances cannot
+ * exhaust the database's connection limit.
+ */
+export function isServerlessRuntime(env: NodeJS.ProcessEnv = process.env): boolean {
+  return Boolean(env.VERCEL || env.AWS_LAMBDA_FUNCTION_NAME || env.FUNCTION_NAME);
+}

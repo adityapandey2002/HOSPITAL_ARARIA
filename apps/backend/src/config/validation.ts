@@ -7,7 +7,18 @@ export const validationSchema = Joi.object({
   NODE_ENV: Joi.string()
     .valid('development', 'production', 'test', 'staging')
     .default('development'),
-  FRONTEND_URL: Joi.string().uri().default('http://localhost:3000'),
+  // One origin locally; a comma-separated allowlist in deployment (production
+  // domain plus Vercel preview URL). Joi's .uri() rejects the list form.
+  FRONTEND_URL: Joi.string()
+    .custom((value: string, helpers) => {
+      const origins = value
+        .split(',')
+        .map((origin) => origin.trim())
+        .filter(Boolean);
+      const valid = origins.length > 0 && origins.every((origin) => /^https?:\/\/[^\s]+$/.test(origin));
+      return valid ? value : helpers.error('string.uri');
+    }, 'comma-separated URL list')
+    .default('http://localhost:3000'),
 
   // Database — DATABASE_URL is the single required scheme. DB_* remain as
   // optional explicit overrides for the local docker-compose PostgreSQL.
@@ -28,11 +39,22 @@ export const validationSchema = Joi.object({
   // (Supabase/Neon/Railway all require TLS), disabled for a local devserver.
   DB_SSL: Joi.boolean().optional(),
   DB_POOL_SIZE: Joi.number().default(10),
+  // Direct/session connection for DDL. Supabase's pooler (port 6543) does not
+  // support migrations; leave unset locally so it falls back to DATABASE_URL.
+  DATABASE_MIGRATION_URL: Joi.string()
+    .pattern(/^postgres(ql)?:\/\//)
+    .optional(),
 
-  // Dual-ORM pools (must sum to < the server's max_connections)
-  DRIZZLE_POOL_SIZE: Joi.number().default(20),
-  MIKRO_POOL_SIZE: Joi.number().default(20),
+  // Dual-ORM pools (must sum to < the server's max_connections). Serverless
+  // instances default to 1 each; see src/config/configuration.ts.
+  DRIZZLE_POOL_SIZE: Joi.number().min(1).default(20),
+  MIKRO_POOL_SIZE: Joi.number().min(1).default(20),
+  MIKRO_POOL_MIN: Joi.number().min(0).default(0),
   MIKRO_DEBUG: Joi.boolean().truthy('true').falsy('false').default(false),
+
+  // Opt-in destructive schema reset (drops the MikroORM-owned tables). Never
+  // set this in production: it destroys audit_logs and ABDM records.
+  ALLOW_DESTRUCTIVE_SCHEMA: Joi.boolean().truthy('true').falsy('false').default(false),
 
   // JWT
   JWT_SECRET: Joi.string().min(32).required(),

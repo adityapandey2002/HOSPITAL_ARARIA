@@ -1,0 +1,5 @@
+{
+  "$schema": "https://json.schemastore.org/any.json",
+  "comment": "Time-boxed exceptions for the production dependency audit gate (npm run audit:ci). Every entry needs a package, a reason, and an expiry date. Expired entries fail CI so the list cannot rot. Document the compensating control in docs/SECURITY.md.",
+  "entries": []
+}

@@ -38,7 +38,9 @@ export function createMikroOrmConfig(
     entitiesTs: ['src/modules/abdm/entities/*.entity.ts', 'src/common/mikro/entities/*.entity.ts'],
     debug: env.MIKRO_DEBUG === 'true',
     pool: {
-      min: 2,
+      // Serverless instances idle out; an eager minimum would hold connections
+      // open on every cold instance and exhaust a Supabase pooler.
+      min: parseInt(env.MIKRO_POOL_MIN ?? '0', 10),
       max: parseInt(env.MIKRO_POOL_SIZE ?? '20', 10),
     },
     // Timestamps are stored UTC — CERT-In requires trustworthy audit clocks.
