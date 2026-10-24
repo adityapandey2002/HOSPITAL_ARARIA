@@ -912,26 +912,24 @@ plan in the console before quoting an RPO to the hospital.
 ## Development Standards
 
 ### Code Quality Gates
-- TypeScript strict mode
+- TypeScript: `strict: true` on the frontend; `strictNullChecks` and `noImplicitAny` on the backend
 - ESLint (no errors, warnings allowed)
 - Prettier formatting
-- 80% unit test coverage
-- 100% critical path coverage
-- axe-core accessibility tests in CI
+- Jest suites run via `npm test`
+- `schema:check` and `audit:ci` in CI
+- Accessibility checks are manual; no axe automation is configured
 
 ### Git Workflow
-- Trunk-based development
-- Feature flags for incomplete work
-- Conventional commits
-- PR reviews required
-- Automated CI checks
+- Trunk-based development on `main`
+- Conventional commit messages
+- Pull requests reviewed before merge
+- CI on every push and pull request
 
 ### Release Process
-- Semantic versioning
-- Automated changelog
-- Staging deployment
-- Production deployment with rollback
-- Post-deployment smoke tests
+- Vercel builds a preview deployment per pull request
+- Production deploy from `main`; rollback promotes the previous deployment
+- Migrations run separately from an operator machine, before the first request
+- Post-deployment smoke tests from `docs/DEPLOYMENT.md`
 
 ---
 

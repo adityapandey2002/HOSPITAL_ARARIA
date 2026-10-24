@@ -24,7 +24,7 @@ dh-araria/
 │   └── backend/           # NestJS 10 + TypeScript + PostgreSQL
 ├── packages/
 │   ├── shared/            # Shared types, constants, utilities
-│   └── ui/                # Reusable UI components (Tailwind + Radix)
+│   └── ui/                # Reusable UI components (Tailwind + lucide-react)
 ├── package.json           # Root workspace configuration
 └── README.md
 ```
@@ -34,7 +34,7 @@ dh-araria/
 | Layer | Technology | Purpose |
 |-------|------------|---------|
 | **Frontend** | Next.js 16, React 18, TypeScript | SSR, SEO, Accessibility |
-| **Styling** | Tailwind CSS, Radix UI | Responsive, accessible components |
+| **Styling** | Tailwind CSS, lucide-react | Responsive, accessible components |
 | **State** | React Hook Form, Zod, SWR | Form validation, data fetching |
 | **Backend** | NestJS 10, TypeScript | Modular REST API, run as a long-lived server locally and as a serverless function on Vercel |
 | **Database** | Supabase PostgreSQL + Drizzle ORM + MikroORM | Managed Postgres; type-safe access under a strict 11 + 5 table-ownership split |
@@ -304,8 +304,8 @@ carries a hidden honeypot field, and its contact fields are never logged.
 - [ ] CPGRAMS API integration
 - [ ] e-RaktKosh real-time sync
 - [ ] ABDM Milestone 1 (ABHA creation)
-- [ ] ABDM Milestone 2 (HIP - FHIR bundles)
-- [ ] ABDM Milestone 3 (HIU - Consent management)
+- [ ] ABDM Milestone 2 (HIP - bundle storage and audit exist; gateway transport pending)
+- [ ] ABDM Milestone 3 (HIU - consent records exist; gateway transport pending)
 
 ### Phase 4: Production Deployment 📋
 - [ ] CERT-In WASA audit
@@ -324,7 +324,7 @@ carries a hidden honeypot field, and its contact fields are never logged.
 5. Open a Pull Request
 
 ### Code Standards
-- TypeScript strict mode enabled
+- TypeScript: strict mode on the frontend, strict null checks and `noImplicitAny` on the backend
 - ESLint + Prettier configured
 - Conventional commits
 - 80%+ test coverage target
