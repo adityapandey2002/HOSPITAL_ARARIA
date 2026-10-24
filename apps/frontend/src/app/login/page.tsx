@@ -57,7 +57,8 @@ function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  const callbackUrl = searchParams.get('callbackUrl') || '/appointments';
+  const callbackUrl =
+    searchParams.get('redirect') || searchParams.get('callbackUrl') || '/appointments';
   const expired = searchParams.get('expired') === 'true';
 
   const {

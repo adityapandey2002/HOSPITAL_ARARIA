@@ -25,6 +25,7 @@ const footerLinks = {
     { label: 'Appointments', href: '/appointments' },
     { label: 'Blood Bank', href: '/blood-bank' },
     { label: 'Grievances', href: '/grievances' },
+    { label: 'Feedback', href: '/feedback' },
     { label: 'Notices', href: '/notices' },
     { label: 'Contact Us', href: '/contact' },
   ],

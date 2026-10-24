@@ -21,6 +21,7 @@ const navItems = [
   { href: '/appointments', label: 'Appointments' },
   { href: '/blood-bank', label: 'Blood Bank' },
   { href: '/grievances', label: 'Grievances' },
+  { href: '/feedback', label: 'Feedback' },
   { href: '/notices', label: 'Notices' },
   { href: '/contact', label: 'Contact' },
 ];
@@ -96,19 +97,19 @@ export function Header() {
               <div className="rounded-lg bg-blue-600 p-2">
                 <Hospital className="h-7 w-7 text-white" />
               </div>
-              <div className="hidden sm:block">
+              <div className="hidden sm:block xl:hidden">
                 <h1 className="text-xl font-bold text-gray-900">District Hospital Araria</h1>
                 <p className="text-xs text-gray-500">Government of Bihar</p>
               </div>
             </Link>
 
             {/* Desktop Navigation */}
-            <div className="hidden items-center gap-1 md:flex">
+            <div className="hidden items-center gap-1 xl:flex">
               {navItems.map((item) => (
                 <Link
                   key={item.href}
                   href={item.href}
-                  className="rounded-lg px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-blue-50 hover:text-blue-600"
+                  className="whitespace-nowrap rounded-lg px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-blue-50 hover:text-blue-600"
                 >
                   {item.label}
                 </Link>
@@ -116,7 +117,7 @@ export function Header() {
             </div>
 
             {/* Desktop Actions */}
-            <div className="hidden items-center gap-3 md:flex">
+            <div className="hidden items-center gap-3 xl:flex">
               <Link
                 href="/appointments"
                 className="rounded-lg bg-blue-600 px-4 py-2 font-medium text-white transition-colors hover:bg-blue-700"
@@ -135,7 +136,7 @@ export function Header() {
 
             {/* Mobile Menu Button */}
             <button
-              className="rounded-lg p-2 text-gray-700 transition-colors hover:bg-gray-100 md:hidden"
+              className="rounded-lg p-2 text-gray-700 transition-colors hover:bg-gray-100 xl:hidden"
               onClick={() => setIsMenuOpen(!isMenuOpen)}
               aria-expanded={isMenuOpen}
               aria-controls="mobile-menu"
@@ -149,8 +150,8 @@ export function Header() {
           <div
             id="mobile-menu"
             className={cn(
-              'overflow-hidden border-t border-gray-100 transition-all duration-300 ease-in-out md:hidden',
-              isMenuOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
+              'overflow-hidden border-t border-gray-100 transition-all duration-300 ease-in-out xl:hidden',
+              isMenuOpen ? 'max-h-[85vh] overflow-y-auto opacity-100' : 'max-h-0 opacity-0'
             )}
           >
             <div className="space-y-2 py-4">
