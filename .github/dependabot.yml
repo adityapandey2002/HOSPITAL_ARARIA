@@ -1,0 +1,32 @@
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    groups:
+      nest:
+        patterns:
+          - '@nestjs/*'
+      next:
+        patterns:
+          - next
+          - eslint-config-next
+          - react
+          - react-dom
+      tooling:
+        dependency-type: development
+        patterns:
+          - '*'
+    # Majors are reviewed by a human; the audit gate catches security fixes
+    # that must not wait for the weekly window.
+    ignore:
+      - dependency-name: '*'
+        update-types: ['version-update:semver-major']
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly

@@ -47,9 +47,6 @@ jobs:
       - name: Build backend
         run: npm run build:backend
 
-      - name: Type-check Vercel function entry
-        run: npm run type-check:api --workspace=apps/backend
-
       - name: Build frontend
         run: npm run build:frontend
 

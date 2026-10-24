@@ -97,7 +97,7 @@ export function Header() {
               <div className="rounded-lg bg-blue-600 p-2">
                 <Hospital className="h-7 w-7 text-white" />
               </div>
-              <div className="hidden sm:block xl:hidden">
+              <div className="hidden sm:block xl:hidden 2xl:block">
                 <h1 className="text-xl font-bold text-gray-900">District Hospital Araria</h1>
                 <p className="text-xs text-gray-500">Government of Bihar</p>
               </div>

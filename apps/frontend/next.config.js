@@ -8,7 +8,12 @@ const nextConfig = {
     optimizePackageImports: ['lucide-react'],
   },
   images: {
-    domains: ['localhost'],
+    // `images.domains` was removed in Next 16; remotePatterns is the supported
+    // way to allow remote hosts. Omitted fields match any value.
+    remotePatterns: [
+      { protocol: 'http', hostname: 'localhost' },
+      { protocol: 'https', hostname: 'localhost' },
+    ],
     formats: ['image/avif', 'image/webp'],
   },
   headers: async () => [

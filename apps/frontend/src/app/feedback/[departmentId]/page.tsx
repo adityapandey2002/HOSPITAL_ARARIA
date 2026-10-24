@@ -12,10 +12,12 @@ export const metadata: Metadata = {
 };
 
 interface DepartmentFeedbackPageProps {
-  params: { departmentId: string };
+  params: Promise<{ departmentId: string }>;
 }
 
-export default function DepartmentFeedbackPage({ params }: DepartmentFeedbackPageProps) {
+export default async function DepartmentFeedbackPage({ params }: DepartmentFeedbackPageProps) {
+  const { departmentId } = await params;
+
   return (
     <>
       <Header />
@@ -33,7 +35,7 @@ export default function DepartmentFeedbackPage({ params }: DepartmentFeedbackPag
           </div>
         </section>
 
-        <FeedbackForm initialDepartmentId={params.departmentId} />
+        <FeedbackForm initialDepartmentId={departmentId} />
 
         <div className="bg-white pb-12">
           <div className="container mx-auto px-4">

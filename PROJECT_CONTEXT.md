@@ -1067,7 +1067,7 @@ New notices default to `isPublished = false`. The public feed (`GET /notices/pub
 - A care context must be `ACTIVE` for both `completeCareContext` and `recordBundle`; otherwise `403`.
 - `recordBundle` sets `status = 'ENCRYPTED'` when `encryptedData` is supplied, else `'PENDING'`.
 - `getRecordsForConsent` treats consent as the **legal basis for the read**: absent ⇒ `404`; not `GRANTED` ⇒ `403`; `dateRangeEnd < now` ⇒ flip to `EXPIRED`, flush, `403`.
-- Audit rows intentionally record **only shape metadata** — never diagnoses or clinical content (comment in `abdm.service.ts`, cross-referenced to `docs/SECURITY.md`). Bundle reads log `entryCount`, not entries.
+- Audit rows intentionally record **only shape metadata** — never diagnoses or clinical content (comment in `abdm.service.ts`, cross-         to `docs/SECURITY.md`). Bundle reads log `entryCount`, not entries.
 - ABDM mandates erasure within 90 days of the consent window closing; `findErasure` surfaces overdue consents and `getRecordsForConsent` logs a warning when `dataEraseAt` has passed.
 
 ### 9.7 Authentication rules
@@ -1658,3 +1658,10 @@ The working tree (uncommitted) contains a stabilisation pass that resolved: stal
 7. **Screenshots** — none exist. All 18 captures in §19 need to be taken against a running stack.
 8. **Domain and hosting** — is `dhararia.bihar.gov.in` registered? Is MeghRaj still the target, or has procurement changed?
 9. **Secrets** — the Supabase password was shared in this session. Confirm whether you want it rotated before the repository or documentation is published anywhere.
+
+
+
+
+
+teleconsultation
+
