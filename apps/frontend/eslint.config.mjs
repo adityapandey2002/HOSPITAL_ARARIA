@@ -1,6 +1,23 @@
+import { createRequire } from 'node:module';
+import Module from 'node:module';
+import path from 'node:path';
 import { defineConfig, globalIgnores } from 'eslint/config';
-import nextVitals from 'eslint-config-next/core-web-vitals';
-import nextTs from 'eslint-config-next/typescript';
+
+// npm installs `next` inside this workspace but hoists `eslint-config-next` to
+// the repo root, where it cannot resolve the `next/...` modules it requires.
+// Add the workspace's node_modules to the module search path before the shared
+// config is loaded. This is a no-op when next is hoisted next to the config.
+const require = createRequire(import.meta.url);
+const workspaceNodeModules = path.dirname(
+  path.dirname(require.resolve('next/package.json')),
+);
+process.env.NODE_PATH = [workspaceNodeModules, process.env.NODE_PATH]
+  .filter(Boolean)
+  .join(path.delimiter);
+Module._initPaths();
+
+const { default: nextVitals } = await import('eslint-config-next/core-web-vitals');
+const { default: nextTs } = await import('eslint-config-next/typescript');
 
 export default defineConfig([
   ...nextVitals,
