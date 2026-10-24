@@ -1,720 +1,433 @@
-# DH Araria Hospital Portal - Deployment Guide
+# DH Araria Hospital Portal - Deployment Guide (Vercel + Supabase)
 
 ## Overview
 
-This guide covers deploying the DH Araria Hospital Portal to various environments, from local development to production on MeghRaj Cloud.
+The portal runs as two Vercel projects over one Supabase PostgreSQL database:
+
+| Component | Host | Root directory | Region |
+|-----------|------|----------------|--------|
+| Frontend (Next.js) | Vercel project | `apps/frontend` | `bom1` |
+| API (NestJS in a Node function) | Vercel project | `apps/backend` | `bom1` |
+| PostgreSQL | Supabase | — | the project's region |
+
+The backend keeps two entry points over one shared bootstrap:
+
+```
+apps/backend/src/bootstrap.ts   createApp() — middleware, prefix, versioning,
+                                pipes, filters, Swagger, trust-proxy
+        ├── src/main.ts         long-lived server: createApp() + listen(PORT)
+        └── api/index.js        Vercel function: createApp({ init: true }),
+                                hands the Express instance to the Node runtime
+```
+
+`api/index.js` is plain CommonJS and loads the **compiled** `dist/bootstrap`.
+It must never import from `src/`: Vercel transpiles TypeScript functions without
+`emitDecoratorMetadata`, which breaks Nest's dependency injection. `nest build`,
+run by the project's build command, emits the decorator metadata first.
+
+> The Kubernetes, Terraform and Nginx artefacts that earlier drafts of this
+> document described were never committed to this repository. They are not part
+> of this deployment path and nothing in the repo references them.
 
 ## Prerequisites
 
-### System Requirements
-
-| Component | Minimum | Recommended |
-|-----------|---------|-------------|
-| CPU | 2 vCPU | 4 vCPU |
-| RAM | 4 GB | 8 GB |
-| Storage | 20 GB | 50 GB |
-| OS | Ubuntu 22.04 LTS / RHEL 9 | Ubuntu 22.04 LTS |
-
-### Software Dependencies
-
-- Docker 24+
-- Docker Compose 2+
-- kubectl 1.28+ (for Kubernetes)
-- Helm 3+ (for Kubernetes)
-- PostgreSQL 15 client tools
-- Redis 7 client tools
+- Node.js 20 and npm 10 on the operator machine.
+- A Vercel account with permission to create projects in the hospital's team.
+- A Supabase account with permission to create a project.
+- The repository checked out, with `npm ci` already run (the migration and
+  bootstrap scripts run through `ts-node`).
+- Optional: `psql`, for the verification query in step 3.
 
 ---
 
-## Local Development Deployment
+## 1. Create the Supabase project
 
-### Quick Start
+1. Create the project in the Supabase dashboard. Pick the region your
+   data-residency policy requires; the Vercel functions run in `bom1`, so a
+   nearby region keeps query latency down.
+2. Store the database password in the hospital password manager. It is not
+   recoverable from the dashboard.
+3. Open **Project Settings → Database → Connection string** and copy **both**
+   URIs. They are different endpoints onto the same database:
+
+| Variable | Supabase endpoint | Port | Used by |
+|----------|-------------------|------|---------|
+| `DATABASE_URL` | Transaction pooler | 6543 | The application: Drizzle and MikroORM, in every function instance |
+| `DATABASE_MIGRATION_URL` | Direct connection | 5432 | `drizzle-kit` and `npm run db:migrate` only |
+
+Why the split: DDL through a transaction pooler is not supported, and a
+migration that leaks session state can corrupt the schema mid-run. The
+application, by contrast, wants many short-lived pooled connections.
+`resolveMigrationConnection()` in `apps/backend/src/config/database-url.ts`
+reads `DATABASE_MIGRATION_URL` and falls back to `DATABASE_URL`, so local
+development needs only one variable.
+
+TLS is automatic: `database-url.ts` enables TLS for any host that is not
+`localhost`/`127.0.0.1`/`::1`, and honours `sslmode` in the URL.
+
+> Direct-connection reachability (IPv4 versus IPv6, and any paid add-on it
+> requires on your plan) is plan-specific. Confirm it in the Supabase dashboard
+> before you rely on `DATABASE_MIGRATION_URL` from the operator machine.
+
+Do not run application traffic through the direct connection: every Vercel
+instance would hold its own session.
+
+---
+
+## 2. Create the backend Vercel project
+
+1. **Add New → Project**, import this repository, and set **Root Directory** to
+   `apps/backend`.
+2. Leave the framework preset at its auto-detected value. The build is driven by
+   `apps/backend/vercel.json`, which sets:
+
+   ```json
+   "installCommand": "cd ../.. && npm ci",
+   "buildCommand": "cd ../.. && npm run build --workspace=packages/shared && npm run build:backend",
+   "regions": ["bom1"]
+   ```
+
+   The install runs at the repo root because this is an npm workspace; the
+   build compiles `packages/shared` first (the backend imports its types) and
+   then runs `nest build`, which emits `dist/bootstrap.js`.
+3. The only route is the function `api/index.js`. Every path is rewritten to it:
+
+   ```json
+   "rewrites": [{ "source": "/(.*)", "destination": "/api/index" }]
+   ```
+
+   The function builds the Nest container once per warm instance
+   (`createApp({ init: true })`) and reuses it; a failed bootstrap is not cached,
+   so the next request retries instead of failing for the instance's lifetime.
+4. The committed `vercel.json` asks for 1024 MB of memory and a 30 s maximum
+   duration. **Verify in the Vercel dashboard** that the deployed function shows
+   those limits: the `functions` key in `vercel.json` still names
+   `api/index.ts` while the committed entry is `api/index.js`.
+5. Add the environment variables from the table below, for **Production** (and
+   **Preview** if you use preview deployments).
+6. Deploy. The first deployment will build and boot, but `/api/v1/health` returns
+   503 until the schema exists — that is expected before step 3.
+
+### Backend environment variables
+
+| Variable | Required | Default | Notes |
+|----------|----------|---------|-------|
+| `NODE_ENV` | yes | `development` | Set to `production`. Disables Swagger UI and redacts 5xx bodies. |
+| `DATABASE_URL` | yes | — | Supabase transaction pooler (port 6543). Read by both ORMs. |
+| `FRONTEND_URL` | yes | `http://localhost:3000` | Comma-separated origin allowlist; see step 6. |
+| `JWT_SECRET` | yes | — | At least 32 characters. The `.env.example` placeholder is rejected when `NODE_ENV=production`. |
+| `DRIZZLE_POOL_SIZE` | recommended | `1` when `VERCEL` is set, else `20` | Set to `1` explicitly. |
+| `MIKRO_POOL_SIZE` | **yes** | `20` | Set to `1` explicitly — see the note below. |
+| `MIKRO_POOL_MIN` | no | `0` | Keep at `0`; an eager minimum holds connections open on idle instances. |
+| `JWT_ACCESS_EXPIRY` | no | `15m` | |
+| `JWT_REFRESH_EXPIRY` | no | `7d` | |
+| `LOG_LEVEL` | no | `info` | |
+| `RATE_LIMIT_TTL` | no | `60000` | Global throttle window (ms). |
+| `RATE_LIMIT_LIMIT` | no | `100` | Global requests per window. |
+| `RATE_LIMIT_AUTH_LIMIT` | no | `10` | Auth requests per window. |
+| `DATABASE_MIGRATION_URL` | no | falls back to `DATABASE_URL` | **Do not set it on Vercel.** It belongs on the operator machine only. |
+| `ALLOW_DESTRUCTIVE_SCHEMA` | no | `false` | Never set it anywhere. It drops the MikroORM-owned tables, `audit_logs` included. |
+
+The optional integration variables (`ABDM_*`, `BHASHINI_*`, `EPRAAMAN_*`,
+`CPGRAMS_*`, `ERAKTKOSH_*`, `SMTP_*`, `REDIS_*`) are validated by
+`apps/backend/src/config/validation.ts` and default to empty. None is needed to
+serve the portal.
+
+> **Pool sizing.** `configuration.ts` defaults both pools to 1 when
+> `VERCEL`/`AWS_LAMBDA_FUNCTION_NAME`/`FUNCTION_NAME` is set, and that default is
+> what `DrizzleService` receives. `mikro.config.ts` reads `MIKRO_POOL_SIZE`
+> straight from `process.env` with a fallback of `20`, so an unset
+> `MIKRO_POOL_SIZE` gives every function instance a 20-connection MikroORM pool.
+> Set `DRIZZLE_POOL_SIZE=1` and `MIKRO_POOL_SIZE=1` in the dashboard.
+
+---
+
+## 3. Apply migrations from an operator machine
+
+Migrations are not run by the Vercel build. They run once, from a machine that
+can reach the database, before the first request is served.
+
+1. Put the **direct** connection string in `apps/backend/.env`:
+
+   ```env
+   # Both variables point at the direct connection for this operator session.
+   DATABASE_URL=postgresql://postgres:<password>@db.<project-ref>.supabase.co:5432/postgres
+   DATABASE_MIGRATION_URL=postgresql://postgres:<password>@db.<project-ref>.supabase.co:5432/postgres
+   ```
+
+   `DATABASE_URL` is overridden deliberately: `db:migrate` applies Drizzle
+   migrations through `DATABASE_MIGRATION_URL`, but the MikroORM reconciliation
+   in the same script builds its config from `DATABASE_URL`. Leaving the pooler
+   URL there would send DDL through the transaction pooler.
+
+2. Run the migration from the repository root:
+
+   ```bash
+   npm run db:migrate
+   ```
+
+   This applies `apps/backend/drizzle/0000`–`0003` (0002 creates `feedback` and
+   `feedback_viewers`, 0003 adds the rating CHECK constraints), then reconciles
+   the five MikroORM entities with `updateSchema({ safe: true, dropTables: false })`.
+   A repeated run is a no-op.
+
+3. Verify the ownership boundary offline:
+
+   ```bash
+   npm run schema:check
+   ```
+
+   It exits non-zero unless Drizzle owns 11 tables, MikroORM owns 5, no table is
+   claimed twice, and no Drizzle migration touches a MikroORM table.
+
+4. Optional, before restoring `DATABASE_URL`: confirm the tables exist.
+
+   ```bash
+   psql "$DATABASE_MIGRATION_URL" -c '\dt'
+   ```
+
+   Expect 16 tables: the 11 Drizzle-owned application tables and the 5
+   MikroORM-owned clinical/audit tables.
+
+Never run `db:seed` against this database: it inserts the demo accounts whose
+passwords are published in this repository. The script refuses to run when
+`NODE_ENV=production` unless `ALLOW_PROD_SEED=true`, but the guard is not a
+reason to try.
+
+---
+
+## 4. Create the first Hospital Manager account
+
+`db:seed` is for local development only. Production starts with exactly one
+account, created by the operator:
 
 ```bash
-# 1. Clone repository
-git clone https://github.com/your-org/dh-araria.git
-cd dh-araria
+ADMIN_EMAIL=hm@dhararia.bihar.gov.in \
+ADMIN_PASSWORD='<at least 12 characters, not a published demo password>' \
+ADMIN_NAME='Hospital Manager' \
+npm run bootstrap:admin
+```
 
-# 2. Configure environment
-cp .env.example .env
+On PowerShell:
+
+```powershell
+$env:ADMIN_EMAIL="hm@dhararia.bihar.gov.in"
+$env:ADMIN_PASSWORD="<at least 12 characters>"
+$env:ADMIN_NAME="Hospital Manager"
+npm run bootstrap:admin
+```
+
+The script (`apps/backend/scripts/bootstrap-admin.ts`):
+
+- creates one `ADMIN` account and nothing else;
+- refuses a password shorter than 12 characters or one of the demo passwords
+  published in this repository;
+- is idempotent — re-running with the same e-mail reports the existing account
+  and changes nothing;
+- refuses to promote an existing non-admin account with that e-mail.
+
+It connects through `DATABASE_URL`, so it runs inside the operator session set
+up in step 3 (direct connection) and needs no Vercel access. Store the password
+in the hospital password manager; it is not recoverable.
+
+The `ADMIN` role is what the documentation calls HM. That account sees every
+department in the feedback inbox and is the only role allowed to manage
+`feedback_viewers` grants.
+
+---
+
+## 5. Create the frontend Vercel project
+
+1. **Add New → Project**, import the same repository, and set **Root Directory**
+   to `apps/frontend`.
+2. Framework preset: **Next.js**. `apps/frontend/vercel.json` pins the region:
+
+   ```json
+   { "framework": "nextjs", "regions": ["bom1"] }
+   ```
+
+3. Set the environment variables. Both are compiled into the client bundle, so
+   they must be correct **before** the build:
+
+| Variable | Required | Example | Notes |
+|----------|----------|---------|-------|
+| `NEXT_PUBLIC_API_URL` | yes | `https://dh-araria-api.vercel.app/api/v1` | The backend project's origin **plus `/api/v1`**. Without the suffix every request 404s. |
+| `NEXT_PUBLIC_APP_URL` | yes | `https://feedback.dhararia.bihar.gov.in` | The frontend's public origin. Used for `metadataBase` and as the fallback when building per-department share links. |
+
+4. Deploy.
+
+`NEXT_PUBLIC_*` values are inlined at build time. Changing one in the dashboard
+does nothing until the project is redeployed.
+
+---
+
+## 6. Set `FRONTEND_URL` and redeploy the backend
+
+The backend's CORS allowlist comes from `FRONTEND_URL`. It accepts one origin or
+a comma-separated list, so the production domain and a Vercel preview URL can
+both be allowed:
+
+```env
+FRONTEND_URL=https://feedback.dhararia.bihar.gov.in,https://dh-araria-frontend-git-main-hospital.vercel.app
+```
+
+`bootstrap.ts` splits the value and passes the list to `enableCors` with
+`credentials: true`; `validation.ts` validates each entry as an `http(s)` origin.
+An origin that is not on the list is rejected by the browser with a CORS error,
+not by the API with a 403.
+
+After changing `FRONTEND_URL`, **redeploy the backend** — environment changes
+apply to new deployments, not to already-running instances.
+
+### Proxy trust
+
+`bootstrap.ts` sets `trust proxy` to `1` only when `isServerlessRuntime()` is
+true. Vercel's edge is exactly one hop, so Express then reports the citizen's
+address in `req.ip`. Without it every visitor shares the proxy's address and the
+public 5-requests-per-minute feedback throttle becomes one global bucket.
+
+---
+
+## 7. Smoke tests
+
+Replace the hostnames with the ones Vercel assigned.
+
+```bash
+# 1. Liveness — no database access, must always answer once the function boots
+curl -fsS https://dh-araria-api.vercel.app/api/v1/health/live
+
+# 2. Readiness — probes Drizzle and MikroORM; exits non-zero on 503
+curl -fsS https://dh-araria-api.vercel.app/api/v1/health
+
+# 3. Public read path (no token)
+curl -fsS "https://dh-araria-api.vercel.app/api/v1/departments"
+curl -fsS "https://dh-araria-api.vercel.app/api/v1/notices/published?page=1&limit=5"
+
+# 4. Feedback is public to write, authenticated to read
+curl -s -o /dev/null -w '%{http_code}\n' \
+  https://dh-araria-api.vercel.app/api/v1/feedback          # expect 401
+
+# 5. The inbox page loads (redirects to /login when signed out)
+curl -fsS https://feedback.dhararia.bihar.gov.in/feedback/inbox
+```
+
+Then, in a browser:
+
+1. Open `/feedback`, submit a rating, and confirm success.
+2. Sign in as the bootstrap admin and confirm the row appears at
+   `/feedback/inbox`.
+3. Move it `NEW → ACKNOWLEDGED → RESOLVED`.
+4. Open `/feedback/<departmentId>` for one department from the share links panel
+   and confirm the department is preselected.
+
+---
+
+## 8. Rollback
+
+### Application
+
+Vercel keeps every deployment. In the project, open **Deployments**, pick the
+last known-good one, and use **Instant Rollback** (or **Promote to Production**).
+The switch is immediate and does not rebuild.
+
+- Roll back the frontend and the backend independently; they share only the API
+  contract at `/api/v1`.
+- A rollback restores code, not configuration. If the incident was caused by an
+  environment-variable change, fix the variable and redeploy — rolling back to an
+  older deployment re-applies that older deployment's variables.
+- Rolling back the backend past a migration is only safe while the previous
+  version still matches the schema. Drizzle migrations in this repository are
+  forward-only: there are no down migrations to run.
+
+### Database
+
+A database rollback is a **Supabase restore**, never a destructive
+`db:migrate`:
+
+1. Stop writes by rolling the backend back to a version that cannot write the
+   affected tables, or by pausing the project in the Supabase dashboard.
+2. Restore from the Supabase backup or point-in-time recovery to a timestamp
+   before the bad change.
+3. Redeploy the matching application version and re-run the smoke tests.
+
+Do not "fix" a bad migration by setting `ALLOW_DESTRUCTIVE_SCHEMA=true`. That
+flag makes `db:migrate` drop `audit_logs`, `care_contexts`, `consent_artefacts`,
+`fhir_bundles` and `abha_profiles` before recreating them — it destroys CERT-In
+audit history and ABDM records.
+
+Record the restore timestamp and the measured restore time in the incident log.
+
+---
+
+## Local development
+
+Local development keeps one PostgreSQL instance and one `.env` per app.
+
+```bash
+# 1. Install once, at the repository root
+npm ci
+
+# 2. Environment
 cp apps/backend/.env.example apps/backend/.env
 cp apps/frontend/.env.example apps/frontend/.env.local
 
-# 3. Edit .env files with your settings
-# Required: DATABASE_URL, JWT_SECRET, FRONTEND_URL
+# 3. Point apps/backend/.env at a local database
+#    DATABASE_URL=postgresql://postgres:postgres@localhost:5432/dh_araria
+#    DATABASE_MIGRATION_URL stays unset and falls back to DATABASE_URL.
 
-# 4. Start services
-docker-compose up -d
-
-# 5. Initialize database
-cd apps/backend
-npm run db:generate
-npm run db:push
-npm run db:seed
-
-# 6. Access applications
-# Frontend: http://localhost:3000
-# Backend API: http://localhost:3001/api/v1
-# API Docs: http://localhost:3001/api/docs
-```
-
-### Environment Variables
-
-#### Root (.env)
-```env
-NODE_ENV=development
-DB_HOST=localhost
-DB_PORT=5432
-DB_USERNAME=postgres
-DB_PASSWORD=postgres
-DB_NAME=dh_araria
-BACKEND_PORT=3001
-FRONTEND_URL=http://localhost:3000
-JWT_SECRET=your-dev-secret-min-32-chars
-REDIS_HOST=localhost
-REDIS_PORT=6379
-```
-
-#### Backend (apps/backend/.env)
-```env
-NODE_ENV=development
-PORT=3001
-FRONTEND_URL=http://localhost:3000
-DATABASE_URL=postgresql://postgres:postgres@localhost:5432/dh_araria?schema=public
-JWT_SECRET=your-dev-secret-min-32-chars
-JWT_ACCESS_EXPIRY=15m
-JWT_REFRESH_EXPIRY=7d
-LOG_LEVEL=debug
-REDIS_HOST=localhost
-REDIS_PORT=6379
-```
-
-#### Frontend (apps/frontend/.env.local)
-```env
-NEXT_PUBLIC_API_URL=http://localhost:3001/api/v1
-NEXT_PUBLIC_APP_URL=http://localhost:3000
-```
-
-### Database Management
-
-```bash
-# Generate Drizzle SQL from schema.ts (no database needed)
-npm run db:generate
-
-# Apply Drizzle migrations, then reconcile MikroORM entities
+# 4. Schema and demo data
 npm run db:migrate
+npm run db:seed        # demo accounts only; never against production
 
-# Verify the Drizzle/MikroORM ownership boundary (offline)
-npm run schema:check
-
-# Open Drizzle Studio
-npm run db:studio
-
-# Seed database (idempotent)
-npm run db:seed
+# 5. Both dev servers
+npm run dev
 ```
 
----
+- Frontend: http://localhost:3000
+- API: http://localhost:3001/api/v1
+- Swagger: http://localhost:3001/api/docs (disabled when `NODE_ENV=production`)
+- Health: http://localhost:3001/api/v1/health/live
 
-## Staging Deployment
+`npm run db:generate` regenerates SQL from `src/common/drizzle/schema.ts`; it
+does not need a database. Commit the generated file. `db:push` is a development
+shortcut only — production schema changes must ship as a committed migration.
 
-### Infrastructure
-
-- **Kubernetes**: 3-node cluster (1 control plane, 2 workers)
-- **PostgreSQL**: Primary + 1 replica (Patroni)
-- **Redis**: Sentinel HA (3 nodes)
-- **Ingress**: NGINX Ingress Controller
-- **Certificates**: cert-manager + Let's Encrypt
-
-### Deployment Steps
+For a local non-demo admin, the same bootstrap applies:
 
 ```bash
-# 1. Build and push images
-docker build -f apps/backend/Dockerfile -t your-registry/dh-araria-backend:staging .
-docker build -f apps/frontend/Dockerfile -t your-registry/dh-araria-frontend:staging .
-docker push your-registry/dh-araria-backend:staging
-docker push your-registry/dh-araria-frontend:staging
-
-# 2. Deploy to Kubernetes
-kubectl apply -f k8s/staging/namespace.yaml
-kubectl apply -f k8s/staging/configmap.yaml
-kubectl apply -f k8s/staging/secrets.yaml
-kubectl apply -f k8s/staging/postgres.yaml
-kubectl apply -f k8s/staging/redis.yaml
-kubectl apply -f k8s/staging/backend.yaml
-kubectl apply -f k8s/staging/frontend.yaml
-kubectl apply -f k8s/staging/ingress.yaml
-
-# 3. Run migrations
-kubectl exec -it deployment/backend -n staging -- npm run db:migrate
-
-# 4. Verify deployment
-kubectl get pods -n staging
-kubectl logs -f deployment/backend -n staging
+ADMIN_EMAIL=hm@example.test ADMIN_PASSWORD='a-unique-12-char-password' npm run bootstrap:admin
 ```
-
-### Staging Configuration
-
-```yaml
-# k8s/staging/configmap.yaml
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: dh-araria-config
-  namespace: staging
-data:
-  NODE_ENV: "staging"
-  FRONTEND_URL: "https://staging.dhararia.bihar.gov.in"
-  LOG_LEVEL: "info"
-  RATE_LIMIT_TTL: "60000"
-  RATE_LIMIT_LIMIT: "100"
-```
-
-```yaml
-# k8s/staging/secrets.yaml
-apiVersion: v1
-kind: Secret
-metadata:
-  name: dh-araria-secrets
-  namespace: staging
-type: Opaque
-stringData:
-  DATABASE_URL: "postgresql://user:pass@postgres:5432/dh_araria"
-  JWT_SECRET: "staging-secret-min-32-chars"
-  REDIS_PASSWORD: "redis-password"
-```
-
----
-
-## Production Deployment (MeghRaj Cloud)
-
-### MeghRaj Cloud Requirements
-
-- **CSP Empanelment**: Use MeghRaj empanelled CSP
-- **Data Localization**: All data within Indian borders
-- **NDC Zones**: Active-Active across Delhi & Pune
-- **Security**: WAF, Anti-DDoS, IAM integration
-- **Compliance**: CERT-In, STQC ready
-
-### Architecture
-
-```
-MeghRaj Cloud (Government of India)
-├── NDC Delhi (Primary)
-│   ├── Kubernetes Cluster (3 masters, 5 workers)
-│   ├── PostgreSQL Patroni Cluster (3 nodes)
-│   ├── Redis Sentinel (3 nodes)
-│   └── NGINX Ingress + WAF
-├── NDC Pune (Disaster Recovery)
-│   ├── Kubernetes Cluster (3 masters, 3 workers)
-│   ├── PostgreSQL Replica (Streaming)
-│   ├── Redis Replica (Sentinel)
-│   └── NGINX Ingress
-└── Global Load Balancer (Citrix/F5)
-    ├── SSL Termination
-    ├── DDoS Protection
-    └── Geo-routing
-```
-
-### Pre-Deployment Checklist
-
-- [ ] CERT-In empanelled auditor engaged
-- [ ] WASA audit completed
-- [ ] Safe-To-Host certificate obtained
-- [ ] STQC CQC certification initiated
-- [ ] CMAP & CAP documents approved
-- [ ] WIM appointed and trained
-- [ ] MeghRaj CSP contract signed
-- [ ] NDC zone allocation confirmed
-- [ ] SSL certificates procured (gov.in domain)
-- [ ] Domain configured (dhararia.bihar.gov.in)
-- [ ] NTP servers configured (time.nic.in, time.nplindia.org)
-- [ ] ELK stack deployed for 180-day logs
-- [ ] Monitoring/alerting configured
-- [ ] Backup strategy tested
-- [ ] DR failover tested
-
-### Deployment Process
-
-#### 1. Infrastructure Provisioning (Terraform)
-
-```bash
-cd infra/terraform/meghraj
-
-# Initialize
-terraform init
-
-# Plan
-terraform plan -var-file=production.tfvars
-
-# Apply
-terraform apply -var-file=production.tfvars
-```
-
-#### 2. Kubernetes Setup
-
-```bash
-# Configure kubectl for MeghRaj clusters
-kubectl config use-context meghraj-delhi-primary
-kubectl config use-context meghraj-pune-dr
-
-# Install operators
-helm repo add postgresql-operator https://charts.postgresql-operator.io
-helm install postgresql-operator postgresql-operator/postgresql-operator -n operators
-
-helm repo add redis-operator https://charts.redis-operator.io
-helm install redis-operator redis-operator/redis-operator -n operators
-
-# Install monitoring
-helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
-helm install monitoring prometheus-community/kube-prometheus-stack -n monitoring
-```
-
-#### 3. Database Deployment (PostgreSQL with Dual-ORM Support)
-
-```bash
-# Primary cluster (Delhi) - Patroni HA Cluster for PostgreSQL 15+
-kubectl apply -f k8s/production/postgres-primary.yaml
-
-# Verify Patroni cluster
-kubectl exec -it postgresql-0 -n production -- patronictl list
-
-# Verify JSONB support for FHIR R4 bundles
-kubectl exec -it postgresql-0 -n production -- psql -U postgres -d dh_araria -c "SELECT jsonb_typeof('{}'::jsonb);"
-```
-
-#### 4. Redis Deployment
-
-```bash
-kubectl apply -f k8s/production/redis.yaml
-
-# Verify Sentinel
-kubectl exec -it redis-0 -n production -- redis-cli info sentinel
-```
-
-#### 5. Application Deployment
-
-```bash
-# Backend
-kubectl apply -f k8s/production/backend.yaml
-
-# Frontend
-kubectl apply -f k8s/production/frontend.yaml
-
-# Ingress with SSL
-kubectl apply -f k8s/production/ingress.yaml
-```
-
-#### 6. Run Migrations
-
-Drizzle owns DDL for the 9 application tables; MikroORM owns the 5 clinical and
-audit tables. `db:migrate` performs both steps in order: it applies the committed
-Drizzle SQL, then reconciles the MikroORM entities with
-`updateSchema({ safe: true })`, which only adds missing tables/columns.
-
-```bash
-# Wait for backend pods to be ready
-kubectl wait --for=condition=available deployment/backend -n production --timeout=300s
-
-# Apply pending migrations (safe to re-run)
-kubectl exec -it deployment/backend -n production -- npm run db:migrate:prod
-
-# Seed production data (first time only)
-kubectl exec -it deployment/backend -n production -- npm run db:seed
-```
-
-> `drizzle-kit push` is a development shortcut only. Production schema changes
-> must ship as a generated file under `apps/backend/drizzle/`.
-
-#### Verification
-
-```bash
-# Every table exists (9 Drizzle + 5 MikroORM)
-kubectl exec -it deployment/backend -n production -- psql -U postgres -d dh_araria -c "\dt"
-
-# JSONB column for FHIR R4
-kubectl exec -it deployment/backend -n production -- psql -U postgres -d dh_araria -c "\d fhir_bundles" | grep fhirJson
-
-# Ownership check: exits non-zero if the two schemas overlap or drift.
-kubectl exec -it deployment/backend -n production -- npm run schema:check
-
-# Health endpoint reports Drizzle + MikroORM reachability and pool stats
-kubectl exec -it deployment/backend -n production -- \
-  curl -s localhost:3001/api/v1/health | jq '.database'
-```
-
-Expected `database` block:
-
-```json
-{
-  "status": "up",
-  "drizzle": "up",
-  "mikro": "up",
-  "drizzlePool": { "total": 0, "idle": 0, "waiting": 0 }
-}
-```
-
-#### 7. Verify Production
-
-```bash
-# Check all pods
-kubectl get pods -n production -o wide
-
-# Check services
-kubectl get svc -n production
-
-# Check ingress
-kubectl get ingress -n production
-
-# Test endpoints
-curl -I https://dhararia.bihar.gov.in/health/live
-curl -I https://dhararia.bihar.gov.in/api/docs
-```
-
-### Production Configuration
-
-```yaml
-# k8s/production/backend.yaml (key excerpts)
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: backend
-  namespace: production
-spec:
-  replicas: 5
-  selector:
-    matchLabels:
-      app: backend
-  template:
-    spec:
-      containers:
-      - name: backend
-        image: your-registry/dh-araria-backend:v1.0.0
-        resources:
-          requests:
-            memory: "512Mi"
-            cpu: "250m"
-          limits:
-            memory: "1Gi"
-            cpu: "1000m"
-        envFrom:
-        - configMapRef:
-            name: dh-araria-config
-        - secretRef:
-            name: dh-araria-secrets
-        livenessProbe:
-          httpGet:
-            path: /health/live
-            port: 3001
-          initialDelaySeconds: 30
-          periodSeconds: 10
-        readinessProbe:
-          httpGet:
-            path: /health/ready
-            port: 3001
-          initialDelaySeconds: 10
-          periodSeconds: 5
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: backend
-  namespace: production
-spec:
-  selector:
-    app: backend
-  ports:
-  - port: 3001
-    targetPort: 3001
-```
-
-### SSL/TLS Configuration
-
-```yaml
-# k8s/production/ingress.yaml
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: dh-araria-ingress
-  namespace: production
-  annotations:
-    cert-manager.io/cluster-issuer: "letsencrypt-prod"
-    nginx.ingress.kubernetes.io/rate-limit: "100"
-    nginx.ingress.kubernetes.io/rate-limit-window: "1m"
-    nginx.ingress.kubernetes.io/ssl-redirect: "true"
-    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
-    nginx.ingress.kubernetes.io/hsts: "true"
-    nginx.ingress.kubernetes.io/hsts-max-age: "31536000"
-    nginx.ingress.kubernetes.io/hsts-include-subdomains: "true"
-spec:
-  tls:
-  - hosts:
-    - dhararia.bihar.gov.in
-    - www.dhararia.bihar.gov.in
-    secretName: dh-araria-tls
-  rules:
-  - host: dhararia.bihar.gov.in
-    http:
-      paths:
-      - path: /api
-        pathType: Prefix
-        backend:
-          service:
-            name: backend
-            port:
-              number: 3001
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: frontend
-            port:
-              number: 3000
-```
-
----
-
-## Post-Deployment
-
-### Health Checks
-
-```bash
-# Automated health check script
-#!/bin/bash
-# health-check.sh
-
-ENDPOINTS=(
-  "https://dhararia.bihar.gov.in/health/live"
-  "https://dhararia.bihar.gov.in/health/ready"
-  "https://dhararia.bihar.gov.in/api/docs"
-)
-
-for endpoint in "${ENDPOINTS[@]}"; do
-  response=$(curl -s -o /dev/null -w "%{http_code}" "$endpoint")
-  if [ "$response" -ne 200 ]; then
-    echo "FAIL: $endpoint returned $response"
-    exit 1
-  fi
-  echo "OK: $endpoint"
-done
-
-echo "All health checks passed"
-```
-
-### Monitoring Setup
-
-```bash
-# Deploy Prometheus alerts
-kubectl apply -f k8s/production/prometheus-alerts.yaml
-
-# Key alerts:
-# - High error rate (>5%)
-# - High latency (p99 > 1s)
-# - Pod restarts
-# - Disk usage > 80%
-# - Memory usage > 85%
-# - Database connections > 80%
-# - Certificate expiry < 30 days
-```
-
-### Backup Verification
-
-```bash
-# Daily backup verification
-#!/bin/bash
-# verify-backup.sh
-
-BACKUP_DATE=$(date -d "yesterday" +%Y%m%d)
-BACKUP_FILE="s3://dh-araria-backups/postgres-$BACKUP_DATE.dump"
-
-# Download and test restore to staging
-aws s3 cp "$BACKUP_FILE" /tmp/backup.dump
-pg_restore --clean --if-exists --no-owner --dbname=dh_araria_staging /tmp/backup.dump
-
-if [ $? -eq 0 ]; then
-  echo "Backup verification successful"
-else
-  echo "BACKUP VERIFICATION FAILED"
-  # Alert on-call
-fi
-```
-
----
-
-## Rollback Procedure
-
-### Application Rollback
-
-```bash
-# Quick rollback to previous version
-kubectl rollout undo deployment/backend -n production
-kubectl rollout undo deployment/frontend -n production
-
-# Verify rollback
-kubectl rollout status deployment/backend -n production
-kubectl rollout status deployment/frontend -n production
-```
-
-### Database Rollback
-
-```bash
-# Point-in-time recovery (if needed)
-# 1. Stop application
-kubectl scale deployment backend --replicas=0 -n production
-
-# 2. Restore from backup
-pg_restore --clean --if-exists --no-owner --dbname=dh_araria /path/to/backup.dump
-
-# 3. Start application
-kubectl scale deployment backend --replicas=5 -n production
-```
-
-### DR Failover
-
-```bash
-# Manual DR failover (if automatic fails)
-# 1. Promote DR PostgreSQL
-kubectl exec -it postgresql-0 -n production-dr -- patronictl failover --candidate postgresql-1
-
-# 2. Update DNS/Load Balancer
-# Point to DR NDC IP
-
-# 3. Scale up DR Kubernetes
-kubectl scale deployment backend --replicas=5 -n production-dr
-
-# 4. Verify
-curl -I https://dhararia.bihar.gov.in/health/live
-```
-
----
-
-## Security Hardening (Production)
-
-### Network Policies
-
-```yaml
-# k8s/production/network-policies.yaml
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
-metadata:
-  name: backend-network-policy
-  namespace: production
-spec:
-  podSelector:
-    matchLabels:
-      app: backend
-  policyTypes:
-  - Ingress
-  - Egress
-  ingress:
-  - from:
-    - namespaceSelector:
-        matchLabels:
-          name: ingress-nginx
-    ports:
-    - protocol: TCP
-      port: 3001
-  egress:
-  - to:
-    - podSelector:
-        matchLabels:
-          app: postgresql
-    ports:
-    - protocol: TCP
-      port: 5432
-  - to:
-    - podSelector:
-        matchLabels:
-          app: redis
-    ports:
-    - protocol: TCP
-      port: 6379
-```
-
-### Pod Security Standards
-
-```yaml
-# Restricted PSP for production
-apiVersion: policy/v1beta1
-kind: PodSecurityPolicy
-metadata:
-  name: restricted
-spec:
-  privileged: false
-  allowPrivilegeEscalation: false
-  requiredDropCapabilities:
-    - ALL
-  volumes:
-    - 'configMap'
-    - 'emptyDir'
-    - 'projected'
-    - 'secret'
-    - 'downwardAPI'
-    - 'persistentVolumeClaim'
-  hostNetwork: false
-  hostIPC: false
-  hostPID: false
-  runAsUser:
-    rule: 'MustRunAsNonRoot'
-  seLinux:
-    rule: 'RunAsAny'
-  fsGroup:
-    rule: 'RunAsAny'
-```
-
----
-
-## Maintenance Windows
-
-### Scheduled Maintenance
-
-| Activity | Frequency | Window | Duration |
-|----------|-----------|--------|----------|
-| Security patches | Monthly | 2nd Saturday 02:00-04:00 IST | 2 hours |
-| Database maintenance | Weekly | Sunday 03:00-04:00 IST | 1 hour |
-| Certificate renewal | Quarterly | Automated | - |
-| DR failover test | Monthly | 1st Sunday 02:00-04:00 IST | 2 hours |
-| Full backup verification | Daily | 03:00 IST | 30 min |
-
-### Emergency Maintenance
-
-- **Trigger**: Critical security vulnerability (CVSS ≥ 9.0)
-- **Approval**: CISO + Project Director
-- **Communication**: 2-hour advance notice to stakeholders
-- **Rollback**: Immediate if issues detected
 
 ---
 
 ## Troubleshooting
 
-### Common Issues
+| Symptom | Likely cause | Resolution |
+|---------|--------------|------------|
+| 503 from `/api/v1/health`, logs show `too many clients already` or `remaining connection slots are reserved` | Pool exhaustion. Each warm function instance opens its own pool, and `MIKRO_POOL_SIZE` defaults to 20. | Set `DRIZZLE_POOL_SIZE=1` and `MIKRO_POOL_SIZE=1` in the backend project and redeploy. Check the pooler's client limit in the Supabase dashboard. |
+| `db:migrate` fails with a DDL or prepared-statement error | `DATABASE_MIGRATION_URL` is the transaction pooler (port 6543), or `DATABASE_URL` is. | Run migrations with both variables on the direct connection (port 5432), as in step 3. |
+| `db:migrate` connects but MikroORM reconciliation fails | `DATABASE_URL` still points at the pooler while only `DATABASE_MIGRATION_URL` was changed. | `createMikroOrmConfig()` reads `DATABASE_URL`; override it for the operator session. |
+| Frontend requests go to `http://localhost:3001` in production, or 404 on every call | `NEXT_PUBLIC_API_URL` was missing or wrong at build time. | Set it to `https://<backend-origin>/api/v1`, then **redeploy** the frontend. |
+| Browser console shows a CORS error | The calling origin is not in `FRONTEND_URL`. | Add the exact origin (scheme + host, no trailing slash), comma-separated, then redeploy the backend. |
+| Function times out at 30 s, usually on the first request after idle | Cold start: container creation plus `createApp()` plus the first database connection. | Expected on a cold instance. If it persists, check database latency, and confirm in the dashboard that the function still has 1024 MB / 30 s. |
+| All citizens share one rate-limit bucket | `trust proxy` is not applied because the runtime marker is absent. | Confirm the deployment is on Vercel (`VERCEL` is set); `isServerlessRuntime()` keys off it. |
+| `JWT_SECRET still holds the example value` at boot | The placeholder from `.env.example` was copied into production. | Generate a unique secret of at least 32 characters and redeploy. |
+| 502 from the function with no Nest log line | The function failed to load `dist/bootstrap`. | Check the build log: `nest build` must run before the function is packaged. An import from `src/` in `api/index.js` also breaks this. |
 
-| Issue | Diagnosis | Resolution |
-|-------|-----------|------------|
-| Backend pods CrashLoopBackOff | Check logs: `kubectl logs -l app=backend` | Fix config/env, restart |
-| Database connection refused | Check PostgreSQL status, network policies | Verify service, credentials |
-| High memory usage | Check heap dumps, memory leaks | Increase limits, fix leaks |
-| SSL certificate errors | Check cert-manager logs | Renew cert, check DNS |
-| Rate limiting too aggressive | Check nginx config, headers | Adjust limits |
+---
 
-### Debug Commands
+## Maintenance windows
 
-```bash
-# View backend logs
-kubectl logs -f deployment/backend -n production --tail=100
+| Activity | Frequency | Window | Duration |
+|----------|-----------|--------|----------|
+| Dependency updates (Dependabot PRs) | Weekly | Monday | review only |
+| Supabase backup verification | Monthly | First Sunday 02:00–04:00 IST | 1 hour |
+| Restore drill | Quarterly | Scheduled | 2 hours |
+| JWT secret rotation | Annually, or on suspicion | Scheduled | 30 minutes |
 
-# Exec into backend pod
-kubectl exec -it deployment/backend-xxx -n production -- sh
-
-# Check database connectivity
-kubectl exec -it deployment/backend-xxx -n production -- nc -zv postgresql 5432
-
-# View events
-kubectl get events -n production --sort-by='.lastTimestamp'
-
-# Describe pod for details
-kubectl describe pod backend-xxx -n production
-```
+Vercel and Supabase both deploy without a maintenance window, so application
+releases need none. A database restore does: announce it, pause writes, and
+expect the API to return 503 while it runs.
 
 ---
 
@@ -729,6 +442,6 @@ kubectl describe pod backend-xxx -n production
 
 ---
 
-*Document Version: 1.0*  
-*Last Updated: 2024-10-06*  
+*Document Version: 2.0*
+*Last Updated: 2026-10-24*
 *Classification: Internal - Government Use*
