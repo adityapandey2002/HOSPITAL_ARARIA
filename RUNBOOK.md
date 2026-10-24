@@ -115,6 +115,8 @@ Or run both together:
 npm run dev
 ```
 
+> **Note:** `npm run dev` may print a harmless `ENOWORKSPACES` error for the frontend — this is an npm/concurrently quirk. Both servers still start correctly (frontend on 3000, backend on 3001). If you prefer to avoid the error, run the two `dev:backend`/`dev:frontend` commands in separate terminals instead.
+
 Verify the backend is up:
 
 ```powershell
