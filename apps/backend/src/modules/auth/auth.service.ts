@@ -5,7 +5,7 @@ import {
   BadRequestException,
   Logger,
 } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
+import { JwtService, type JwtSignOptions } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { createHash } from 'crypto';
 import { ConfigService } from '@nestjs/config';
@@ -240,7 +240,7 @@ export class AuthService {
 
     const accessToken = this.jwtService.sign(payload);
     const refreshToken = this.jwtService.sign(payload, {
-      expiresIn: this.configService.get<string>('jwt.refreshTokenExpiry'),
+      expiresIn: this.configService.get<JwtSignOptions['expiresIn']>('jwt.refreshTokenExpiry'),
     });
 
     return {

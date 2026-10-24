@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { JwtModule } from '@nestjs/jwt';
+import { JwtModule, type JwtSignOptions } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 
@@ -17,7 +17,9 @@ import { UsersModule } from '../users/users.module';
       useFactory: async (configService: ConfigService) => ({
         secret: configService.get<string>('jwt.secret'),
         signOptions: {
-          expiresIn: configService.get<string>('jwt.accessTokenExpiry'),
+          // @nestjs/jwt 11 types `expiresIn` as `number | ms.StringValue`, so the
+          // env string has to be read at that type rather than as plain string.
+          expiresIn: configService.get<JwtSignOptions['expiresIn']>('jwt.accessTokenExpiry'),
           issuer: configService.get<string>('jwt.issuer'),
           audience: configService.get<string>('jwt.audience'),
         },

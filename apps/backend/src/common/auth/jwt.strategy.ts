@@ -25,7 +25,9 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
-      secretOrKey: configService.get<string>('jwt.secret'),
+      // `getOrThrow` both satisfies passport-jwt's non-optional `secretOrKey`
+      // and fails the boot rather than the first login if the secret is absent.
+      secretOrKey: configService.getOrThrow<string>('jwt.secret'),
       issuer: configService.get<string>('jwt.issuer'),
       audience: configService.get<string>('jwt.audience'),
     });
