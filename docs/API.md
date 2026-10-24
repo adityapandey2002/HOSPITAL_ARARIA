@@ -3,19 +3,22 @@
 ## Base Information
 
 - **Base URL (Development)**: `http://localhost:3001/api/v1`
-- **Base URL (Production)**: `https://dhararia.bihar.gov.in/api/v1`
+- **Base URL (Production)**: `<backend-origin>/api/v1` — the Vercel project's origin, configured in the frontend as `NEXT_PUBLIC_API_URL`
 - **API Version**: v1
 - **Protocol**: HTTPS only (Production)
 - **Authentication**: Bearer Token (JWT)
-- **Rate Limits**: 100 req/min (general), 10 req/min (auth endpoints)
+- **Rate Limits**: 100 req/min (general), 10 req/min (auth endpoints), 5 req/min (public feedback and contact), 20 req/min (client error reports)
 - **Content-Type**: `application/json`
 
 ## Authentication
 
 ### JWT Token Structure
 
+Tokens are signed with HS256 using the shared `JWT_SECRET` (minimum 32
+characters), and carry the issuer `dh-araria` and audience `dh-araria-users`.
+
 ```
-Header: { "alg": "RS256", "typ": "JWT" }
+Header: { "alg": "HS256", "typ": "JWT" }
 Payload: {
   "sub": "user-id",
   "email": "user@example.com",
@@ -74,6 +77,7 @@ All error responses follow this structure:
 |------|-------------|
 | 200 | Success |
 | 201 | Created |
+| 202 | Accepted (client error reports) |
 | 400 | Bad Request (validation error) |
 | 401 | Unauthorized (invalid/expired token) |
 | 403 | Forbidden (insufficient permissions) |
@@ -583,6 +587,279 @@ GET /api/v1/grievances/statuses
 
 ---
 
+### Feedback
+
+Public, anonymous submission with a scoped staff inbox. It is stored in two
+Drizzle-owned tables, `feedback` and `feedback_viewers`
+(`docs/adr/0002-feedback-table-ownership.md`).
+
+#### Visibility and scope
+
+| Actor | Sees |
+|-------|------|
+| Anonymous caller | `POST /feedback` only |
+| `ADMIN` (the Hospital Manager) | Every department, every response, and all access grants |
+| Any other signed-in user | Only the departments granted in `feedback_viewers`; no grant means an empty inbox, not an error |
+
+Scope is enforced in `FeedbackService`, not in the controller: every read passes
+through `accessibleDepartmentIds()` / `requireDepartmentAccess()`, so a new
+route cannot widen it. Only `ADMIN` may manage grants.
+
+Two failure modes are deliberately distinct:
+
+| Status | Meaning |
+|--------|---------|
+| `403` | The feedback row exists but its department is not in your scope, or the route requires `ADMIN` |
+| `404` | The row, user or department does not exist. Existence is checked before scope, so the two errors stay distinct. |
+
+#### Submit feedback (Public)
+
+```http
+POST /api/v1/feedback
+Content-Type: application/json
+```
+
+**Throttle:** 5 requests per minute per client IP. On Vercel this is per citizen,
+because `trust proxy` is set to `1` on serverless.
+
+```json
+{
+  "departmentId": "3f1c1a5e-...",
+  "serviceArea": "OPD",
+  "rating": 4,
+  "cleanliness": 5,
+  "staffBehaviour": 4,
+  "waitTime": 2,
+  "comment": "Short wait at registration, long queue for tests.",
+  "name": "Optional Name",
+  "phone": "+91 98765 43210",
+  "email": "optional@example.com"
+}
+```
+
+| Field | Type | Required | Constraints |
+|-------|------|----------|-------------|
+| `departmentId` | uuid | yes | Must exist and be active; otherwise `404 Department not found` |
+| `serviceArea` | enum | yes | `OPD`, `EMERGENCY`, `PHARMACY`, `LABORATORY`, `RADIOLOGY`, `BILLING`, `ADMISSION`, `OTHER` |
+| `rating` | integer | yes | 1–5 (overall) |
+| `cleanliness` | integer | no | 1–5 |
+| `staffBehaviour` | integer | no | 1–5 |
+| `waitTime` | integer | no | 1–5 |
+| `comment` | string | no | at most 2000 characters |
+| `name` | string | no | at most 120 characters; feedback is anonymous by default |
+| `phone` | string | no | 7–20 characters of digits, spaces, `+`, `-`, `(`, `)` |
+| `email` | string | no | valid e-mail, at most 254 characters |
+| `website` | string | must be empty | Honeypot: hidden in the form, rejected if it has any value |
+
+`status`, `id` and the timestamps are server-owned and absent from the DTO.
+Unknown fields are rejected (`forbidNonWhitelisted`), so a caller cannot smuggle
+a workflow state through the public endpoint.
+
+**Response (201):**
+
+```json
+{
+  "success": true,
+  "data": {
+    "id": "uuid",
+    "departmentId": "uuid",
+    "departmentName": "General Medicine",
+    "serviceArea": "OPD",
+    "rating": 4,
+    "cleanliness": 5,
+    "staffBehaviour": 4,
+    "waitTime": 2,
+    "comment": "Short wait at registration, long queue for tests.",
+    "name": "Optional Name",
+    "phone": "+91 98765 43210",
+    "email": "optional@example.com",
+    "status": "NEW",
+    "createdAt": "2026-10-24T10:30:00.000Z",
+    "updatedAt": "2026-10-24T10:30:00.000Z"
+  }
+}
+```
+
+#### Departments in scope
+
+```http
+GET /api/v1/feedback/scope
+Authorization: Bearer <token>
+```
+
+`all` is `true` for `ADMIN`. For everyone else, `departments` lists the active
+departments they hold a grant for — the same source the inbox uses, so an empty
+scope and an empty list can never disagree.
+
+```json
+{
+  "success": true,
+  "data": {
+    "all": false,
+    "departments": [{ "id": "uuid", "name": "General Medicine" }]
+  }
+}
+```
+
+#### List feedback
+
+```http
+GET /api/v1/feedback?page=1&limit=10&status=NEW&serviceArea=OPD
+Authorization: Bearer <token>
+```
+
+| Parameter | Type | Default | Notes |
+|-----------|------|---------|-------|
+| `page` | integer | 1 | 1 or greater |
+| `limit` | integer | 10 | 1–100 |
+| `sortBy` | string | `createdAt` | `createdAt`, `rating`, `status` or `serviceArea`; any other value falls back to `createdAt` |
+| `sortOrder` | string | `desc` | `asc` or `desc` |
+| `departmentId` | uuid | — | Narrows within scope; a department outside your scope returns an empty page, not `403` |
+| `status` | enum | — | `NEW`, `ACKNOWLEDGED`, `RESOLVED` |
+| `serviceArea` | enum | — | the eight service areas above |
+| `from` | ISO 8601 | — | Inclusive lower bound on `createdAt` |
+| `to` | ISO 8601 | — | Inclusive upper bound; a date-only value covers the whole day |
+
+**Response (200):**
+
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": "uuid",
+      "departmentId": "uuid",
+      "departmentName": "General Medicine",
+      "serviceArea": "OPD",
+      "rating": 4,
+      "cleanliness": 5,
+      "staffBehaviour": 4,
+      "waitTime": 2,
+      "comment": "…",
+      "name": null,
+      "phone": null,
+      "email": null,
+      "status": "NEW",
+      "createdAt": "2026-10-24T10:30:00.000Z",
+      "updatedAt": "2026-10-24T10:30:00.000Z"
+    }
+  ],
+  "meta": { "page": 1, "limit": 10, "total": 1, "totalPages": 1 }
+}
+```
+
+#### Feedback statistics
+
+```http
+GET /api/v1/feedback/stats?departmentId=uuid
+Authorization: Bearer <token>
+```
+
+`departmentId` is optional and narrows within scope. Averages are rounded to one
+decimal; a criterion nobody rated comes back as `null`.
+
+```json
+{
+  "success": true,
+  "data": {
+    "total": 42,
+    "averageRating": 3.8,
+    "averageCleanliness": 4.1,
+    "averageStaffBehaviour": 4,
+    "averageWaitTime": 2.9,
+    "byStatus": { "NEW": 12, "ACKNOWLEDGED": 8, "RESOLVED": 22 },
+    "ratingDistribution": { "1": 2, "2": 5, "3": 10, "4": 15, "5": 10 },
+    "byDepartment": [
+      { "departmentId": "uuid", "departmentName": "General Medicine", "total": 20, "averageRating": 4 }
+    ]
+  }
+}
+```
+
+#### Update feedback status
+
+```http
+PATCH /api/v1/feedback/:id/status
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+  "status": "ACKNOWLEDGED"
+}
+```
+
+The inbox presents the workflow as `NEW → ACKNOWLEDGED → RESOLVED`. The endpoint
+sets the value it is given; it does not reject a backward transition.
+
+- `403` — the row exists in a department you cannot read.
+- `404` — no feedback with that id.
+
+#### List access grants (Admin only)
+
+```http
+GET /api/v1/feedback/access
+Authorization: Bearer <token>
+Roles: ADMIN
+```
+
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": "uuid",
+      "userId": "uuid",
+      "userName": "Dr A. Verma",
+      "userEmail": "a.verma@dhararia.gov.in",
+      "departmentId": "uuid",
+      "departmentName": "General Medicine",
+      "grantedBy": "uuid",
+      "createdAt": "2026-10-24T10:00:00.000Z"
+    }
+  ]
+}
+```
+
+#### Grant access (Admin only)
+
+```http
+POST /api/v1/feedback/access
+Authorization: Bearer <token>
+Roles: ADMIN
+Content-Type: application/json
+
+{
+  "userId": "uuid",
+  "departmentIds": ["uuid", "uuid"]
+}
+```
+
+A user may hold grants for several departments. The pair
+(`userId`, `departmentId`) is unique, so re-granting is a no-op and the response
+is the **current** set of grants for that user/department combination, not just
+the rows this call inserted.
+
+- `201` — grants created (or already present).
+- `404` — the user or one of the departments does not exist.
+- `403` — the caller is not `ADMIN`. The check runs in the guard **and** again in
+  the service.
+
+#### Revoke access (Admin only)
+
+```http
+DELETE /api/v1/feedback/access/:id
+Authorization: Bearer <token>
+Roles: ADMIN
+```
+
+```json
+{ "success": true, "data": { "deleted": true } }
+```
+
+`404` if the grant id does not exist.
+
+---
+
 ### 📢 Notices
 
 #### List Published Notices (Public)
@@ -705,6 +982,65 @@ GET /api/v1/health
 
 ---
 
+### Client Error Reporting
+
+The frontend error boundaries (`apps/frontend/src/app/error.tsx` and
+`app/global-error.tsx`) report here through `src/lib/telemetry.ts`. Reporting is
+best-effort: a failed report never masks the original error.
+
+```http
+POST /api/v1/client-errors
+Content-Type: application/json
+```
+
+Public. **Throttle:** 20 requests per minute per client IP.
+
+| Field | Type | Required | Constraints |
+|-------|------|----------|-------------|
+| `message` | string | yes | 1–500 characters |
+| `stack` | string | no | at most 4000 characters; only the first ten frames are logged |
+| `digest` | string | no | at most 200 characters (the Next.js error digest) |
+| `path` | string | no | at most 500 characters; query string and fragment are stripped |
+| `userAgent` | string | no | at most 500 characters |
+| `occurredAt` | ISO 8601 | no | defaults to the server's receipt time |
+
+```json
+{
+  "message": "Cannot read properties of undefined (reading 'map')",
+  "stack": "TypeError: …",
+  "digest": "1234567890",
+  "path": "/feedback/inbox",
+  "userAgent": "Mozilla/5.0 …",
+  "occurredAt": "2026-10-24T10:30:00.000Z"
+}
+```
+
+**Response (202):**
+
+```json
+{ "success": true, "data": { "received": true } }
+```
+
+The server writes exactly one structured log line and stores nothing:
+
+```json
+{
+  "event": "client_error",
+  "message": "…",
+  "digest": "…",
+  "path": "/feedback/inbox",
+  "userAgent": "…",
+  "occurredAt": "…",
+  "stack": "first ten frames only"
+}
+```
+
+The payload is deliberately small and PII-free: no cookies, no e-mail, no request
+body. `path` is cut at the first `?` or `#`, because a query string can carry a
+phone number.
+
+---
+
 ## Webhooks (Phase 3 - ABDM)
 
 ### Inbound callbacks
@@ -789,7 +1125,7 @@ class DhArariaApi {
 ### cURL Examples
 
 ```bash
-# Login
+# Login (local seed data only — never present in production)
 curl -X POST http://localhost:3001/api/v1/auth/login \
   -H "Content-Type: application/json" \
   -d '{"email":"demo@dhararia.gov.in","password":"Demo@123"}'
@@ -803,6 +1139,15 @@ curl -X POST http://localhost:3001/api/v1/appointments \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer YOUR_TOKEN" \
   -d '{"doctorId":"uuid","appointmentDate":"2024-10-15","startTime":"10:00","type":"OPD","reason":"Consultation"}'
+
+# Submit feedback (public, anonymous)
+curl -X POST http://localhost:3001/api/v1/feedback \
+  -H "Content-Type: application/json" \
+  -d '{"departmentId":"uuid","serviceArea":"OPD","rating":4}'
+
+# Read the scoped feedback inbox
+curl -X GET "http://localhost:3001/api/v1/feedback?page=1&limit=10&status=NEW" \
+  -H "Authorization: Bearer YOUR_TOKEN"
 ```
 
 ---
@@ -815,4 +1160,4 @@ curl -X POST http://localhost:3001/api/v1/appointments \
 
 ---
 
-*Generated from Swagger/OpenAPI spec available at `/api/docs`*
+*Generated from the Swagger/OpenAPI spec at `/api/docs` (served when `NODE_ENV` is not `production`).*
