@@ -267,11 +267,11 @@ carries a hidden honeypot field, and its contact fields are never logged.
 ## 🏛️ Compliance Standards
 
 - **GIGW 3.0** - Government of India Website Guidelines
-- **WCAG 2.2 AA** - Web Content Accessibility Guidelines
+- **WCAG 2.2 AA** - Conformance target; audit and fixes are Phase 2
 - **MeitY Open Source Policy** - No vendor lock-in
 - **ABDM** - Ayushman Bharat Digital Mission M2/M3 data model (gateway transport is Phase 3)
 - **CERT-In** - Audit trail and retention controls; log shipping and incident reporting are operator processes
-- **STQC CQW** - Certification ready
+- **STQC CQW** - Certification planned for Phase 4; not yet certified
 
 ## 📁 Project Phases
 

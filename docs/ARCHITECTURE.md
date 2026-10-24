@@ -750,6 +750,10 @@ advisory and confirm the effective limits in the Vercel dashboard.
 
 ### WCAG 2.2 AA / GIGW 3.0 Compliance
 
+This section describes the implementation intent. No formal WCAG or GIGW audit
+has been carried out, and automated checks alone do not establish conformance;
+see the compliance table in [SECURITY.md](SECURITY.md).
+
 1. **Perceivable**
    - Semantic HTML5 structure
    - Text alternatives for all non-text content
