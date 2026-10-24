@@ -255,7 +255,7 @@ department in the feedback inbox and is the only role allowed to manage
 | Variable | Required | Example | Notes |
 |----------|----------|---------|-------|
 | `NEXT_PUBLIC_API_URL` | yes | `https://dh-araria-api.vercel.app/api/v1` | The backend project's origin **plus `/api/v1`**. Without the suffix every request 404s. |
-| `NEXT_PUBLIC_APP_URL` | yes | `https://feedback.dhararia.bihar.gov.in` | The frontend's public origin. Used for `metadataBase` and as the fallback when building per-department share links. |
+| `NEXT_PUBLIC_APP_URL` | yes | `https://feedback.dhararia.bihar.gov.in` | The frontend's public origin. Used for `metadataBase` and as the fallback origin when composing copyable per-department links. |
 
 4. Deploy.
 
@@ -320,8 +320,8 @@ Then, in a browser:
 2. Sign in as the bootstrap admin and confirm the row appears at
    `/feedback/inbox`.
 3. Move it `NEW → ACKNOWLEDGED → RESOLVED`.
-4. Open `/feedback/<departmentId>` for one department from the share links panel
-   and confirm the department is preselected.
+4. Open `/feedback/<departmentId>` for one department from the **Public feedback
+   links** panel and confirm the department is preselected.
 
 ---
 
