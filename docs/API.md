@@ -7,7 +7,7 @@
 - **API Version**: v1
 - **Protocol**: HTTPS only (Production)
 - **Authentication**: Bearer Token (JWT)
-- **Rate Limits**: 100 req/min (general), 10 req/min (auth endpoints), 5 req/min (public feedback and contact), 20 req/min (client error reports)
+- **Rate Limits**: 100 req/min (general); auth is 5 req/min on register, 10 req/min on login and 3 req/hour on forgot-password; public feedback and contact are 5 req/min; client-error reports are 20 req/min
 - **Content-Type**: `application/json`
 
 ## Authentication

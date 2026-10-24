@@ -262,15 +262,15 @@ carries a hidden honeypot field, and its contact fields are never logged.
 - 5xx responses redacted to `Internal server error` in production
 - The `JWT_SECRET` placeholder from `.env.example` is rejected when `NODE_ENV=production`
 - Production dependency audit gate (`npm run audit:ci`) with time-boxed, documented exceptions
-- CERT-In compliant logging (180-day retention ready)
+- CERT-In-oriented audit trail and a 180-day retention target (the purge still needs an external scheduler)
 
 ## 🏛️ Compliance Standards
 
 - **GIGW 3.0** - Government of India Website Guidelines
 - **WCAG 2.2 AA** - Web Content Accessibility Guidelines
 - **MeitY Open Source Policy** - No vendor lock-in
-- **ABDM** - Ayushman Bharat Digital Mission ready
-- **CERT-In** - Cybersecurity directives compliant
+- **ABDM** - Ayushman Bharat Digital Mission M2/M3 data model (gateway transport is Phase 3)
+- **CERT-In** - Audit trail and retention controls; log shipping and incident reporting are operator processes
 - **STQC CQW** - Certification ready
 
 ## 📁 Project Phases
@@ -285,13 +285,15 @@ carries a hidden honeypot field, and its contact fields are never logged.
 - [x] Grievance submission form
 - [x] Notices & announcements
 - [x] Contact page with map
-- [x] Accessibility compliant UI components
-- [x] API documentation (Swagger)
+- [x] Department feedback form with a per-department staff inbox
+- [x] Accessibility-oriented UI components
+- [x] API documentation (Swagger, development only)
 
 ### Phase 2: Compliance Hardening 🔄
 - [ ] WCAG 2.2 AA audit & fixes
-- [ ] ELK stack for 180-day log retention
-- [ ] NTP synchronization
+- [ ] Log drain to a 180-day retention store
+- [ ] External scheduler for the audit-retention purge
+- [ ] Confirm platform time synchronisation
 - [ ] Content Management Policy (CMAP)
 - [ ] Content Archival Policy (CAP)
 - [ ] Security hardening

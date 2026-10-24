@@ -116,7 +116,7 @@ instance would hold its own session.
 | `DATABASE_URL` | yes | — | Supabase transaction pooler (port 6543). Read by both ORMs. |
 | `FRONTEND_URL` | yes | `http://localhost:3000` | Comma-separated origin allowlist; see step 6. |
 | `JWT_SECRET` | yes | — | At least 32 characters. The `.env.example` placeholder is rejected when `NODE_ENV=production`. |
-| `DRIZZLE_POOL_SIZE` | recommended | `1` when `VERCEL` is set, else `20` | Set to `1` explicitly. |
+| `DRIZZLE_POOL_SIZE` | **yes** | `20` | Set to `1` explicitly — see the note below. |
 | `MIKRO_POOL_SIZE` | **yes** | `20` | Set to `1` explicitly — see the note below. |
 | `MIKRO_POOL_MIN` | no | `0` | Keep at `0`; an eager minimum holds connections open on idle instances. |
 | `JWT_ACCESS_EXPIRY` | no | `15m` | |
@@ -133,12 +133,15 @@ The optional integration variables (`ABDM_*`, `BHASHINI_*`, `EPRAAMAN_*`,
 `apps/backend/src/config/validation.ts` and default to empty. None is needed to
 serve the portal.
 
-> **Pool sizing.** `configuration.ts` defaults both pools to 1 when
-> `VERCEL`/`AWS_LAMBDA_FUNCTION_NAME`/`FUNCTION_NAME` is set, and that default is
-> what `DrizzleService` receives. `mikro.config.ts` reads `MIKRO_POOL_SIZE`
-> straight from `process.env` with a fallback of `20`, so an unset
-> `MIKRO_POOL_SIZE` gives every function instance a 20-connection MikroORM pool.
-> Set `DRIZZLE_POOL_SIZE=1` and `MIKRO_POOL_SIZE=1` in the dashboard.
+> **Pool sizing.** Set `DRIZZLE_POOL_SIZE=1` and `MIKRO_POOL_SIZE=1` in the
+> dashboard. Do not rely on runtime detection: `configuration.ts` lowers its
+> default to 1 when `VERCEL`/`AWS_LAMBDA_FUNCTION_NAME`/`FUNCTION_NAME` is set,
+> but the Joi schema in `validation.ts` gives both variables a default of `20`,
+> and `@nestjs/config` copies that default into `process.env` before the
+> configuration factory runs. An unset variable therefore resolves to 20.
+> `mikro.config.ts` reads `MIKRO_POOL_SIZE` directly, so the same applies to
+> MikroORM. One connection per pool per warm instance is the safe starting
+> point; raise it only after checking Supabase's connection limit.
 
 ---
 
