@@ -34,6 +34,7 @@ import { api, handleApiResponse } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
 import { feedbackTimestamp, getErrorMessage, toFeedbackQuery } from '@/lib/feedback';
 import { FeedbackAccessPanel } from './FeedbackAccessPanel';
+import { FeedbackShareLinks } from './FeedbackShareLinks';
 import { RatingDisplay } from './RatingStars';
 
 const PAGE_SIZE = 10;
@@ -652,6 +653,10 @@ export function FeedbackInbox() {
             </Button>
           </p>
         )}
+
+        <div className="mt-6">
+          <FeedbackShareLinks departments={scope.departments} />
+        </div>
 
         <div className="mt-8 rounded-2xl border border-gray-100 bg-white p-4 shadow-sm sm:p-5">
           <h2 className="sr-only">Filter feedback</h2>

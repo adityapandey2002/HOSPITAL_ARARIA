@@ -22,6 +22,13 @@
       "when": 1792839749040,
       "tag": "0002_massive_red_wolf",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1792841212448,
+      "tag": "0003_amusing_micromacro",
+      "breakpoints": true
     }
   ]
 }

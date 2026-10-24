@@ -1,4 +1,10 @@
-import { ForbiddenException, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Inject,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { and, asc, avg, count, desc, eq, gte, inArray, lte, type SQL } from 'drizzle-orm';
 import type { AnyPgColumn } from 'drizzle-orm/pg-core';
 
@@ -67,6 +73,18 @@ function average(value: string | number | null | undefined): number | null {
   return Math.round(parsed * 10) / 10;
 }
 
+/**
+ * A date-only `to` filter covers the whole day, not just midnight. Without
+ * this, `to=2026-10-24` would silently exclude every submission made after
+ * 00:00 on 24 October.
+ */
+function endOfDay(value: string): Date {
+  const date = new Date(value);
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) date.setUTCHours(23, 59, 59, 999);
+  return date;
+}
+
+/** Neutral payload for a caller with no grants (or no rows in range). */
 function emptyStats(): FeedbackStats {
   const byStatus = {} as Record<FeedbackStatus, number>;
   for (const status of Object.values(FeedbackStatus)) byStatus[status] = 0;
@@ -74,9 +92,9 @@ function emptyStats(): FeedbackStats {
   return {
     total: 0,
     averageRating: 0,
-    averageCleanliness: null,
-    averageStaffBehaviour: null,
-    averageWaitTime: null,
+    averageCleanliness: 0,
+    averageStaffBehaviour: 0,
+    averageWaitTime: 0,
     byStatus,
     ratingDistribution: { '1': 0, '2': 0, '3': 0, '4': 0, '5': 0 },
     byDepartment: [],
@@ -382,12 +400,22 @@ export class FeedbackService {
     this.assertAdmin(actor);
 
     const [user] = await this.db
-      .select({ id: users.id })
+      .select({ id: users.id, role: users.role })
       .from(users)
       .where(eq(users.id, dto.userId))
       .limit(1);
 
     if (!user) throw new NotFoundException('User not found');
+
+    // Feedback is about the hospital's own service quality, so only people who
+    // work in it can be granted access. A patient account reading other
+    // patients' comments (and any contact details they left) would be a
+    // privacy leak dressed up as an admin action.
+    if (user.role === UserRole.PATIENT) {
+      throw new BadRequestException(
+        'Feedback access can only be granted to hospital staff accounts'
+      );
+    }
 
     const departmentIds = [...new Set(dto.departmentIds)];
     const found = await this.db
@@ -477,7 +505,7 @@ export class FeedbackService {
     if (filters.status) conditions.push(eq(feedback.status, filters.status));
     if (filters.serviceArea) conditions.push(eq(feedback.serviceArea, filters.serviceArea));
     if (filters.from) conditions.push(gte(feedback.createdAt, new Date(filters.from)));
-    if (filters.to) conditions.push(lte(feedback.createdAt, new Date(filters.to)));
+    if (filters.to) conditions.push(lte(feedback.createdAt, endOfDay(filters.to)));
 
     return conditions;
   }

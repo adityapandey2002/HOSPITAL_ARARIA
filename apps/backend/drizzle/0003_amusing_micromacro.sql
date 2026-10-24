@@ -1,0 +1,4 @@
+ALTER TABLE "feedback" ADD CONSTRAINT "feedback_rating_check" CHECK ("feedback"."rating" between 1 and 5);--> statement-breakpoint
+ALTER TABLE "feedback" ADD CONSTRAINT "feedback_cleanliness_check" CHECK ("feedback"."cleanliness" is null or "feedback"."cleanliness" between 1 and 5);--> statement-breakpoint
+ALTER TABLE "feedback" ADD CONSTRAINT "feedback_staff_behaviour_check" CHECK ("feedback"."staffBehaviour" is null or "feedback"."staffBehaviour" between 1 and 5);--> statement-breakpoint
+ALTER TABLE "feedback" ADD CONSTRAINT "feedback_wait_time_check" CHECK ("feedback"."waitTime" is null or "feedback"."waitTime" between 1 and 5);

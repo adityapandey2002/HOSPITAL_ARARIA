@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
 import { AlertCircle, CheckCircle, RefreshCw, Shield, Trash2, Users } from 'lucide-react';
 import type { FeedbackAccessGrant, FeedbackScope, User } from '@dh-araria/shared/types';
+import { UserRole } from '@dh-araria/shared/types';
 import { Button, Select } from '@dh-araria/ui/components';
 import { api, handleApiResponse } from '@/lib/api';
 import { getErrorMessage } from '@/lib/feedback';
@@ -48,7 +49,11 @@ export function FeedbackAccessPanel({ departments }: FeedbackAccessPanelProps) {
       ]);
 
       setGrants(handleApiResponse(grantsResponse) ?? []);
-      setUsers(handleApiResponse(usersResponse) ?? []);
+      // Patients are never valid grantees: feedback can carry contact details.
+      // The API rejects them too; filtering here keeps the picker honest.
+      setUsers(
+        (handleApiResponse(usersResponse) ?? []).filter((user) => user.role !== UserRole.PATIENT)
+      );
     } catch (error) {
       setLoadError(getErrorMessage(error, 'We could not load feedback access grants.'));
     } finally {

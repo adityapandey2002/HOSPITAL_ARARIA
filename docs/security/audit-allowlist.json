@@ -1,5 +1,21 @@
 {
   "$schema": "https://json.schemastore.org/any.json",
   "comment": "Time-boxed exceptions for the production dependency audit gate (npm run audit:ci). Every entry needs a package, a reason, and an expiry date. Expired entries fail CI so the list cannot rot. Document the compensating control in docs/SECURITY.md.",
-  "entries": []
+  "entries": [
+    {
+      "package": "axios",
+      "reason": "No fixed 1.x exists in the registry (latest is 1.12.2; the advisories reference 1.15.0). The browser client only calls NEXT_PUBLIC_API_URL, a build-time constant pointing at this hospital's own API; it never accepts a user-supplied URL, proxy, or axios config object. The SSRF/proxy-credential advisories therefore have no attacker-controlled input path. Revisit when 1.15+ is published.",
+      "expires": "2027-01-31"
+    },
+    {
+      "package": "form-data",
+      "reason": "No fixed 4.x is published (latest 4.0.4; the advisory covers <=4.0.5). It is reached only transitively through axios and supertest. The portal builds no multipart bodies from user-controlled field names, and the public forms submit JSON only. Revisit when 4.0.6 is published.",
+      "expires": "2027-01-31"
+    },
+    {
+      "package": "zod",
+      "reason": "The fix requires zod 4.6.7, which is not published (latest 4.6.5). zod is used only for frontend form validation with bounded string fields; the backend re-validates every request with class-validator DTOs and Joi configuration validation, so an oversized-collection memory DoS cannot cross the trust boundary.",
+      "expires": "2027-01-31"
+    }
+  ]
 }

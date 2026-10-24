@@ -98,6 +98,18 @@ function describe(vulnerability) {
   return issues.length ? issues.join('; ') : vulnerability.range;
 }
 
+// An entry that no longer matches a finding is stale: the package was upgraded
+// or removed. Warn so it can be deleted instead of hiding beneath the expiry.
+const warnings = allowlist
+  .filter((entry) => {
+    const vulnerability = vulnerabilities[entry.package];
+    return !vulnerability || (vulnerability.severity !== 'high' && vulnerability.severity !== 'critical');
+  })
+  .map(
+    (entry) =>
+      `Allowlist entry for "${entry.package}" no longer matches a high/critical finding — remove it.`
+  );
+
 const counts = audit.metadata?.vulnerabilities ?? {};
 const summary = [
   `${counts.critical ?? 0} critical`,
@@ -105,6 +117,8 @@ const summary = [
   `${counts.moderate ?? 0} moderate`,
   `${counts.low ?? 0} low`,
 ].join(', ');
+
+for (const warning of warnings) console.warn(`Warning: ${warning}`);
 
 if (problems.length) {
   console.error('Audit gate configuration problems:');

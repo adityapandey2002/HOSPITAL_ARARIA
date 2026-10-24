@@ -56,8 +56,22 @@ export const validationSchema = Joi.object({
   // set this in production: it destroys audit_logs and ABDM records.
   ALLOW_DESTRUCTIVE_SCHEMA: Joi.boolean().truthy('true').falsy('false').default(false),
 
-  // JWT
-  JWT_SECRET: Joi.string().min(32).required(),
+  // JWT. The placeholder from .env.example is rejected in production so a
+  // copied template cannot become the signing key for real accounts.
+  JWT_SECRET: Joi.string()
+    .min(32)
+    .required()
+    .when('NODE_ENV', {
+      is: 'production',
+      then: Joi.string().invalid(
+        'your-super-secret-jwt-key-change-in-production',
+        'your-super-secret-jwt-key-change-in-production-min-32-chars'
+      ),
+      otherwise: Joi.string(),
+    })
+    .messages({
+      'any.invalid': 'JWT_SECRET still holds the example value; generate a unique secret.',
+    }),
   JWT_ACCESS_EXPIRY: Joi.string().default('15m'),
   JWT_REFRESH_EXPIRY: Joi.string().default('7d'),
 

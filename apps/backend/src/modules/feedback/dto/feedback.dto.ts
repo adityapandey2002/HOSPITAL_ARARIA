@@ -1,4 +1,4 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiHideProperty, ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
   ArrayNotEmpty,
   IsArray,
@@ -98,7 +98,7 @@ export class CreateFeedbackDto {
    * Honeypot: rendered hidden and left empty by humans. Any value fails
    * validation, so bots that fill every field never reach the service.
    */
-  @ApiPropertyOptional({ writeOnly: true, description: 'Leave empty (honeypot)' })
+  @ApiHideProperty()
   @IsOptional()
   @IsEmpty()
   website?: string;

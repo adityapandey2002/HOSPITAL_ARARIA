@@ -13,9 +13,9 @@ import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import helmet from 'helmet';
 import compression from 'compression';
-import * as cors from 'cors';
 
 import { AppModule } from './app.module';
+import { isServerlessRuntime } from './config/database-url';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
@@ -43,6 +43,13 @@ export async function createApp(options: CreateAppOptions = {}): Promise<NestExp
   const frontendUrls = resolveFrontendOrigins(
     configService.get<string>('frontendUrl', 'http://localhost:3000')
   );
+
+  // Behind Vercel's edge there is exactly one proxy hop. Without this, Express
+  // reports the proxy's address as req.ip, every visitor shares one throttler
+  // bucket, and the public feedback rate limit becomes a global 5/min cap.
+  if (isServerlessRuntime()) {
+    app.set('trust proxy', 1);
+  }
 
   // Security middleware
   app.use(

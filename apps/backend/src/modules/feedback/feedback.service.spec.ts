@@ -1,4 +1,4 @@
-import { ForbiddenException, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { Test, type TestingModule } from '@nestjs/testing';
 
 import { FeedbackServiceArea, FeedbackStatus, UserRole } from '@dh-araria/shared';
@@ -250,6 +250,18 @@ describe('FeedbackService', () => {
       // Only the grant lookup ran; no feedback row could leak.
       expect(db.select).toHaveBeenCalledTimes(1);
     });
+
+    it('treats a date-only `to` filter as inclusive of the whole day', async () => {
+      await setup([[{ departmentId: 'dept-a' }], [{ id: 'fb-1' }], [{ value: 1 }]]);
+
+      await service.findAll({ to: '2026-10-24' }, viewer);
+
+      const params = sqlParams(builderOf(db, 'select', 1).where.mock.calls[0][0]);
+      const dates = params.filter((value): value is Date => value instanceof Date);
+
+      expect(dates).toHaveLength(1);
+      expect(dates[0].toISOString()).toBe('2026-10-24T23:59:59.999Z');
+    });
   });
 
   describe('updateStatus', () => {
@@ -308,9 +320,9 @@ describe('FeedbackService', () => {
       await expect(service.getStats({}, viewer)).resolves.toEqual({
         total: 0,
         averageRating: 0,
-        averageCleanliness: null,
-        averageStaffBehaviour: null,
-        averageWaitTime: null,
+        averageCleanliness: 0,
+        averageStaffBehaviour: 0,
+        averageWaitTime: 0,
         byStatus: { NEW: 0, ACKNOWLEDGED: 0, RESOLVED: 0 },
         ratingDistribution: { '1': 0, '2': 0, '3': 0, '4': 0, '5': 0 },
         byDepartment: [],
@@ -344,7 +356,12 @@ describe('FeedbackService', () => {
         ],
       ]);
 
-      const stats = await service.getStats({}, viewer);
+      const stats = await service.getStats({ departmentId: 'dept-a' }, viewer);
+
+      // Select #0 is the grant lookup; #1-#3 are the aggregates.
+      for (let call = 1; call <= 3; call += 1) {
+        expect(sqlParams(builderOf(db, 'select', call).where.mock.calls[0][0])).toContain('dept-a');
+      }
 
       expect(stats.total).toBe(3);
       expect(stats.averageRating).toBe(4.6);
@@ -405,6 +422,17 @@ describe('FeedbackService', () => {
         service.createAccess({ userId: 'ghost', departmentIds: ['dept-a'] }, admin)
       ).rejects.toBeInstanceOf(NotFoundException);
       expect(db.insert).not.toHaveBeenCalled();
+    });
+
+    it('refuses to grant feedback access to a patient account', async () => {
+      await setup([[{ id: 'user-1', role: UserRole.PATIENT }]]);
+
+      await expect(
+        service.createAccess({ userId: 'user-1', departmentIds: ['dept-a'] }, admin)
+      ).rejects.toBeInstanceOf(BadRequestException);
+      // The role check runs before any department lookup or write.
+      expect(db.insert).not.toHaveBeenCalled();
+      expect(db.select).toHaveBeenCalledTimes(1);
     });
 
     it('404s when any department does not exist', async () => {
