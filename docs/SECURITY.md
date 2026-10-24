@@ -2,7 +2,16 @@
 
 ## Overview
 
-This document describes the security architecture, controls, and best practices for the DH Araria Hospital Portal, aligned with Government of India standards including CERT-In directives, MeitY guidelines, and healthcare data protection requirements.
+This document describes the security controls that exist in this repository and
+the ones the operator must provide on Vercel and Supabase. It maps the
+CERT-In directions, MeitY guidance and GIGW to concrete code where that mapping
+exists; where a control is procedural or platform-provided, the text says so.
+
+The deployed shape is two Vercel projects (Next.js frontend, NestJS API as a
+single Node function) over one Supabase PostgreSQL database. There is no
+Kubernetes cluster, no Redis, no WAF configuration and no log pipeline in this
+repository. Those are either platform features or operator tasks, and the
+sections below distinguish them.
 
 ## Security Framework
 
@@ -10,395 +19,373 @@ This document describes the security architecture, controls, and best practices 
 
 | Standard | Applicability | Status |
 |----------|---------------|--------|
-| **CERT-In Directions 2022** | Mandatory for all Indian govt systems | ✅ Implemented |
-| **MeitY Open Source Policy** | Required for govt software | ✅ Compliant |
-| **GIGW 3.0** | Government website guidelines | ✅ Compliant |
-| **WCAG 2.2 AA** | Accessibility standard | ✅ Compliant |
-| **ABDM Security** | Healthcare data protection | 🔄 Phase 3 |
-| **ISO 27001** | Information security management | 📋 Planned |
-| **HIPAA Equivalent** | Healthcare data (Indian context) | 🔄 Phase 3 |
+| **CERT-In Directions 2022** | Mandatory for Indian government systems | Partial: the audit trail and retention method exist; log shipping and six-hour reporting are operator processes |
+| **MeitY Open Source Policy** | Required for government software | Not assessed: licence inventory and OpenForge publication are release tasks |
+| **GIGW 3.0** | Government website guidelines | Partial: accessibility work is in progress; see `docs/ARCHITECTURE.md` |
+| **WCAG 2.2 AA** | Accessibility standard | Partial: component tests exist; no axe automation is wired into CI and no formal audit has been done |
+| **ABDM Security** | Healthcare data protection | Partial: bundle, consent and audit logic exist behind staff auth; gateway transport and certificates are Phase 3 |
+| **ISO 27001** | Information security management | Not pursued |
+| **HIPAA** | US healthcare regulation | Not applicable; Indian context |
 
 ### Security Principles
 
-1. **Defense in Depth** - Multiple layers of security controls
-2. **Zero Trust** - Never trust, always verify
-3. **Least Privilege** - Minimum necessary access
-4. **Data Minimization** - Collect only what's needed
-5. **Audit Everything** - Comprehensive logging
-5. **Fail Secure** - Secure by default
-6. **Continuous Monitoring** - Real-time threat detection
-
----
+1. **Defense in depth** - platform edge, application guards and query-level scope each stand alone
+2. **Least privilege** - roles plus per-department grants for feedback
+3. **Data minimisation** - feedback is anonymous unless the citizen supplies contact fields
+4. **Audit sensitive writes** - ABDM writes commit together with their audit row
+5. **Fail secure** - the production JWT secret rejects the template value, and password-reset tokens are signed with a derived, single-purpose secret
+6. **Redact errors** - 5xx bodies never carry driver details or stack traces in production
 
 ## Application Security
 
 ### Authentication
 
-#### JWT Implementation
+#### JWT implementation
 
-```typescript
-// Configuration
-JWT_SECRET: RS256 key (min 2048-bit)
-ACCESS_TOKEN_EXPIRY: 15 minutes
-REFRESH_TOKEN_EXPIRY: 7 days
-ISSUER: dh-araria
-AUDIENCE: dh-araria-users
+```text
+Algorithm: HS256 (symmetric, `JWT_SECRET`)
+Issuer:    dh-araria
+Audience:  dh-araria-users
+Access:    15 minutes (`JWT_ACCESS_EXPIRY`)
+Refresh:   7 days (`JWT_REFRESH_EXPIRY`)
 
-// Token Claims
+Claims:
 {
-  "sub": "user-uuid",
+  "sub":   "user-uuid",
   "email": "user@example.com",
-  "role": "PATIENT|DOCTOR|ADMIN|STAFF",
-  "iat": 1699267200,
-  "exp": 1699268100,
-  "iss": "dh-araria",
-  "aud": "dh-araria-users"
+  "role":  "PATIENT | DOCTOR | STAFF | ADMIN",
+  "iss":   "dh-araria",
+  "aud":   "dh-araria-users",
+  "iat":   1699267200,
+  "exp":   1699268100
 }
 ```
 
-#### Password Security
+`JWT_SECRET` must be at least 32 characters. When `NODE_ENV=production`, Joi
+rejects the two placeholder values from the example environment files, so a
+copied template cannot become the signing key for real accounts.
+
+Access and refresh tokens carry the same claims and are signed with the same
+secret. There is no `type` claim, so the API does not distinguish them: a
+refresh token is accepted as a bearer token for its full seven-day lifetime.
+The 15-minute access-token expiry is therefore not a containment boundary until
+this is fixed.
+
+#### Password security
 
 - **Algorithm**: bcrypt with cost factor 12
-- **Requirements**: 8+ chars, uppercase, lowercase, number, special char
-- **History**: Prevent last 5 passwords reuse
-- **Lockout**: 5 failed attempts → 15 min lockout
-- **Rotation**: 90 days (configurable)
+- **Policy** (registration and password change): 8-50 characters, at least one
+  uppercase letter, one lowercase letter, one number and one special character
+  from `@$!%*?&`
+- **Not implemented**: password history, account lockout after failed attempts,
+  and forced rotation. The throttler limits login to 10 requests per minute per
+  IP but does not lock an account.
 
-#### Multi-Factor Authentication (Phase 3)
+#### Password reset
 
-- **e-Pramaan SSO** integration via Meri Pehchaan
-- **OTP** via SMS/Email
-- **Digital Certificate** support
-- **Biometric** (Aadhaar) support
+`POST /api/v1/auth/forgot-password` issues a JWT signed with
+`JWT_SECRET + ":password-reset"`, valid for 15 minutes and bound to the current
+password hash, so changing the password invalidates outstanding tokens. No SMTP
+transport is wired up yet. The token is written to the debug log at every
+`NODE_ENV`, and it is also returned in the response body when
+`NODE_ENV=development`. Password-reset delivery is therefore not usable in
+production until a mail provider is configured, and the log line should be
+removed before one is.
+
+#### Multi-factor authentication
+
+Not implemented. e-Pramaan SSO, OTP, digital certificates and biometric login
+are Phase 3 items with no code path today.
 
 ### Authorization
 
-#### Role-Based Access Control (RBAC)
+#### Role-based access control
 
-| Role | Permissions |
-|------|-------------|
+| Role | Intended scope |
+|------|----------------|
 | **PATIENT** | Own appointments, profile, grievances |
-| **DOCTOR** | Own schedule, appointments, patient records (assigned) |
+| **DOCTOR** | Own schedule, assigned appointments, patient records created through ABDM |
 | **STAFF** | Appointments, grievances, notices, blood bank |
-| **ADMIN** | Full system access, user management, config |
+| **ADMIN** | User management, configuration, all feedback departments |
 
-#### Resource-Level Permissions
+`JwtStrategy` re-reads the user row on every request and rejects inactive
+accounts immediately, so deactivation does not wait for token expiry.
+`RolesGuard` enforces `@Roles(...)` declarations; routes without `@Roles` accept
+any authenticated role, which is why resource-level checks live in services.
 
-```typescript
-// Example: Appointment access
-PATIENT: CRUD own appointments
-DOCTOR: Read assigned, Update status
-STAFF: CRUD all, Assign doctors
-ADMIN: Full CRUD + system config
-```
+#### Resource-level permissions
 
-### Session Management
+The feedback module is the reference implementation for per-resource scope:
 
-- **Access Token**: 15 min, in-memory (frontend), Authorization header
-- **Refresh Token**: 7 days, httpOnly secure cookie, rotation on use
-- **Concurrent Sessions**: Max 3 per user
-- **Idle Timeout**: 30 min warning, 60 min logout
-- **Absolute Timeout**: 8 hours (refresh token)
+- `FeedbackService.accessibleDepartmentIds()` returns `null` for `ADMIN` (all
+  departments) and the granted department ids for everyone else.
+- `requireDepartmentAccess()` loads the row, returns 404 when it does not exist,
+  and 403 when it belongs to a department the caller cannot read.
+- Every read and the status update go through one of those helpers, so a new
+  route cannot widen scope by omitting a decorator.
 
----
+The 404/403 split lets an authenticated user distinguish "does not exist" from
+"exists elsewhere". It reveals existence, not content, but it is a deliberate
+trade-off worth revisiting if feedback ids become guessable in practice.
+
+### Session management
+
+- Access and refresh tokens are stored in `localStorage` by the frontend, not in
+  an httpOnly cookie. Any XSS that survives React escaping can read them.
+- There is no server-side session store, no concurrent-session limit, no idle
+  timeout and no absolute timeout beyond the token expiry.
+- Logout is client-side. The API has no denylist, so a copied refresh token
+  remains valid until it expires.
+- Tokens are sent in the `Authorization: Bearer` header; cookies are not used,
+  so CSRF does not apply to the API as written.
 
 ## Data Protection
 
 ### Classification
 
-| Level | Examples | Protection |
-|-------|----------|------------|
-| **Public** | Notices, department info, doctor profiles | Standard |
-| **Internal** | Staff schedules, internal memos | Encrypted at rest |
-| **Confidential** | Appointments, grievances, user profiles | Encrypted at rest + transit |
-| **Restricted** | Medical records, ABHA data, audit logs | Field-level encryption, audit |
+| Level | Examples | Protection in this system |
+|-------|----------|---------------------------|
+| **Public** | Notices, department information, doctor profiles | Integrity only; served over HTTPS |
+| **Internal** | Staff schedules, internal memos | Authentication plus TLS in transit |
+| **Confidential** | Appointments, grievances, user profiles, feedback contact details | Authentication, role scope, TLS in transit, provider-managed encryption at rest |
+| **Restricted** | ABDM records, consent artefacts, audit logs | MikroORM-owned tables, department/role checks, audit rows written in the same transaction |
 
 ### Encryption
 
-#### At Rest
+#### At rest
 
-| Data | Method | Key Management |
-|------|--------|----------------|
-| Database | PostgreSQL TDE / Column encryption | AWS KMS / HashiCorp Vault |
-| Files | AES-256-GCM | Per-file keys, master key in Vault |
-| Backups | AES-256 | Separate encryption keys |
+Encryption at rest is Supabase-managed. The repository does not implement
+Transparent Data Encryption, column encryption or its own key management; there
+is no KMS or Vault integration. Verify the project's disk-encryption and backup
+settings in the Supabase console.
 
-#### In Transit
+#### In transit
 
-- **TLS 1.3** minimum for all connections
-- **Certificate Pinning** for external APIs
-- **mTLS** for service-to-service (Phase 3)
-- **HSTS** with preload
+- TLS is required for every non-local database host. `resolveDatabaseConnection()`
+  enables it automatically, and `?sslmode=require` in `DATABASE_URL` forces it.
+- `tlsOptions()` passes `{ rejectUnauthorized: false }`, which encrypts the
+  connection but **does not verify the server certificate**. That stops passive
+  interception, not an active man-in-the-middle. Treat it as a known weakness
+  and tighten it once the Supabase CA is pinned in deployment.
+- Browser-to-Vercel and Vercel-to-Supabase traffic is HTTPS/TLS; there is no
+  plaintext listener in the deployed shape.
+- Certificate pinning and mutual TLS are not implemented.
 
-### Field-Level Encryption (Phase 3)
+### Field-level encryption
 
-```typescript
-// Example: Sensitive field encryption
-@Entity()
-class PatientRecord {
-  @FieldEncryption()
-  abhaId: string;
+Not active. `fhir_bundles` has `encryptedData` and `encryptionKey` columns for
+the Phase 3 Fidelius flow, but nothing writes them today. The ABDM module stores
+FHIR JSON in a `jsonb` column.
 
-  @FieldEncryption()
-  medicalHistory: string;
+### Data retention
 
-  @FieldEncryption({ algorithm: 'AES-256-GCM' })
-  diagnosis: string;
-}
-```
+| Data type | Target | Enforced by |
+|-----------|--------|-------------|
+| Audit logs | 180 days | `AuditLogService.purgeOlderThan()` exists, but **nothing invokes it**; `ScheduleModule` is registered with no `@Cron` handler |
+| Application logs | 180 days | Not enforced; Vercel's log retention is much shorter and no drain is configured |
+| Appointments | 7 years | Policy only; no archival job |
+| Grievances | 5 years | Policy only; no archival job |
+| Browser error reports | Not stored | `POST /api/v1/client-errors` writes one log line and persists nothing |
 
-### Data Retention
-
-| Data Type | Retention | Disposal |
-|-----------|-----------|----------|
-| Audit Logs | 180 days (CERT-In) | Secure deletion |
-| Medical Records | 10 years (clinical) | Anonymization |
-| Appointments | 7 years | Archive |
-| Grievances | 5 years | Archive |
-| Session Logs | 90 days | Purge |
-| Password History | 5 years | Hash only |
-
----
+The retention table describes the hospital's target policy. Only the audit
+purge method exists in code, and it must be invoked by an external scheduler.
 
 ## Network Security
 
-### Network Architecture
+### Topology
 
-```
-Internet
-    │
-    ▼
-┌─────────────────────────────────────┐
-│ Global Load Balancer (WAF + DDoS)   │
-└─────────────────────────────────────┘
-    │
-    ▼
-┌─────────────────────────────────────┐
-│ DMZ: NGINX Ingress (SSL Termination)│
-│ Rate Limiting, Security Headers     │
-└─────────────────────────────────────┘
-    │
-    ▼
-┌─────────────────────────────────────┐
-│ App Tier: Kubernetes (Private Subnet)│
-│ Network Policies, mTLS (Phase 3)    │
-└─────────────────────────────────────┘
-    │
-    ▼
-┌─────────────────────────────────────┐
-│ Data Tier: PostgreSQL + Redis       │
-│ Private Subnet, No Internet Access  │
-└─────────────────────────────────────┘
+```text
+Citizen browser
+    |
+    | HTTPS
+    v
+Vercel edge (TLS termination, DDoS mitigation)
+    |
+    +--> Frontend project (Next.js: SSR and static assets)
+    |
+    +--> Backend project (one Node function: /api/v1/*)
+             |
+             | PostgreSQL over TLS
+             v
+         Supabase transaction pooler :6543
+             |
+             v
+         PostgreSQL database
+
+Operator workstation / CI
+    |
+    | PostgreSQL over TLS (DDL only)
+    v
+Supabase direct connection :5432
 ```
 
-### Firewall Rules
+### Exposed surfaces
 
-| Source | Destination | Port | Protocol | Purpose |
-|--------|-------------|------|----------|---------|
-| Internet | LB | 443 | HTTPS | Public access |
-| LB | Ingress | 443 | HTTPS | SSL termination |
-| Ingress | Frontend | 3000 | HTTP | App traffic |
-| Ingress | Backend | 3001 | HTTP | API traffic |
-| Backend | PostgreSQL | 5432 | TCP | Database |
-| Backend | Redis | 6379 | TCP | Cache/Sessions |
-| Backend | External APIs | 443 | HTTPS | ABDM, e-Pramaan, etc. |
+| Source | Destination | Port | Purpose |
+|--------|-------------|------|---------|
+| Internet | Vercel frontend and backend | 443 | Public site and API |
+| Vercel function | Supabase pooler | 6543 | Application queries |
+| Operator / CI | Supabase direct | 5432 | `db:migrate`, `db:seed`, `bootstrap:admin` |
+| Vercel function | External APIs | 443 | ABDM and other Phase 3 integrations |
 
-### Network Policies (Kubernetes)
+The database must not accept connections from the public internet beyond the
+Supabase endpoints. Supabase network restrictions (IP allowlisting) are
+plan-dependent; verify in the console whether they are enabled and restrict the
+direct port to the operator's egress addresses.
 
-```yaml
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
-metadata:
-  name: backend-network-policy
-spec:
-  podSelector:
-    matchLabels:
-      app: backend
-  policyTypes:
-  - Ingress
-  - Egress
-  ingress:
-  - from:
-    - namespaceSelector:
-        matchLabels:
-          name: ingress-nginx
-    ports:
-    - protocol: TCP
-      port: 3001
-  egress:
-  - to:
-    - podSelector:
-        matchLabels:
-          app: postgresql
-    ports:
-    - protocol: TCP
-      port: 5432
-  - to:
-    - podSelector:
-        matchLabels:
-          app: redis
-    ports:
-    - protocol: TCP
-      port: 6379
-```
+### What does not exist
 
----
+- No Kubernetes cluster, therefore no NetworkPolicy, PodSecurityPolicy or
+  cluster RBAC to configure.
+- No ingress controller, WAF rule set or anti-DDoS appliance in this repository.
+  Vercel provides edge DDoS mitigation; a WAF, if required, must be added in
+  front of the deployment.
+- No Redis, queue or cache tier. The `REDIS_*` keys in configuration are unused
+  and no Redis client is installed.
+- No service mesh or mTLS between components; the frontend and backend are
+  separate Vercel projects that talk over public HTTPS.
 
 ## Infrastructure Security
 
-### Container Security
+### Vercel
 
-#### Base Images
+- Two projects from one repository: the frontend uses the Next.js preset; the
+  backend builds `apps/backend` and serves every path through `api/index.js`.
+- Environment variables are scoped per project and per environment (Production,
+  Preview, Development). Secrets belong in the Vercel dashboard, never in
+  `vercel.json` or the repository.
+- Deployments are immutable: a rollback promotes a previous deployment. A
+  rollback does not revert a database migration, so migrations must be
+  backward compatible for one release.
+- `vercel.json` pins region `bom1`. The backend requests 1024 MB and a
+  30-second `maxDuration`; the `functions` key currently names `api/index.ts`
+  while the entry point is `api/index.js`, so confirm the effective limits in
+  the dashboard.
+- Function instances are short-lived and share nothing. Do not rely on the
+  filesystem for sessions or uploads; no upload endpoint exists today and
+  `UPLOAD_PATH` is unused.
 
-```dockerfile
-# Use distroless/minimal base
-FROM node:20-alpine AS base
-# ... build stages ...
-FROM gcr.io/distroless/nodejs20-debian12 AS runner
-COPY --from=builder /app/dist ./dist
-USER nonroot:nonroot
-```
+### Supabase
 
-#### Security Scanning
+- The application connects as a PostgreSQL role with a password. It does not
+  use the Supabase client SDK, so Row Level Security is not part of the trust
+  boundary: authorization is enforced by the NestJS guards and services.
+- Never ship the Supabase service-role key to the frontend. The frontend only
+  needs `NEXT_PUBLIC_API_URL`.
+- Use the transaction pooler (`:6543`) for application traffic and the direct
+  connection (`:5432`) for DDL. Running migrations through the pooler fails or
+  leaks session state.
+- Rotate the database password if it has ever been pasted into a ticket, a
+  screenshot or a chat. Rotating it requires updating both Vercel projects and
+  the operator environment.
 
-```bash
-# Trivy scan in CI
-trivy image --severity HIGH,CRITICAL your-registry/dh-araria-backend:v1.0.0
+### Secrets management
 
-# Dependency audit
-npm audit --audit-level=high --workspaces
-```
+| Secret | Where it lives | Rotation |
+|--------|----------------|----------|
+| `DATABASE_URL`, `DATABASE_MIGRATION_URL` | Backend Vercel project; operator `.env` for migrations | On suspected exposure |
+| `JWT_SECRET` | Backend Vercel project | Invalidates every session; plan a maintenance window |
+| `NEXT_PUBLIC_API_URL` | Frontend Vercel project | Not secret; build-time constant |
+| GitHub Actions credentials | Repository secrets | Per GitHub policy |
 
-#### Runtime Security
+There is no External Secrets Operator, Vault or KMS integration. Secrets are
+injected as environment variables at build and runtime. `apps/backend/.env` is
+gitignored; the committed `.env.example` files contain placeholders only.
 
-- **Non-root user** in containers
-- **Read-only root filesystem**
-- **Drop all capabilities**
-- **No privilege escalation**
-- **Seccomp profile**
+### Dependency audit gate
 
-### Kubernetes Security
+`npm run audit:ci` runs `npm audit --omit=dev --json` and fails on:
 
-#### Pod Security Standards
+- any **critical** production vulnerability, with no exceptions;
+- any **high** vulnerability not covered by an unexpired allowlist entry;
+- any malformed or **expired** allowlist entry, even if nothing is vulnerable.
 
-```yaml
-apiVersion: policy/v1
-kind: PodSecurityPolicy
-metadata:
-  name: restricted
-spec:
-  privileged: false
-  allowPrivilegeEscalation: false
-  requiredDropCapabilities:
-    - ALL
-  volumes:
-    - 'configMap'
-    - 'emptyDir'
-    - 'projected'
-    - 'secret'
-    - 'downwardAPI'
-    - 'persistentVolumeClaim'
-  hostNetwork: false
-  hostIPC: false
-  hostPID: false
-  runAsUser:
-    rule: 'MustRunAsNonRoot'
-  seLinux:
-    rule: 'RunAsAny'
-```
+The allowlist is `docs/security/audit-allowlist.json`. Every entry needs a
+package name, a reason and an expiry date; the gate warns when an entry no
+longer matches a finding so it can be deleted rather than left to rot.
 
-#### RBAC
+| Package | Advisory scope | Compensating control | Expires |
+|---------|----------------|----------------------|---------|
+| `axios` | SSRF/proxy-credential advisories with no fixed 1.x release | The browser client only calls `NEXT_PUBLIC_API_URL`, a build-time constant; it never accepts a user-supplied URL or proxy | 2027-01-31 |
+| `form-data` | Multipart parsing advisory, no fixed 4.x release | Reached only through `axios` and `supertest`; public forms submit JSON, and no multipart body is built from user-controlled field names | 2027-01-31 |
+| `zod` | Oversized-collection memory DoS, fix unpublished | Frontend form validation only, with bounded string fields; the backend re-validates every request with class-validator DTOs and Joi | 2027-01-31 |
 
-```yaml
-# Least privilege roles
-apiVersion: rbac.authorization.k8s.io/v1
-kind: Role
-metadata:
-  name: backend-role
-rules:
-- apiGroups: [""]
-  resources: ["pods", "services", "configmaps", "secrets"]
-  verbs: ["get", "list", "watch"]
-- apiGroups: ["apps"]
-  resources: ["deployments"]
-  verbs: ["get", "list", "watch", "patch"]
-```
-
-### Secrets Management
-
-```yaml
-# External Secrets Operator (recommended)
-apiVersion: external-secrets.io/v1beta1
-kind: ExternalSecret
-metadata:
-  name: dh-araria-secrets
-spec:
-  refreshInterval: 1h
-  secretStoreRef:
-    name: vault-backend
-    kind: ClusterSecretStore
-  target:
-    name: dh-araria-secrets
-    creationPolicy: Owner
-  data:
-  - secretKey: DATABASE_URL
-    remoteRef:
-      key: dh-araria/prod
-      property: database_url
-  - secretKey: JWT_SECRET
-    remoteRef:
-      key: dh-araria/prod
-      property: jwt_secret
-```
-
----
+Renewing an entry means re-justifying the compensating control and moving the
+date, not deleting the reason. The gate runs in CI on every push and pull
+request.
 
 ## API Security
 
-### Rate Limiting
+### Rate limiting
 
-| Endpoint Type | Limit | Window | Burst |
-|---------------|-------|--------|-------|
-| General API | 100 req/min | 1 min | 20 |
-| Auth (login/register) | 10 req/min | 1 min | 5 |
-| Password Reset | 3 req/hour | 1 hour | 1 |
-| File Upload | 10 req/min | 1 min | 2 |
+The global throttler is 100 requests per minute per IP, configured from
+`RATE_LIMIT_TTL` and `RATE_LIMIT_LIMIT`. Routes override it:
 
-### Input Validation
+| Endpoint | Limit | Window |
+|----------|-------|--------|
+| `POST /api/v1/auth/register` | 5 | 1 minute |
+| `POST /api/v1/auth/login` | 10 | 1 minute |
+| `POST /api/v1/auth/forgot-password` | 3 | 1 hour |
+| `POST /api/v1/feedback` | 5 | 1 minute |
+| `POST /api/v1/contact` | 5 | 1 minute |
+| `POST /api/v1/client-errors` | 20 | 1 minute |
+| Everything else | 100 | 1 minute |
+
+On Vercel, `app.set('trust proxy', 1)` makes the throttler key on the visitor
+IP. Without it, every visitor would share the edge proxy's address and the
+public limits would collapse into one global bucket.
+
+### Input validation
+
+- `ValidationPipe` is global with `whitelist: true`,
+  `forbidNonWhitelisted: true` and implicit conversion. Unknown fields are
+  rejected rather than ignored.
+- When `NODE_ENV=production`, validation messages are suppressed so field names
+  and constraints are not echoed to an attacker.
+- Configuration is validated by Joi at boot; a missing `DATABASE_URL`, a short
+  `JWT_SECRET` or the template secret aborts startup.
+- Queries are parameterised through Drizzle and MikroORM; there is no string
+  concatenation of user input into SQL.
 
 ```typescript
-// All inputs validated via class-validator + Zod
-@IsEmail()
-@IsString()
+// Password policy, registration and change-password
 @MinLength(8)
 @MaxLength(50)
-@Matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])/)
-password: string;
-
-// Sanitization
-@Transform(({ value }) => sanitizeHtml(value))
-description: string;
+@Matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/, {
+  message:
+    'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character',
+})
+password!: string;
 ```
 
-### Security Headers
+### Security headers
 
-```nginx
-# Nginx security headers
-add_header X-Frame-Options "DENY" always;
-add_header X-Content-Type-Options "nosniff" always;
-add_header X-XSS-Protection "1; mode=block" always;
-add_header Referrer-Policy "strict-origin-when-cross-origin" always;
-add_header Permissions-Policy "camera=(), microphone=(), geolocation=()" always;
-add_header Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https:; frame-ancestors 'none';" always;
-add_header Strict-Transport-Security "max-age=31536000; includeSubDomains; preload" always;
-```
-
-### CORS Policy
+`helmet()` is applied in `src/bootstrap.ts` with the default header set. In
+production the default Content Security Policy is enabled; in development CSP is
+disabled so the Next.js dev server works. `crossOriginEmbedderPolicy` is off.
 
 ```typescript
-// Restrictive CORS
+app.use(
+  helmet({
+    contentSecurityPolicy: nodeEnv === 'production' ? undefined : false,
+    crossOriginEmbedderPolicy: false,
+  })
+);
+app.use(compression());
+```
+
+There is no nginx in the deployment, so header configuration belongs in
+`helmet()`, not in a server block.
+
+### CORS
+
+`FRONTEND_URL` is an origin allowlist. It may be a comma-separated list so the
+production domain and a Vercel preview URL can coexist; credentials are allowed
+and the preflight cache is 24 hours.
+
+```typescript
 app.enableCors({
-  origin: process.env.FRONTEND_URL, // Exact match, no wildcards
+  origin: resolveFrontendOrigins(configService.get<string>('frontendUrl')),
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
   credentials: true,
@@ -406,286 +393,236 @@ app.enableCors({
 });
 ```
 
----
+### Error handling
+
+`HttpExceptionFilter` catches everything. In production, any response with
+status 500 or above is rewritten to `Internal server error` /
+`INTERNAL_ERROR` with no `details`; the original message and stack go to the
+function log. 4xx responses keep their message so form validation remains
+usable.
+
+### Feedback abuse controls
+
+The public feedback write is the most exposed endpoint, so it has four
+independent controls:
+
+1. **Throttle** - 5 requests per minute per IP, separate from the global 100.
+2. **Honeypot** - `CreateFeedbackDto` declares a hidden `website` field with
+   `@IsEmpty()`. A filled value fails validation; a human never sees the field.
+3. **Server-owned fields** - `id`, `status`, `createdAt` and `updatedAt` are set
+   in the service. A caller cannot create pre-acknowledged feedback or forge a
+   timestamp.
+4. **Department check** - the target department must exist and be active, or the
+   request returns 404 before any insert.
+
+Reads require authentication and are restricted to `ADMIN` or a grant in
+`feedback_viewers`. Grant creation is `ADMIN`-only and refuses `PATIENT`
+accounts, because a feedback row can contain another patient's phone number or
+email address.
 
 ## Vulnerability Management
 
-### Scanning Schedule
+### Automated
 
-| Scan Type | Frequency | Tool | Action |
-|-----------|-----------|------|--------|
-| SAST | Every PR | SonarQube/ESLint | Block merge on critical |
-| DAST | Weekly | OWASP ZAP | Fix within 7 days |
-| Container Scan | Daily | Trivy | Fix critical in 24h |
-| Dependency Scan | Daily | npm audit / Snyk | Fix high in 72h |
-| Penetration Test | Quarterly | CERT-In empanelled | Fix critical in 7 days |
+| Check | When | Gate |
+|-------|------|------|
+| Table-ownership check (`schema:check`) | Every push and PR | Fails on a table claimed by both ORMs |
+| Type-check and builds (shared, backend, frontend) | Every push and PR | Fails the run |
+| Jest suites | Every push and PR | Fails the run |
+| Production dependency audit (`audit:ci`) | Every push and PR | Fails on critical/high, or an expired exception |
 
-### Vulnerability Response
+The CI workflow is `.github/workflows/ci.yml`. It runs offline; no database is
+required.
 
-| Severity | SLA | Process |
-|----------|-----|---------|
-| Critical (CVSS ≥ 9.0) | 24 hours | Emergency patch, emergency release |
-| High (CVSS 7.0-8.9) | 72 hours | Priority patch, next release |
-| Medium (CVSS 4.0-6.9) | 7 days | Scheduled patch |
-| Low (CVSS 0.1-3.9) | 30 days | Next maintenance window |
+### Manual
 
----
+Penetration testing, DAST and container scanning are not configured in the
+repository. When they are performed, they run against the deployed Vercel URLs
+and report through the incident process below.
+
+### Response targets
+
+| Severity | Target |
+|----------|--------|
+| Critical (CVSS >= 9.0) | 24 hours |
+| High (7.0-8.9) | 72 hours |
+| Medium (4.0-6.9) | 7 days |
+| Low (0.1-3.9) | Next maintenance window |
+
+These are targets, not an automated SLA. The audit gate enforces the critical
+and high cases at merge time.
 
 ## Incident Response
 
-### Incident Classification
+### Classification
 
-| Level | Criteria | Response Time | Team |
+| Level | Criteria | Response time | Team |
 |-------|----------|---------------|------|
-| **P1 - Critical** | Data breach, service down, active exploit | 15 min | Security + DevOps + Management |
-| **P2 - High** | Vulnerability exploited, partial outage | 1 hour | Security + DevOps |
+| **P1 - Critical** | Data breach, service down, active exploit | 15 minutes | Security, platform owner, management |
+| **P2 - High** | Vulnerability exploited, partial outage | 1 hour | Security, platform owner |
 | **P3 - Medium** | Suspicious activity, failed attacks | 4 hours | Security |
-| **P4 - Low** | Policy violation, scan findings | 24 hours | Security |
+| **P4 - Low** | Policy violation, scan finding | 24 hours | Security |
 
-### Response Playbooks
+### Playbooks
 
-#### Data Breach
+#### Data breach
 
-1. **Contain** - Isolate affected systems
-2. **Assess** - Determine scope, data affected
-3. **Notify** - CERT-In (6 hours), affected users, management
-4. **Remediate** - Patch vulnerability, rotate credentials
-5. **Recover** - Restore from clean backups
-6. **Review** - Post-incident review, update controls
+1. **Contain** - rotate `DATABASE_URL`, `JWT_SECRET` and any exposed provider
+   token; disable affected accounts.
+2. **Assess** - identify the tables and rows reached, using `audit_logs` where
+   the access went through ABDM and Vercel logs otherwise.
+3. **Notify** - CERT-In within six hours, then affected individuals and
+   management.
+4. **Remediate** - patch the defect, redeploy, verify with a smoke test.
+5. **Recover** - restore from a Supabase backup only if data integrity was lost.
+6. **Review** - post-incident write-up and a control change.
 
-#### Service Outage
+#### Service outage
 
-1. **Detect** - Alert from monitoring
-2. **Triage** - Determine root cause
-3. **Mitigate** - Failover, restart, rollback
-4. **Communicate** - Status page, stakeholders
-5. **Resolve** - Permanent fix
-6. **Review** - Post-mortem, action items
+1. **Detect** - `/api/v1/health` returns 503, or Vercel reports function errors.
+2. **Triage** - check Supabase status and connection counts, then the most
+   recent deployment.
+3. **Mitigate** - promote the previous Vercel deployment, or wait for Supabase.
+4. **Communicate** - status page and stakeholders.
+5. **Resolve** - permanent fix with a regression test.
+6. **Review** - post-mortem and action items.
 
-### CERT-In Reporting (6-Hour Rule)
+### CERT-In reporting
 
-```bash
-# Automated incident reporting template
-cat > incident-report.json <<EOF
-{
-  "incident_id": "INC-$(date +%Y%m%d-%H%M%S)",
-  "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
-  "severity": "HIGH",
-  "type": "DATA_BREACH",
-  "affected_systems": ["backend-api", "postgresql"],
-  "data_categories": ["PII", "PHI"],
-  "estimated_records": 1000,
-  "root_cause": "SQL injection in appointment endpoint",
-  "containment_actions": ["WAF rule deployed", "Endpoint disabled"],
-  "remediation": ["Input validation fixed", "WAF rules updated"],
-  "reporter": "security@dhararia.gov.in"
-}
-EOF
+The six-hour notification is a manual process. Keep an incident record with the
+detection time, affected systems, data categories, containment actions and the
+reporter, and submit it through the CERT-In channel the hospital has registered.
+The repository contains no automated submission client.
 
-# Submit to CERT-In
-curl -X POST https://cert-in.gov.in/api/incident \
-  -H "Authorization: Bearer $CERT_IN_TOKEN" \
-  -d @incident-report.json
-```
+## Audit and Logging
 
----
+### What is audited
 
-## Audit & Logging
+`audit_logs` is a MikroORM-owned table. Rows are written by `AuditLogService`
+from the ABDM module:
 
-### Log Categories
+- `logWith(em, entry)` uses the caller's EntityManager, so the audit row commits
+  or rolls back with the clinical change.
+- `log(entry)` is best-effort and swallows failures; an audit outage must not
+  take down the citizen-facing operation it records.
 
-| Category | Retention | Format | Destination |
-|----------|-----------|--------|-------------|
-| **Application** | 180 days | JSON | ELK Stack |
-| **Security** | 180 days | JSON | ELK + SIEM |
-| **Audit** | 7 years | JSON | Immutable storage |
-| **Database** | 180 days | JSON | ELK Stack |
-| **Network** | 180 days | PCAP/JSON | SIEM |
-| **System** | 180 days | JSON | ELK Stack |
+Actions currently recorded are `CARE_CONTEXT_CREATE`, `CARE_CONTEXT_COMPLETE`,
+`FHIR_BUNDLE_CREATE`, `FHIR_BUNDLE_STATUS_CHANGE`, `FHIR_BUNDLE_VIEW`,
+`CONSENT_ARTEFACT_CREATE`, `CONSENT_ARTEFACT_STATUS_CHANGE` and
+`FHIR_RECORDS_DISCLOSED`. **Authentication events are not written to
+`audit_logs`**: login success, login failure, logout, permission denials and
+rate-limit hits exist as constants in `SECURITY_EVENT_ACTIONS` but no code path
+emits them. They appear only in function logs, if at all.
 
-### Log Structure
+Each row carries `action`, `resource`, `resourceId`, `userId`, `ipAddress`,
+`userAgent`, `correlationId`, JSON `details` and a server-side `createdAt`.
+`details` is metadata only; raw FHIR payloads and diagnoses must not be stored
+there.
 
-```json
-{
-  "timestamp": "2024-10-06T10:30:00.000Z",
-  "level": "INFO",
-  "service": "backend",
-  "traceId": "abc-123",
-  "spanId": "def-456",
-  "userId": "user-uuid",
-  "action": "APPOINTMENT_CREATE",
-  "resource": "Appointment",
-  "resourceId": "apt-uuid",
-  "ip": "192.168.1.100",
-  "userAgent": "Mozilla/5.0...",
-  "request": { "method": "POST", "path": "/api/v1/appointments" },
-  "response": { "status": 201, "duration": 145 },
-  "outcome": "SUCCESS"
-}
-```
+### Retention
 
-### Audit Events
+`AuditLogService.purgeOlderThan(180)` deletes rows older than 180 days and
+returns the count. Nothing calls it: `ScheduleModule.forRoot()` is registered in
+`AppModule`, but there is no `@Cron` handler, and an in-process schedule would
+not run reliably on short-lived Vercel functions anyway. Until an external
+scheduler invokes it, audit rows grow without bound. The method is the only code
+path that deletes audit rows.
 
-| Event | Logged Fields |
-|-------|---------------|
-| **Authentication** | login, logout, token_refresh, password_change, mfa_challenge |
-| **Authorization** | permission_denied, role_change, privilege_escalation |
-| **Data Access** | phi_access, medical_record_view, appointment_view |
-| **Data Modification** | create, update, delete, bulk_operations |
-| **Admin Actions** | user_create, config_change, permission_grant |
-| **Security Events** | failed_login, brute_force, suspicious_activity |
-| **Clinical/ABDM** | fhir_bundle_create, fhir_bundle_update, fhir_bundle_delete, consent_grant, consent_revoke, care_context_link |
+### Application logs
 
-### Audit Logging Inside the Same Unit of Work
+- Nest's `Logger` writes to stdout; Vercel captures it per invocation. The
+  format is Nest's text format, not JSON. The `pino` dependency is declared but
+  not used.
+- `LoggingInterceptor` records method, URL, user, IP and user agent on entry,
+  then status and duration on completion.
+- `HttpExceptionFilter` logs 5xx with the original error and stack.
+- `POST /api/v1/client-errors` emits one `client_error` line with message,
+  digest, path (query string removed), user agent, timestamp and the first ten
+  stack frames.
 
-Clinical and ABDM writes go through MikroORM's Unit of Work, and the audit row
-is written with **the same EntityManager** as the business change. That is what
-makes the trail non-bypassable: the audit row cannot commit without the change,
-and the change cannot commit without the audit row.
-
-```typescript
-// apps/backend/src/modules/abdm/abdm.service.ts
-@Injectable()
-export class AbdmService {
-  constructor(
-    @Inject(ENTITY_MANAGER) private readonly em: EntityManager,
-    private readonly audit: AuditLogService,
-  ) {}
-
-  async recordBundle(input: RecordBundleInput): Promise<FhirBundle> {
-    return this.em.transactional(async (em) => {
-      const bundle = em.create(FhirBundle, {
-        id: newId(),
-        bundleId: input.bundleId,
-        bundleType: input.bundleType,
-        patientId: input.patientId,
-        fhirJson: input.fhirJson,
-        status: input.encryptedData ? 'ENCRYPTED' : 'PENDING',
-      } as any);
-
-      await em.persistAndFlush(bundle);
-
-      await this.audit.logWith(em, {
-        action: 'FHIR_BUNDLE_CREATE',
-        resource: 'FhirBundle',
-        resourceId: bundle.id,
-        userId: input.actorId,
-        correlationId: input.correlationId,
-        // Metadata only — never diagnoses or raw FHIR payloads.
-        details: { bundleId: bundle.bundleId, entryCount: /* … */ },
-      });
-
-      return bundle;
-    });
-  }
-}
-```
-
-Non-transactional audit writes (failed logins, rate-limit events, reads that
-happen outside a Unit of Work) use `AuditLogService.log()`, which persists via
-the injected EntityManager and **swallows failures** — an audit outage must never
-take down the citizen-facing operation it is recording.
-
-**Properties this design gives us:**
-
-- **Atomic**: audit rows commit or roll back with the clinical change
-- **Non-bypassable**: there is one write path per operation, and it always audits
-- **No clinical content in logs**: `details` carries shape metadata only
-- **Traceable**: `correlationId` ties every row from one request together
-- **Compliant**: `AuditLogService.purgeOlderThan(180)` performs the single,
-  scheduled CERT-In retention cut; no other code deletes audit rows
-
-> Earlier drafts of this document proposed entity lifecycle decorators
-> (`@OnCreate`/`@OnUpdate`). Those were replaced: a hook cannot share the
-> caller's transaction, so an audited write could have committed without its
-> audit row.
-
-### Log Integrity
-
-- **Immutable Storage**: Write-once storage (WORM)
-- **Hash Chains**: Each log entry includes hash of previous
-- **Digital Signatures**: Periodic signing of log batches
-- **Verification**: Daily integrity checks
-
----
+No log drain, SIEM, WORM storage or hash-chained log integrity is configured.
+Shipping logs to a 180-day retention store is an operator task.
 
 ## Secure Development
 
-### SDLC Security Gates
+### CI gates
 
-| Phase | Security Activity | Tool |
-|-------|-------------------|------|
-| **Requirements** | Threat modeling | Microsoft Threat Modeling Tool |
-| **Design** | Architecture review | Security architect sign-off |
-| **Coding** | Secure coding standards | Code review checklist |
-| **Testing** | SAST/DAST/SCA | SonarQube, OWASP ZAP, Snyk |
-| **Deployment** | Image scanning | Trivy, Cosign |
-| **Runtime** | Runtime protection | Falco, eBPF |
+`.github/workflows/ci.yml` runs, in order:
 
-### Secure Coding Checklist
+1. `npm ci`
+2. `npm run schema:check` - fails if the Drizzle/MikroORM boundary drifts
+3. build of `packages/shared`
+4. backend build
+5. frontend build
+6. `npm test`
+7. `npm run audit:ci`
 
-- [ ] Input validation on all endpoints
-- [ ] Output encoding for XSS prevention
-- [ ] Parameterized queries (no string concatenation)
-- [ ] Authentication on all non-public endpoints
-- [ ] Authorization checks on resource access
-- [ ] Secrets never in code (use vault)
-- [ ] Error messages don't leak information
-- [ ] Logging doesn't include sensitive data
-- [ ] Cryptography uses approved algorithms
-- [ ] Dependencies scanned and updated
+The workflow uses placeholder `DATABASE_URL` and `JWT_SECRET` values because no
+step connects to a database.
 
-### Code Review Security Focus
+### Secure coding checklist
 
-- Authentication/authorization logic
-- Input validation/sanitization
-- Cryptographic implementations
-- Secret management
-- Error handling
-- Logging sensitivity
-- Dependency changes
+- [x] Input validation on all endpoints (`ValidationPipe`, class-validator)
+- [x] Parameterised queries only (Drizzle and MikroORM)
+- [x] Authentication on all non-public endpoints (global `JwtAuthGuard`)
+- [x] Authorization checks in the service layer, not only on controllers
+- [x] Secrets never committed; environment files are gitignored
+- [x] 5xx responses redacted in production
+- [x] Client-error reports strip query strings before logging
+- [ ] Logs contain no sensitive data - review each new log statement
+- [ ] Dependencies scanned and updated - covered by `audit:ci`, but exceptions
+      need periodic review
+- [ ] Cryptography reviewed - certificate verification is currently disabled for
+      database TLS
 
----
+### Code review focus
+
+- Authentication and authorization logic, especially new feedback routes
+- Input validation and mass-assignment risk (build inserts field by field)
+- Secret handling and environment-variable names
+- Error handling and response redaction
+- Log statements that could capture PII
+- Dependency changes and allowlist entries
 
 ## Third-Party Integrations
 
-### Security Requirements
+No external integration is enabled. The configuration keys exist and default to
+empty strings, and `AbdmService` keeps gateway transport behind a port that has
+no implementation yet.
 
-| Integration | Authentication | Data Shared | Review |
-|-------------|----------------|-------------|--------|
-| **ABDM** | Mutual TLS + JWT | PHI (encrypted) | Quarterly |
-| **e-Pramaan** | OAuth 2.0 | PII (minimal) | Quarterly |
-| **Bhashini** | API Key + Secret | Text content | Quarterly |
-| **CPGRAMS** | API Key + Cert | Grievance data | Quarterly |
-| **e-RaktKosh** | API Key | Blood inventory | Quarterly |
+| Integration | Planned authentication | Data shared | Status |
+|-------------|------------------------|-------------|--------|
+| **ABDM** | Mutual TLS plus JWT | PHI, encrypted with Fidelius | Partial: local M2/M3 storage and consent records; gateway transport not implemented |
+| **e-Pramaan** | OAuth 2.0 | Minimal PII | Phase 3 |
+| **Bhashini** | API key and secret | Text content | Phase 3 |
+| **CPGRAMS** | API key and certificate | Grievance data | Phase 3 |
+| **e-RaktKosh** | API key | Blood inventory | Phase 3 |
 
-### Vendor Assessment
-
-1. **Security Questionnaire** - CAIQ or SIG
-2. **Certifications** - ISO 27001, SOC 2, CERT-In empanelment
-3. **Data Processing Agreement** - Signed DPA
-4. **Incident Response** - 24/7 contact, SLA
-5. **Right to Audit** - Contractual right
-
----
+Before enabling any of them, add the credential to the backend Vercel project
+(never to the frontend), confirm the data-sharing agreement, and add an audit
+event for every call that carries PHI.
 
 ## Compliance Checklist
 
 ### CERT-In Directions 2022
 
-- [ ] 6-hour incident reporting capability
-- [ ] 180-day log retention
-- [ ] NTP synchronization (time.nic.in, time.nplindia.org)
-- [ ] Vulnerability management program
-- [ ] Incident response plan
-- [ ] Secure configuration baselines
+- [x] Audit trail for ABDM writes, committed with the business change
+- [x] Audit retention method (`purgeOlderThan(180)`)
+- [ ] Audit purge scheduled - no cron job exists
+- [ ] 180-day application-log retention - no log drain exists
+- [ ] Six-hour incident reporting - manual process, no client in the repository
+- [ ] NTP synchronisation - provided by the platform, not by the application
+- [ ] Vulnerability management programme - dependency gate exists; DAST and
+      penetration tests do not
+- [ ] Secure configuration baselines - platform defaults only
+- [ ] Authentication events in the audit trail - constants exist, emission does
+      not
 
 ### GIGW 3.0
 
-- [ ] WCAG 2.2 AA compliance
-- [ ] Bilingual content (English + Hindi minimum)
-- [ ] Sitemap and search
-- [ ] Feedback mechanism
+- [ ] WCAG 2.2 AA compliance - automated checks only
+- [ ] Bilingual content
+- [x] Feedback mechanism - public department feedback form
 - [ ] Privacy policy
 - [ ] Terms of service
 - [ ] Accessibility statement
@@ -693,92 +630,73 @@ take down the citizen-facing operation it is recording.
 ### MeitY Open Source Policy
 
 - [ ] No proprietary dependencies
-- [ ] License compliance (MIT/Apache-2.0 preferred)
+- [ ] Licence compliance inventory
 - [ ] OpenForge publication ready
 - [ ] Community contribution guidelines
 
----
-
 ## Security Testing
 
-### Automated (CI/CD)
+### Automated (CI)
 
 ```yaml
-# .github/workflows/security.yml
-- name: SAST Scan
-  uses: github/codeql-action/analyze@v2
-
-- name: Dependency Audit
-  run: npm audit --audit-level=high --workspaces
-
-- name: Container Scan
-  uses: aquasecurity/trivy-action@master
-  with:
-    image-ref: ${{ env.REGISTRY }}/dh-araria-backend:${{ github.sha }}
-    severity: HIGH,CRITICAL
-
-- name: Secret Scan
-  uses: trufflesecurity/trufflehog@v3
+# .github/workflows/ci.yml (abridged)
+- run: npm run schema:check
+- run: npm run build:backend
+- run: npm run build:frontend
+- run: npm test
+- run: npm run audit:ci
 ```
 
-### Manual Testing
+### Manual
 
 ```bash
-# OWASP ZAP DAST scan
-docker run -t owasp/zap2docker-stable zap-baseline.py \
-  -t https://staging.dhararia.bihar.gov.in \
-  -r zap-report.html
+# Dependency audit outside CI
+npm run audit:ci
 
-# Manual penetration testing checklist
+# DAST and penetration testing are run against a deployed URL, not locally.
+# Suggested coverage:
 # - Authentication bypass
-# - Authorization bypass
-# - Injection (SQL, NoSQL, LDAP, XPath)
-# - XSS (Reflected, Stored, DOM)
-# - CSRF
-# - SSRF
-# - XXE
-# - Deserialization
+# - Authorization bypass (feedback department scope)
+# - Injection (SQL)
+# - XSS (reflected, stored, DOM)
+# - CSRF (not applicable to bearer-token API as written)
+# - SSRF (outbound integrations are disabled)
 # - Broken access control
 # - Security misconfiguration
-# - Cryptographic failures
 ```
 
----
+## Training and Awareness
 
-## Training & Awareness
-
-### Developer Training
+### Developer training
 
 | Topic | Frequency | Audience |
 |-------|-----------|----------|
 | Secure coding practices | Quarterly | All developers |
 | OWASP Top 10 | Annually | All developers |
-| Threat modeling | Per project | Architects + Leads |
+| Threat modelling | Per project | Architects and leads |
 | Incident response | Quarterly | Security team |
-| New vulnerabilities | Monthly | All technical |
+| New vulnerabilities | Monthly | All technical staff |
 
-### User Awareness
+### User awareness
 
-- **Phishing simulations** - Quarterly
-- **Password hygiene** - Annual
-- **Data handling** - Onboarding + annual
-- **Incident reporting** - Onboarding + posters
+- Phishing simulations - quarterly
+- Password hygiene - annual
+- Data handling - onboarding and annual
+- Incident reporting - onboarding and posters
 
----
-
-## Contacts & Escalation
+## Contacts and Escalation
 
 | Role | Contact | Availability |
 |------|---------|--------------|
 | **CISO** | ciso@dhararia.gov.in | 24/7 |
-| **Security Team** | security@dhararia.gov.in | 24/7 |
-| **DevOps Lead** | devops@dhararia.gov.in | Business hours + on-call |
-| **DBA** | dba@dhararia.gov.in | Business hours + on-call |
+| **Security team** | security@dhararia.gov.in | 24/7 |
+| **Platform owner** | devops@dhararia.gov.in | Business hours and on-call |
+| **DBA** | dba@dhararia.gov.in | Business hours and on-call |
 | **CERT-In** | incident@cert-in.org.in | 24/7 |
 | **NIC-CERT** | ncert@nic.in | 24/7 |
 
 ---
 
-*Document Version: 1.0*  
-*Last Updated: 2024-10-06*  
+*Document Version: 2.0*  
+*Last Updated: 2026-10-24*  
 *Classification: CONFIDENTIAL - Government Use Only*
