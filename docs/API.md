@@ -37,7 +37,7 @@ Payload: {
 | `/auth/register` | POST | Register new user |
 | `/auth/login` | POST | Login with email/password |
 | `/auth/refresh` | POST | Refresh access token |
-| `/auth/logout` | POST | Logout (blacklist refresh token) |
+| `/auth/logout` | POST | Logout (client-side; the API keeps no denylist) |
 | `/auth/me` | GET | Get current user profile |
 | `/auth/change-password` | POST | Change password |
 | `/auth/forgot-password` | POST | Request password reset |
@@ -176,6 +176,9 @@ Content-Type: application/json
   "refreshToken": "eyJ..."
 }
 ```
+
+Refresh returns a new token pair, but the old refresh token is not invalidated:
+there is no rotation and no denylist. See [SECURITY.md](SECURITY.md).
 
 #### Get Profile
 ```http
