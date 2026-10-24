@@ -34,6 +34,13 @@ ADRs: `apps/backend/src/modules/notices/docs/adr/`
 
 Owns publication terms: Notice, NoticeCategory, NoticePriority, publication, expiry, attachment, language. Notices are multilingual via the `language` field and the Bhashini integration.
 
+### `feedback`
+
+Glossary: `docs/glossary/feedback.md`
+ADRs: `docs/adr/0002-feedback-table-ownership.md`
+
+Owns department service-quality terms: Feedback, service area, overall and criterion ratings, feedback status, scope, department grant, HM. A feedback row is anonymous by default, rates one department at one service area, and is read only by `ADMIN` or by grantees of that department. It is not a grievance.
+
 ### `abdm`
 
 Glossary: `apps/backend/src/modules/abdm/GLOSSARY.md`
@@ -50,4 +57,4 @@ Owns cross-cutting portal terms shared across the UI packages: role (patient / d
 
 ## Not yet written
 
-The per-context glossaries and ADR directories don't exist yet. `/domain-modeling` creates them when terms or decisions are actually resolved; don't create empty templates upfront.
+Most per-context glossaries and ADR directories don't exist yet. `feedback` has one because its vocabulary was resolved during the feedback build; `/domain-modeling` creates the others when their terms or decisions are actually resolved, so don't create empty templates upfront.
