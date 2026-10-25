@@ -32,15 +32,24 @@ export class CreateFeedbackDto {
   @IsUUID()
   departmentId!: string;
 
-  @ApiProperty({ enum: FeedbackServiceArea })
-  @IsEnum(FeedbackServiceArea)
-  serviceArea!: FeedbackServiceArea;
+  /** One or more departments visited (simple form may select several). */
+  @ApiPropertyOptional({ type: [String], format: 'uuid' })
+  @IsOptional()
+  @IsArray()
+  @IsUUID('all', { each: true })
+  departmentIds?: string[];
 
-  @ApiProperty({ minimum: 1, maximum: 5, description: 'Overall rating' })
+  @ApiPropertyOptional({ enum: FeedbackServiceArea, default: 'OPD' })
+  @IsOptional()
+  @IsEnum(FeedbackServiceArea)
+  serviceArea?: FeedbackServiceArea;
+
+  @ApiPropertyOptional({ minimum: 1, maximum: 5, default: 3 })
+  @IsOptional()
   @IsInt()
   @Min(1)
   @Max(5)
-  rating!: number;
+  rating?: number;
 
   @ApiPropertyOptional({ minimum: 1, maximum: 5 })
   @IsOptional()
@@ -68,6 +77,20 @@ export class CreateFeedbackDto {
   @IsString()
   @MaxLength(2000)
   comment?: string;
+
+  /** What the citizen liked most about their visit (simple form). */
+  @ApiPropertyOptional({ maxLength: 1000 })
+  @IsOptional()
+  @IsString()
+  @MaxLength(1000)
+  likedMost?: string;
+
+  /** What the citizen wants to suggest (simple form). */
+  @ApiPropertyOptional({ maxLength: 1000 })
+  @IsOptional()
+  @IsString()
+  @MaxLength(1000)
+  suggestion?: string;
 
   @ApiPropertyOptional({
     maxLength: 120,

@@ -16,6 +16,7 @@ import { GrievancesModule } from './modules/grievances/grievances.module';
 import { NoticesModule } from './modules/notices/notices.module';
 import { ContactModule } from './modules/contact/contact.module';
 import { FeedbackModule } from './modules/feedback/feedback.module';
+import { ComplaintsModule } from './modules/complaints/complaints.module';
 import { TelemetryModule } from './modules/telemetry/telemetry.module';
 import { AuditQueryModule } from './modules/audit/audit.module';
 import { HealthModule } from './modules/health/health.module';
@@ -66,6 +67,7 @@ import { validationSchema } from './config/validation';
     NoticesModule,
     ContactModule,
     FeedbackModule,
+    ComplaintsModule,
     TelemetryModule,
     HealthModule,
     AuditQueryModule,

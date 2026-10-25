@@ -8,7 +8,7 @@ import {
 import { and, asc, avg, count, desc, eq, gte, inArray, lte, type SQL } from 'drizzle-orm';
 import type { AnyPgColumn } from 'drizzle-orm/pg-core';
 
-import { FeedbackStatus, UserRole } from '@dh-araria/shared';
+import { FeedbackStatus, FeedbackServiceArea, UserRole } from '@dh-araria/shared';
 import type { FeedbackAccessGrant, FeedbackScope, FeedbackStats } from '@dh-araria/shared';
 
 import { DRIZZLE, type DrizzleDb } from '../../common/drizzle/drizzle.module';
@@ -42,12 +42,15 @@ export type FeedbackWithDepartment = FeedbackRow & { departmentName: string };
 const FEEDBACK_COLUMNS = {
   id: feedback.id,
   departmentId: feedback.departmentId,
+  departmentIds: feedback.departmentIds,
   departmentName: departments.name,
   serviceArea: feedback.serviceArea,
   rating: feedback.rating,
   cleanliness: feedback.cleanliness,
   staffBehaviour: feedback.staffBehaviour,
   waitTime: feedback.waitTime,
+  likedMost: feedback.likedMost,
+  suggestion: feedback.suggestion,
   comment: feedback.comment,
   name: feedback.name,
   phone: feedback.phone,
@@ -137,12 +140,15 @@ export class FeedbackService {
     const values: NewFeedbackRow = {
       id: newId(),
       departmentId: dto.departmentId,
-      serviceArea: dto.serviceArea,
-      rating: dto.rating,
+      departmentIds: dto.departmentIds ?? [],
+      serviceArea: dto.serviceArea ?? FeedbackServiceArea.OPD,
+      rating: dto.rating ?? 3,
       cleanliness: dto.cleanliness,
       staffBehaviour: dto.staffBehaviour,
       waitTime: dto.waitTime,
       comment: dto.comment,
+      likedMost: dto.likedMost ?? null,
+      suggestion: dto.suggestion ?? null,
       name: dto.name,
       phone: dto.phone,
       email: dto.email,

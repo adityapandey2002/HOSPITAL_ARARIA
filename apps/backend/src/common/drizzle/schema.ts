@@ -121,6 +121,15 @@ export const feedbackServiceAreaEnum = pgEnum('FeedbackServiceArea', [
 
 export const feedbackStatusEnum = pgEnum('FeedbackStatus', ['NEW', 'ACKNOWLEDGED', 'RESOLVED']);
 
+export const complaintStatusEnum = pgEnum('ComplaintStatus', [
+  'SUBMITTED',
+  'UNDER_REVIEW',
+  'IN_PROGRESS',
+  'RESOLVED',
+  'CLOSED',
+  'REJECTED',
+]);
+
 // ---------------------------------------------------------------------------
 // Tables
 // ---------------------------------------------------------------------------
@@ -297,10 +306,14 @@ export const grievances = pgTable(
     name: text('name').notNull(),
     email: text('email').notNull(),
     phone: text('phone').notNull(),
+    departmentId: text('departmentId').references(() => departments.id, { onDelete: 'set null' }),
     category: grievanceCategoryEnum('category').notNull(),
     subject: text('subject').notNull(),
     description: text('description').notNull(),
     status: grievanceStatusEnum('status').notNull().default('SUBMITTED'),
+    /** Set only for complaints submitted via the simple complaint form. */
+    complaintStatus: complaintStatusEnum('complaintStatus'),
+    imageUrl: text('imageUrl'),
     cpgramsId: text('cpgramsId').unique(),
     assignedTo: text('assignedTo').references(() => users.id, { onDelete: 'set null' }),
     resolution: text('resolution'),
@@ -311,6 +324,8 @@ export const grievances = pgTable(
     userIdIdx: index('grievances_userId_idx').on(t.userId),
     statusIdx: index('grievances_status_idx').on(t.status),
     categoryIdx: index('grievances_category_idx').on(t.category),
+    departmentIdIdx: index('grievances_departmentId_idx').on(t.departmentId),
+    complaintStatusIdx: index('grievances_complaintStatus_idx').on(t.complaintStatus),
     assignedToIdx: index('grievances_assignedTo_idx').on(t.assignedTo),
     cpgramsIdIdx: index('grievances_cpgramsId_idx').on(t.cpgramsId),
   })
@@ -378,6 +393,8 @@ export const feedback = pgTable(
     departmentId: text('departmentId')
       .notNull()
       .references(() => departments.id, { onDelete: 'restrict' }),
+    /** Multiple departments visited (citizen may select more than one). */
+    departmentIds: text('departmentIds').array().notNull().default(sql`'{}'::text[]`),
     serviceArea: feedbackServiceAreaEnum('serviceArea').notNull().default('OPD'),
     /** Overall rating, 1 (very poor) to 5 (excellent). */
     rating: integer('rating').notNull(),
@@ -385,6 +402,10 @@ export const feedback = pgTable(
     cleanliness: integer('cleanliness'),
     staffBehaviour: integer('staffBehaviour'),
     waitTime: integer('waitTime'),
+    /** What the citizen liked most about their visit. */
+    likedMost: text('likedMost'),
+    /** What the citizen wants to suggest. */
+    suggestion: text('suggestion'),
     comment: text('comment'),
     name: text('name'),
     phone: text('phone'),

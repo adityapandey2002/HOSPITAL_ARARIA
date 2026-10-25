@@ -199,6 +199,15 @@ export enum GrievanceStatus {
   REJECTED = 'REJECTED',
 }
 
+export enum ComplaintStatus {
+  SUBMITTED = 'SUBMITTED',
+  UNDER_REVIEW = 'UNDER_REVIEW',
+  IN_PROGRESS = 'IN_PROGRESS',
+  RESOLVED = 'RESOLVED',
+  CLOSED = 'CLOSED',
+  REJECTED = 'REJECTED',
+}
+
 export interface Notice {
   id: string;
   title: string;
@@ -272,12 +281,17 @@ export interface ContactMessage {
 export interface Feedback {
   id: string;
   departmentId: string;
+  departmentIds?: string[];
   departmentName?: string;
   serviceArea: FeedbackServiceArea;
   rating: number;
   cleanliness?: number | null;
   staffBehaviour?: number | null;
   waitTime?: number | null;
+  /** What the citizen liked most about their visit (simple form). */
+  likedMost?: string | null;
+  /** What the citizen wants to suggest (simple form). */
+  suggestion?: string | null;
   comment?: string | null;
   name?: string | null;
   phone?: string | null;

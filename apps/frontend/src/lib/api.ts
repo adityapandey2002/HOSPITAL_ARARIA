@@ -249,6 +249,32 @@ class ApiClient {
     return this.post<{ id: string }>('/contact', data);
   }
 
+  // Complaints
+  async submitComplaint(data: {
+    name: string;
+    departmentId: string;
+    complaint: string;
+    imageUrl?: string;
+  }) {
+    return this.post<{ id: string }>('/complaints', data);
+  }
+
+  async getComplaints(params?: Record<string, unknown>) {
+    return this.get<any[]>('/complaints', params);
+  }
+
+  async getComplaintStats() {
+    return this.get<any>('/complaints/stats');
+  }
+
+  async getComplaint(id: string) {
+    return this.get<any>(`/complaints/${id}`);
+  }
+
+  async updateComplaintStatus(id: string, data: { status: string; resolution?: string }) {
+    return this.patch<any>(`/complaints/${id}/status`, data);
+  }
+
   // Notices
   async getNotices(params?: Record<string, unknown>) {
     return this.get<any[]>('/notices/published', params);

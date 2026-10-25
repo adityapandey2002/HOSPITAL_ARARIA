@@ -175,6 +175,24 @@ export const FEEDBACK_STATUS_LABELS: Record<string, string> = {
   RESOLVED: 'Resolved',
 };
 
+export const COMPLAINT_STATUS_LABELS: Record<string, string> = {
+  SUBMITTED: 'Submitted',
+  UNDER_REVIEW: 'Under Review',
+  IN_PROGRESS: 'In Progress',
+  RESOLVED: 'Resolved',
+  CLOSED: 'Closed',
+  REJECTED: 'Rejected',
+};
+
+export const COMPLAINT_STATUS_COLORS: Record<string, string> = {
+  SUBMITTED: 'warning',
+  UNDER_REVIEW: 'primary',
+  IN_PROGRESS: 'primary',
+  RESOLVED: 'success',
+  CLOSED: 'default',
+  REJECTED: 'danger',
+};
+
 export const FEEDBACK_RATING_LABELS: Record<number, string> = {
   1: 'Very poor',
   2: 'Poor',

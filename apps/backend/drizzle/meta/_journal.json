@@ -36,6 +36,20 @@
       "when": 1792922173689,
       "tag": "0004_timestamp_defaults",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1792943916965,
+      "tag": "0005_spotty_lily_hollister",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1792944078293,
+      "tag": "0006_funny_ozymandias",
+      "breakpoints": true
     }
   ]
 }

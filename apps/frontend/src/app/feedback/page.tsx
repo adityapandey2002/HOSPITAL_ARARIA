@@ -3,12 +3,12 @@ import Link from 'next/link';
 import { MessageSquare } from 'lucide-react';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
-import { FeedbackForm } from '@/components/feedback/FeedbackForm';
+import { SimpleFeedbackForm } from '@/components/feedback/SimpleFeedbackForm';
 
 export const metadata: Metadata = {
   title: 'Share your feedback',
   description:
-    'Share anonymous feedback about your visit to District Hospital Araria. Rate the department, service area and your overall experience.',
+    'Share feedback about your visit to District Hospital Araria. Tell us what you liked and what we can improve.',
 };
 
 export default function FeedbackPage() {
@@ -29,17 +29,24 @@ export default function FeedbackPage() {
           </div>
         </section>
 
-        <FeedbackForm />
+        <SimpleFeedbackForm />
 
         <div className="bg-white pb-12">
           <div className="container mx-auto px-4">
             <p className="mx-auto max-w-3xl text-center text-sm text-gray-500">
-              Hospital staff?{' '}
+              Have a complaint?{' '}
               <Link
-                href="/feedback/inbox"
+                href="/complaint"
                 className="rounded font-medium text-primary-700 underline-offset-2 hover:text-primary-800 hover:underline focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
               >
-                Open the staff feedback inbox
+                File a complaint
+              </Link>{' '}
+              | Hospital staff?{' '}
+              <Link
+                href="/admin/complaints"
+                className="rounded font-medium text-primary-700 underline-offset-2 hover:text-primary-800 hover:underline focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
+              >
+                Open the complaints admin panel
               </Link>
             </p>
           </div>

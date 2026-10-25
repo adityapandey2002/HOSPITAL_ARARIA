@@ -22,6 +22,7 @@ const navItems = [
   { href: '/blood-bank', label: 'Blood Bank' },
   { href: '/grievances', label: 'Grievances' },
   { href: '/feedback', label: 'Feedback' },
+  { href: '/complaint', label: 'Complaint' },
   { href: '/notices', label: 'Notices' },
   { href: '/contact', label: 'Contact' },
 ];
