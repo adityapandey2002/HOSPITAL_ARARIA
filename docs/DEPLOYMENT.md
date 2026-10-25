@@ -80,6 +80,21 @@ instance would hold its own session.
 
 1. **Add New → Project**, import this repository, and set **Root Directory** to
    `apps/backend`.
+
+   > **Do not accept Vercel's "Services" import.** Because the repository is a
+   > monorepo, the import screen offers to group `apps/backend` and
+   > `apps/frontend` into one project with a `services` block in a root
+   > `vercel.json`. That path rebuilds the backend as a **container** from
+   > `apps/backend/Dockerfile` — a different, beta deployment model with
+   > different limits — and abandons the function, region pinning and instant
+   > rollback this runbook is written against. Set the Root Directory first; the
+   > multi-application banner disappears and the normal single-app import
+   > remains. The frontend gets its own project in step 5.
+   >
+   > Turn on **"Include files outside of the Root Directory in the Build Step"**
+   > as well: every command here starts with `cd ../..` to reach the workspace
+   > root, and without the toggle that directory does not exist during the build.
+
 2. Leave the framework preset at its auto-detected value. The build is driven by
    `apps/backend/vercel.json`, which sets:
 
@@ -276,11 +291,21 @@ department in the feedback inbox and is the only role allowed to manage
 
 1. **Add New → Project**, import the same repository, and set **Root Directory**
    to `apps/frontend`.
-2. Framework preset: **Next.js**. `apps/frontend/vercel.json` pins the region:
+2. Framework preset: **Next.js**. `apps/frontend/vercel.json` supplies the rest:
 
    ```json
-   { "framework": "nextjs", "regions": ["bom1"] }
+   {
+     "framework": "nextjs",
+     "installCommand": "cd ../.. && npm ci",
+     "buildCommand": "cd ../.. && npm run build:packages && npm run build:frontend",
+     "regions": ["bom1"]
+   }
    ```
+
+   The build command is not optional: `@dh-araria/shared` and `@dh-araria/ui`
+   resolve through `dist/`, which is gitignored, so a bare `next build` fails
+   with "module not found" on the first deploy. Building the two workspace
+   packages first is exactly what `npm run build` does locally.
 
 3. Set the environment variables. Both are compiled into the client bundle, so
    they must be correct **before** the build:
@@ -445,6 +470,8 @@ ADMIN_EMAIL=hm@example.test ADMIN_PASSWORD='a-unique-12-char-password' npm run b
 | The same error appears after pasting a connection string | A wrapping quote, or a leftover placeholder such as `<password>` or `YOUR_PROJECT_REF`. | Quotes and surrounding whitespace are stripped automatically; placeholders are rejected with a message naming the field. Paste the raw URI from Supabase → Project Settings → Database → Connection string, with no quotes. |
 | `db:migrate` fails with a DDL or prepared-statement error | `DATABASE_MIGRATION_URL` is the transaction pooler (port 6543), or `DATABASE_URL` is. | Run migrations with both variables on the direct connection (port 5432), as in step 3. |
 | `db:migrate` connects but MikroORM reconciliation fails | The operator session is pointed at the pooler, or the database role lacks DDL rights on the MikroORM tables. | `db:migrate` reconciles MikroORM through `DATABASE_MIGRATION_URL`; confirm that variable, not just `DATABASE_URL`, is the direct connection. |
+| Frontend build fails with `Module not found: Can't resolve '@dh-araria/shared'` (or `@dh-araria/ui`) | `next build` ran without the workspace packages. Both publish only `dist/`, which is gitignored, so a fresh clone has no module to resolve. | Keep `buildCommand` in `apps/frontend/vercel.json`: `cd ../.. && npm run build:packages && npm run build:frontend`. |
+| The import screen offers "Services" instead of a single app | The repository is a monorepo, so Vercel proposes grouping both apps into one project. | Set **Root Directory** to `apps/backend` (or `apps/frontend`) before importing. Do not accept the services grouping — see step 2. |
 | Frontend requests go to `http://localhost:3001` in production, or 404 on every call | `NEXT_PUBLIC_API_URL` was missing or wrong at build time. | Set it to `https://<backend-origin>/api/v1`, then **redeploy** the frontend. |
 | Browser console shows a CORS error | The calling origin is not in `FRONTEND_URL`. | Add the exact origin (scheme + host, no trailing slash), comma-separated, then redeploy the backend. |
 | Function times out at 30 s, usually on the first request after idle | Cold start: container creation plus `createApp()` plus the first database connection. | Expected on a cold instance. If it persists, check database latency, and confirm in the dashboard that the function still has 1024 MB / 30 s. |
