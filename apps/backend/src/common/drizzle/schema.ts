@@ -394,7 +394,10 @@ export const feedback = pgTable(
       .notNull()
       .references(() => departments.id, { onDelete: 'restrict' }),
     /** Multiple departments visited (citizen may select more than one). */
-    departmentIds: text('departmentIds').array().notNull().default(sql`'{}'::text[]`),
+    departmentIds: text('departmentIds')
+      .array()
+      .notNull()
+      .default(sql`'{}'::text[]`),
     serviceArea: feedbackServiceAreaEnum('serviceArea').notNull().default('OPD'),
     /** Overall rating, 1 (very poor) to 5 (excellent). */
     rating: integer('rating').notNull(),

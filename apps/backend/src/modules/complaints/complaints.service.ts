@@ -1,10 +1,4 @@
-import {
-  ForbiddenException,
-  Inject,
-  Injectable,
-  Logger,
-  NotFoundException,
-} from '@nestjs/common';
+import { ForbiddenException, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { and, count, desc, eq, inArray, isNotNull, sql } from 'drizzle-orm';
 import { ComplaintStatus, UserRole, isStaffRole } from '@dh-araria/shared';
 
@@ -20,7 +14,11 @@ import {
 } from '../../common/drizzle/schema';
 import { NotificationsService } from '../notifications/notifications.service';
 
-import type { CreateComplaintDto, ComplaintQueryDto, UpdateComplaintStatusDto } from './dto/complaint.dto';
+import type {
+  CreateComplaintDto,
+  ComplaintQueryDto,
+  UpdateComplaintStatusDto,
+} from './dto/complaint.dto';
 
 export interface ComplaintWithDetails extends GrievanceRow {
   departmentName?: string | null;
@@ -115,12 +113,7 @@ export class ComplaintsService {
       })
       .from(grievances)
       .leftJoin(departments, eq(grievances.departmentId, departments.id))
-      .where(
-        and(
-          eq(grievances.id, id),
-          isNotNull(grievances.complaintStatus)
-        )
-      )
+      .where(and(eq(grievances.id, id), isNotNull(grievances.complaintStatus)))
       .limit(1);
 
     if (!row) throw new NotFoundException('Complaint not found');
@@ -150,7 +143,10 @@ export class ComplaintsService {
    * Returns the department filter condition for the actor, plus whether the
    * actor is unrestricted (ADMIN).
    */
-  async departmentCondition(userId: string, role: string): Promise<{ condition: any; unrestricted: boolean }> {
+  async departmentCondition(
+    userId: string,
+    role: string
+  ): Promise<{ condition: any; unrestricted: boolean }> {
     if (role === UserRole.ADMIN) {
       return { condition: undefined, unrestricted: true };
     }
@@ -274,10 +270,7 @@ export class ComplaintsService {
     // Enforce department scope for non-ADMIN users.
     if (userRole && userRole !== UserRole.ADMIN && userId) {
       const accessible = await this.accessibleDepartmentIds(userId, userRole);
-      if (
-        accessible === null ||
-        !accessible.includes(row.departmentId ?? '')
-      ) {
+      if (accessible === null || !accessible.includes(row.departmentId ?? '')) {
         throw new ForbiddenException('You do not have access to this department');
       }
     }
@@ -305,10 +298,7 @@ export class ComplaintsService {
     // Enforce department scope on the update too.
     if (userRole !== UserRole.ADMIN && userId) {
       const accessible = await this.accessibleDepartmentIds(userId, userRole);
-      if (
-        accessible === null ||
-        !accessible.includes(existing.departmentId ?? '')
-      ) {
+      if (accessible === null || !accessible.includes(existing.departmentId ?? '')) {
         throw new ForbiddenException('You do not have access to this department');
       }
     }
@@ -331,21 +321,23 @@ export class ComplaintsService {
       .returning();
 
     // Best-effort notification: never blocks the status transition.
-    await this.notifications.notifyStatusChange({
-      complaintId: updated.id,
-      name: existing.name,
-      email: existing.email || undefined,
-      phone: existing.phone || undefined,
-      departmentName: existing.departmentName ?? undefined,
-      oldStatus,
-      newStatus: status,
-      resolution: updated.resolution ?? undefined,
-    }).catch((error) => {
-      // Notification failures must not roll back the status change.
-      this.logger?.error?.(
-        `Notification failed for complaint ${id}: ${(error as Error).message}`
-      );
-    });
+    await this.notifications
+      .notifyStatusChange({
+        complaintId: updated.id,
+        name: existing.name,
+        email: existing.email || undefined,
+        phone: existing.phone || undefined,
+        departmentName: existing.departmentName ?? undefined,
+        oldStatus,
+        newStatus: status,
+        resolution: updated.resolution ?? undefined,
+      })
+      .catch((error) => {
+        // Notification failures must not roll back the status change.
+        this.logger?.error?.(
+          `Notification failed for complaint ${id}: ${(error as Error).message}`
+        );
+      });
 
     return updated;
   }
@@ -446,19 +438,21 @@ export class ComplaintsService {
 
     const lines = [header.join(',')];
     for (const row of rows) {
-      lines.push([
-        escapeCsv(row.id),
-        escapeCsv(row.name),
-        escapeCsv(row.email),
-        escapeCsv(row.phone),
-        escapeCsv(row.departmentName ?? ''),
-        escapeCsv(row.complaint ?? ''),
-        escapeCsv(String(row.complaintStatus ?? '')),
-        escapeCsv(row.resolution ?? ''),
-        escapeCsv(row.createdAt?.toISOString() ?? ''),
-        escapeCsv(row.updatedAt?.toISOString() ?? ''),
-        escapeCsv(row.imageUrl ?? ''),
-      ].join(','));
+      lines.push(
+        [
+          escapeCsv(row.id),
+          escapeCsv(row.name),
+          escapeCsv(row.email),
+          escapeCsv(row.phone),
+          escapeCsv(row.departmentName ?? ''),
+          escapeCsv(row.complaint ?? ''),
+          escapeCsv(String(row.complaintStatus ?? '')),
+          escapeCsv(row.resolution ?? ''),
+          escapeCsv(row.createdAt?.toISOString() ?? ''),
+          escapeCsv(row.updatedAt?.toISOString() ?? ''),
+          escapeCsv(row.imageUrl ?? ''),
+        ].join(',')
+      );
     }
 
     return lines.join('\n');
