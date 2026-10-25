@@ -172,7 +172,12 @@ describe('AuthService', () => {
   describe('refreshTokens', () => {
     it('should refresh tokens successfully', async () => {
       const refreshToken = 'valid-refresh-token';
-      const payload = { sub: 'user-id', email: 'test@example.com', role: 'PATIENT' };
+      const payload = {
+        sub: 'user-id',
+        email: 'test@example.com',
+        role: 'PATIENT',
+        typ: 'refresh',
+      };
 
       mockJwtService.verify.mockReturnValue(payload);
       mockUsersService.findByIdOrNull.mockResolvedValue({
@@ -197,6 +202,20 @@ describe('AuthService', () => {
       });
 
       await expect(service.refreshTokens('invalid-token')).rejects.toThrow(UnauthorizedException);
+    });
+
+    it('rejects an access token presented at the refresh endpoint', async () => {
+      // Both token kinds share a signing secret, so the `typ` claim is the only
+      // thing preventing a short-lived access token from minting new tokens.
+      mockJwtService.verify.mockReturnValue({
+        sub: 'user-id',
+        email: 'test@example.com',
+        role: 'PATIENT',
+        typ: 'access',
+      });
+
+      await expect(service.refreshTokens('an-access-token')).rejects.toThrow(UnauthorizedException);
+      expect(mockUsersService.findByIdOrNull).not.toHaveBeenCalled();
     });
   });
 

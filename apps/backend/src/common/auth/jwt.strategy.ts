@@ -33,7 +33,13 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
     });
   }
 
-  async validate(payload: { sub: string; email: string; role: string }) {
+  async validate(payload: { sub: string; email: string; role: string; typ?: string }) {
+    // Access and refresh tokens share a signing secret, so without this check a
+    // 7-day refresh token would authenticate every API call for a week.
+    if (payload.typ !== 'access') {
+      throw new UnauthorizedException('Invalid access token');
+    }
+
     const [user] = await this.db
       .select({
         id: users.id,
