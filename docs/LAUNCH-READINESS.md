@@ -1,268 +1,250 @@
 # Production Launch Readiness — DH Araria Hospital Portal
 
-Assessment date: 2026-10-24
+Assessment date: 2026-10-25
 Scope: the monorepo at `apps/backend`, `apps/frontend`, `packages/*`
-Verdict: **NO-GO for public production** until the P0 blockers below are closed.
+Deployment target: **Vercel** (Next.js frontend project + NestJS serverless function)
+backed by **Supabase PostgreSQL**
+Verdict: **GO for the first production deployment**, conditional on the operator
+checklist in `docs/DEPLOYMENT.md` (nothing in the repository can create the
+Supabase project, the two Vercel projects, or the first admin account).
 
-This is a point-in-time assessment, not a certification. Items marked "unverified"
-were not exercised because they need a deployed environment, real traffic, or an
-external audit.
+This is a point-in-time assessment, not a certification. Items marked
+"unverified" were not exercised because they need a deployed environment, real
+traffic, or an external audit. The previous revision of this document was
+written against a Kubernetes/MeghRaj target and is superseded.
 
 ---
 
 ## Assessment evidence
 
+Every row below was produced from a clean `npm install` on this tree.
+
 | Gate | Command | Result |
 |------|---------|--------|
-| Unit tests | `npm test` | **PASS** — 66 tests (60 backend, 6 frontend). Jest warns that a worker did not exit gracefully (likely an open handle). |
-| Build | `npm run build` | **PASS** — packages, backend, and frontend compile; Next lint/type-check pass; 13/13 static pages generated. |
-| Schema ownership | `npm run schema:check` | **PASS** — Drizzle owns 9 tables, MikroORM owns 5, no overlap. |
-| Dependency audit | `npm audit --omit=dev` | **FAIL** — 23 production vulnerabilities: 2 critical, 12 high, 9 moderate. |
-| Lint | backend ESLint | **UNVERIFIED** — the type-aware backend lint did not finish within 3 minutes on this machine; Next's lint (frontend) passed during `next build`. |
-| E2E | `npm run test:e2e` | **NO TESTS** — the suite is configured with `--passWithNoTests` and there are no `*.e2e-spec.ts` files. |
-| Deploy config | manual | **INCOMPLETE** — `docs/DEPLOYMENT.md` references `k8s/`, `infra/terraform/`, `nginx/ssl/`, and `nginx/conf.d/`, none of which are committed. |
+| Schema ownership | `npm run schema:check` | **PASS** — Drizzle owns 11 tables, MikroORM owns 5, no overlap. |
+| Backend type-check | `npx tsc --noEmit -p apps/backend/tsconfig.json` | **PASS** — 0 errors. |
+| Backend lint | `npm run lint --workspace=apps/backend` | **PASS** — 0 errors, 24 warnings (`no-explicit-any`, unused test imports). |
+| Backend tests | `npm test --workspace=apps/backend -- --runInBand` | **PASS** — 6 suites, 86 tests. |
+| Backend build | `npm run build:backend` | **PASS** — `nest build` emits `dist/`, including `dist/bootstrap.js` for the Vercel function. |
+| Frontend type-check | `npm run type-check --workspace=apps/frontend` | **PASS** — 0 errors. |
+| Frontend lint | `npm run lint --workspace=apps/frontend` | **PASS** — 0 errors, 74 warnings (unused imports, `<img>`, `set-state-in-effect` kept at warn). |
+| Frontend tests | `npm test --workspace=apps/frontend -- --runInBand` | **PASS** — 3 suites, 23 tests. |
+| Frontend build | `npm run build:frontend` | **PASS** — Next.js 16.4.3, all routes emitted. |
+| Dependency audit | `npm run audit:ci` | **PASS** — 0 critical, 7 high (all allowlisted), 3 moderate, 0 low. |
+| E2E | `npm run test:e2e` | **NO TESTS** — the suite is configured with `--passWithNoTests` and no `*.e2e-spec.ts` exists. |
+| Live deployment | manual | **NOT PERFORMED** — `docs/DEPLOYMENT.md` is complete but has not been executed against real Vercel/Supabase projects. |
 
-Reproduce the audit with `npm audit --omit=dev --json`; the two critical findings are
-`next` (multiple RCE/DoS advisories, fixed in 14.2.35) and `tar` (transitive via
-`bcrypt` 5.x, fixed by `bcrypt` 6).
+### Dependency audit detail
 
----
+Critical count is **0**. The seven high findings are four distinct causes, all
+time-boxed in `docs/security/audit-allowlist.json` with an expiry of
+**2027-01-31** and a documented compensating control in `docs/SECURITY.md`:
 
-## Checklist status
+| Package | Why it cannot be fixed today | Control |
+|---|---|---|
+| `axios` | No 1.x release contains the fix (registry latest is 1.12.2; advisories reference 1.15.0). | Client only calls the build-time `NEXT_PUBLIC_API_URL`; no user-supplied URL or proxy config. |
+| `form-data` | Fix is 4.0.6, unpublished (latest 4.0.4). | Reached only through `axios`/`supertest`; all public forms submit JSON. |
+| `zod` | Fix is 4.6.7, unpublished (latest 4.6.5). | Frontend form validation only; backend re-validates every request with `class-validator` DTOs. |
+| `body-parser`, `express`, `@nestjs/platform-express` | One transitive chain: `body-parser` 2.4.0 (the fix) is unpublished. Express 5 cannot use body-parser 1.x. | Both parsers mounted explicitly in `src/bootstrap.ts` with a 100 kB limit; Vercel caps the function at 30 s / 1024 MB. |
+| `multer` | The newest advisory covers `<2.5.0`; 2.5.0 is unpublished and Nest pins 2.2.0 exactly. | No upload endpoint exists in the backend, so the multipart parser is never reached. |
 
-Legend: ✅ done · ⚠️ partial / unverified · ❌ missing
-
-### Code quality
-- ✅ Unit tests pass (66).
-- ⚠️ Build passes, but with webpack cache warnings and many `no-explicit-any` lint warnings.
-- ⚠️ No e2e coverage of the critical citizen flows (login, book appointment, grievance, blood bank, notices).
-- ⚠️ One `console.log` remains in production frontend code (`src/context/LanguageContext.tsx:52`).
-- ✅ No `TODO`/`FIXME`/`HACK` markers in application source.
-- ⚠️ Jest worker leak warning — investigate with `--detectOpenHandles` before trusting CI stability.
-- ⚠️ Backend ESLint could not be verified end-to-end in this environment.
-
-### Security
-- ❌ **2 critical / 12 high** production dependency vulnerabilities (`npm audit --omit=dev`).
-  - `next` 14.2.3 → 14.2.35 (non-major fix available; includes critical RCE advisories).
-  - `drizzle-orm` 0.33 → 0.45.3 (SQL-injection advisory; major upgrade).
-  - `zod` 3.23 → 4.6.7 (DoS advisory; major upgrade).
-  - `bcrypt` 5.1.1 → 6.0.0 (pulls the fixed `tar`; native module, retest Docker build).
-  - `body-parser` / `multer` / `file-type` via Nest 10; fixed in Nest 12 (major).
-- ✅ No `.env` files committed; only `.env.example` is tracked.
-- ✅ `JWT_SECRET` is required by Joi validation with a 32-character minimum.
-- ✅ `helmet`, compression, explicit CORS origin, global `ValidationPipe` with `whitelist` + `forbidNonWhitelisted`.
-- ✅ Global `ThrottlerGuard`, stricter `@Throttle` on login/register/password-reset/contact.
-- ✅ Global `JwtAuthGuard` + `RolesGuard` (the guard-ordering bug is documented and fixed).
-- ✅ Swagger UI is disabled when `NODE_ENV=production`.
-- ❌ `HttpExceptionFilter` returns `exception.message` for unhandled `Error`s, leaking
-  internal details in 500 responses. Return a generic message when
-  `NODE_ENV=production`.
-- ⚠️ Access and refresh tokens live in `localStorage`, which is XSS-exposed.
-  `docs/SECURITY.md` claims an httpOnly refresh cookie and token rotation; the code
-  sends the refresh token in the request body instead.
-- ⚠️ CSP in `nginx/nginx.conf` allows `'unsafe-inline'` and `'unsafe-eval'`.
-- ⚠️ `docs/SECURITY.md` marks CERT-In, GIGW, and WCAG as "✅ Implemented/Compliant"
-  without an audit trail in the repo. Treat these as claims until a CERT-In/STQC
-  assessment exists.
-
-### Performance
-- ❌ No load test, Lighthouse run, or Core Web Vitals evidence.
-- ⚠️ `Doctor` imagery uses a raw `<img>` (`src/components/Doctors.tsx:171`) rather
-  than `next/image`; no responsive sizes or lazy loading there.
-- ⚠️ `next.config.js` only allows `localhost` as an image domain.
-- ✅ No obvious N+1 pattern in the reviewed list services; queries use explicit
-  joins/projections and pagination.
-- ⚠️ Database indexes were not audited against real query plans.
-
-### Accessibility
-- ✅ Skip link, semantic nav landmarks, `aria-label`s on key controls, `role="status"` /
-  `role="alert"` on blood-bank async states, labelled form controls.
-- ⚠️ No axe-core or Lighthouse CI in the repo; the WCAG 2.2 AA claim in
-  `docs/ACCESSIBILITY.md` has no automated evidence.
-- ⚠️ Contrast, focus management in modals, and screen-reader flows were not manually
-  exercised in this assessment.
-
-### Infrastructure
-- ✅ Health probes exist and are public: `/api/v1/health`, `/api/v1/health/ready`,
-  `/api/v1/health/live`; the first two probe both ORMs and return 503 when either is down.
-- ✅ Non-root users in both Dockerfiles; `HEALTHCHECK` present; `npm ci` from the
-  workspace root.
-- ✅ Committed Drizzle migrations (2 SQL files) plus a re-runnable `db:migrate`.
-- ✅ `docker-compose.yml` includes PostgreSQL tuning for the two connection pools
-  (20 + 20 against `max_connections=200`).
-- ❌ No CI/CD pipeline (`.github/workflows/` does not exist). Nothing blocks a merge
-  that fails tests, build, schema check, or audit.
-- ❌ `k8s/`, `infra/terraform/`, `nginx/ssl/`, and `nginx/conf.d/` are referenced by
-  `docs/DEPLOYMENT.md` but absent. The production path in the docs cannot be executed
-  as written.
-- ⚠️ The `nginx` compose profile will fail without the missing TLS certificates and
-  `conf.d` directory.
-- ⚠️ DNS, TLS issuance, WAF, and MeghRaj provisioning are operator-owned and unverified.
-
-### Observability
-- ✅ Structured request logging via `LoggingInterceptor`; 5xx errors are logged with stacks.
-- ❌ No error tracking / APM (no Sentry, OpenTelemetry, or equivalent).
-- ❌ No `/metrics` endpoint or Prometheus integration, despite `docs/DEPLOYMENT.md`
-  referencing a `k8s/production/prometheus-alerts.yaml` that does not exist.
-- ❌ No frontend error boundary (`app/error.tsx` / `global-error.tsx` absent) and no
-  client-side error reporting.
-- ⚠️ `pino` is a backend dependency but is never imported; `LOG_LEVEL` is validated but
-  unused. Logging is Nest's default text logger, not JSON.
-- ❌ No alert definitions or runbook-backed dashboards committed.
-
-### Documentation
-- ✅ README, RUNBOOK, ARCHITECTURE, API, SECURITY, DEPLOYMENT, ACCESSIBILITY, and an ADR exist.
-- ⚠️ `docs/DEPLOYMENT.md` health-check examples and Kubernetes probes use
-  `/health/live` and `/health/ready`; the real backend paths are
-  `/api/v1/health/live` and `/api/v1/health/ready`. Through the ingress, `/health/*`
-  routes to the frontend, not the backend.
-- ⚠️ `docs/DEPLOYMENT.md` verification curls `/api/docs` in production, but Swagger is
-  intentionally disabled when `NODE_ENV=production`.
-- ❌ `docs/DEPLOYMENT.md` instructs `npm run db:seed` in production. The seed creates
-  accounts with published demo passwords (`Admin@123`, `Staff@123`, `Demo@123`).
-  **Do not run this against production.**
-- ⚠️ No changelog or release-notes convention.
-
-### Feature flags
-- ❌ `apps/frontend/.env.example` declares `NEXT_PUBLIC_ENABLE_APPOINTMENTS`,
-  `NEXT_PUBLIC_ENABLE_GRIEVANCES`, `NEXT_PUBLIC_ENABLE_BLOOD_BANK`, and
-  `NEXT_PUBLIC_ENABLE_NOTICES`, but no code reads them. There is no kill switch and
-  no staged-rollout mechanism.
+The registry on this machine is behind the advisory database for all four causes
+(advisories name versions that do not exist yet). The gate has a hard expiry, so
+CI fails on 2027-02-01 unless these are upgraded or renewed with fresh evidence.
 
 ---
 
-## P0 — must close before public production
+## What changed since the previous assessment
 
-1. **Clear the dependency audit.** Minimum: upgrade `next` to 14.2.35. Then plan the
-   major upgrades (`drizzle-orm` 0.45.x, `zod` 4.x, `bcrypt` 6.x) with regression
-   tests, and either move to Nest 12 or document a compensating control for the
-   `body-parser`/`multer` advisories. Re-run `npm audit --omit=dev` and require zero
-   critical/high findings.
-2. **Remove `db:seed` from the production procedure.** Replace it with a one-off
-   first-admin bootstrap that takes credentials from the environment. Add a guard so
-   `seed.ts` refuses to run when `NODE_ENV=production` unless an explicit override is set.
-3. **Add CI** (GitHub Actions): `npm ci` → `schema:check` → `build` → `test` →
-   `npm audit --omit=dev --audit-level=high` → frontend type-check. Make it required
-   for merges to the release branch.
-4. **Stop leaking 500 details.** In `HttpExceptionFilter`, map non-`HttpException`
-   errors to `"Internal server error"` in production (keep the stack in logs).
-5. **Make the deployment path real.** Either commit the `k8s/`, `infra/terraform/`,
-   `nginx/ssl/`, and `nginx/conf.d/` artefacts or rewrite `docs/DEPLOYMENT.md` as a
-   template that explicitly says those files must be supplied per environment.
-6. **Add production error visibility.** At minimum: a frontend `app/error.tsx` and
-   `global-error.tsx`; server + client error reporting to an approved service; alerting
-   on 5xx rate, p95 latency, pod restarts, DB pool saturation, and certificate expiry.
+Every P0 from the prior revision is closed in code:
 
-## P1 — close before or during the canary
+| Previous P0 | Now |
+|---|---|
+| Clear the dependency audit (2 critical / 12 high) | **Closed** — 0 critical; 7 high allowlisted with controls and an expiry. `next` 14.2.3 → 16.4.3 removed the two critical RCEs; `tar` left the tree. |
+| Remove `db:seed` from the production procedure | **Closed** — `db:seed` refuses to run under `NODE_ENV=production` unless `ALLOW_PROD_SEED=true`, and `bootstrap:admin` creates the first ADMIN from `ADMIN_EMAIL`/`ADMIN_PASSWORD`. |
+| Add CI | **Closed** — `.github/workflows/ci.yml`: `npm ci` → `schema:check` → shared build → backend lint → backend build → frontend lint → frontend build → `npm test` → `audit:ci`. |
+| Stop leaking 500 details | **Closed** — `HttpExceptionFilter` maps non-`HttpException` errors to a generic message when `NODE_ENV=production`; the stack stays in logs. |
+| Make the deployment path real | **Closed** — `docs/DEPLOYMENT.md` is now a Vercel + Supabase runbook; the Kubernetes/MeghRaj artefacts were never committed and are no longer referenced. |
+| Add production error visibility | **Partially closed** — `app/error.tsx`, `app/global-error.tsx`, and the public `POST /api/v1/client-errors` endpoint emit one PII-free structured log line per client crash. No third-party APM and no alert rules are committed. |
 
-- Add e2e tests for the five citizen journeys and run them against staging.
-- Fix the Jest open-handle warning (`jest --detectOpenHandles`).
-- Move refresh tokens to an httpOnly, secure, same-site cookie (or amend SECURITY.md
-  to match the implemented design) and add revocation.
-- Wire the `NEXT_PUBLIC_ENABLE_*` flags to real checks, or delete them. Every flag
-  needs an owner and an expiry date.
-- Correct the health paths and the `/api/docs` assertion in DEPLOYMENT.md.
-- Use `pino` (or remove it) and drive log level from `LOG_LEVEL`.
-- Add axe-core/Lighthouse CI; convert the Doctors `<img>` to `next/image`.
-- Tighten CSP (nonces or hashes; drop `unsafe-eval`).
-- Verify backup restore into staging on a schedule and keep the evidence.
+Additional blockers found and fixed after the previous assessment:
 
-## P2 — after launch
+- **Refresh tokens were accepted as access tokens.** Both tokens were signed with
+  the same secret and carried the same claims, so a 7-day refresh token could be
+  used as a bearer credential. Both now carry an explicit `typ` claim and both
+  verifiers reject the wrong kind.
+- **Serverless pool defaults were 20, not 1.** Joi applied `.default(20)` and
+  `@nestjs/config` copies validated defaults into `process.env`, so the
+  serverless branch in the configuration factory never fired. The defaults moved
+  into `defaultPoolSize()` in `src/config/database-url.ts`, shared by Drizzle and
+  MikroORM, and the Joi fields are now optional.
+- **The Vercel function limit was keyed to `api/index.ts`** while the committed
+  entry point is `api/index.js`, so the memory/timeout limits may not have
+  applied.
+- **`db:migrate` ran the MikroORM reconcile through `DATABASE_URL`** even when
+  `DATABASE_MIGRATION_URL` pointed at the direct connection, so DDL could hit the
+  transaction pooler.
+- **The password-reset token was written to the debug log in every
+  environment.** It is now logged only when `NODE_ENV=development`, matching the
+  response-body gate.
 
-- Changelog / release-notes habit.
-- Load test at expected peak (appointment slot contention, grievance spikes).
-- Index review against `EXPLAIN ANALYZE` for the busiest list endpoints.
+---
+
+## Remaining gaps
+
+### Ships with a documented risk
+
+- **No e2e coverage.** Unit tests cover the feedback service (25 cases), auth,
+  and the rating UI, but no browser test drives login → book appointment →
+  grievance → notice. The first production smoke test in `docs/DEPLOYMENT.md`
+  is manual.
+- **Third-party APM / alerting is absent.** Client and server errors are logged;
+  nothing pages a human. Configure Vercel log drains and Supabase alerts before
+  real traffic.
+- **Database TLS is encrypted but not verified** (`rejectUnauthorized: false` in
+  `tlsOptions`). Traffic cannot be read in transit, but a forged certificate is
+  not detected. Pinning Supabase's CA bundle is the fix; it is not wired yet.
+- **Logout does not revoke the refresh token.** The API is stateless and has no
+  denylist; the client discards both tokens.
+- **The 180-day audit-log purge exists only as a documented intention.** There is
+  no scheduled job, so `audit_logs` grows indefinitely until one is added.
+- **React 18 is deprecated by Next 16.** The build prints a warning and Next 17
+  will require React 19.
+
+### Requires an operator
+
+- Create the Supabase project and both connection strings.
+- Create the two Vercel projects, set every environment variable, and redeploy
+  the frontend once `NEXT_PUBLIC_API_URL` is final (it is baked in at build time).
+- Run `db:migrate` with `DATABASE_MIGRATION_URL`, then `bootstrap:admin`.
+- Set `FRONTEND_URL` to the real origins after the first frontend deployment.
+- Confirm the Supabase plan's PITR/backup retention and the Vercel function
+  limits actually applied in the dashboard.
+
+### P1 — close during the first month
+
+- Add Playwright e2e coverage for the five citizen journeys plus the feedback
+  submission and inbox flows.
+- Pin the Supabase CA bundle so `rejectUnauthorized` can be `true`.
+- Wire an APM and alert rules (5xx rate, p95 latency, DB connection saturation,
+  function cold-start failures).
+- Implement a refresh-token denylist (or document the risk as accepted).
+- Schedule the 180-day audit purge.
+- Remove dead configuration and dependencies (`pino`, `pino-pretty`, `REDIS_*`,
+  `UPLOAD_PATH`, the `NEXT_PUBLIC_ENABLE_*` flags), or implement them.
+- Reduce the 98 lint warnings; promote `react-hooks/set-state-in-effect` to an
+  error once the mount-loading effects are refactored.
+- Plan the React 19 upgrade before Next 17.
+
+### P2 — after launch
+
+- Load test at expected peak (appointment slot contention, feedback bursts).
+- Review indexes against `EXPLAIN ANALYZE` for the busiest list endpoints.
+- Changelog / release-notes convention.
 - Remove the obsolete `version:` key from `docker-compose.yml`.
 
 ---
 
-## Staged rollout plan
+## Deployment path
 
-There is no feature-flag service in the codebase, so use infrastructure-level
-canarying first; add per-feature flags before the next release.
+The runbook is `docs/DEPLOYMENT.md`. The shape is:
 
-1. **Staging** — deploy the exact image tag; run `db:migrate`, `schema:check`, the
-   e2e suite, and a manual smoke test of login → book → view → submit grievance.
-2. **Production, dark** — deploy with the new backend/frontend image but keep the
-   public ingress pointed at the previous version. Confirm `/health/live` and
-   `/health/ready` return 200 for the new pods.
-3. **Internal users** — route staff traffic (or 1 of N backend replicas) to the new
-   version for 24 hours.
-4. **Canary 5%** — shift 5% of traffic at the ingress; monitor for 24–48 hours.
-5. **25% → 50% → 100%** — advance only when every threshold below is green.
-6. **Full rollout** — monitor one week, then clean up flags/dead paths.
+1. **Supabase** — one project. `DATABASE_URL` is the transaction pooler
+   (`:6543`) used by both ORMs at runtime; `DATABASE_MIGRATION_URL` is the direct
+   connection (`:5432`) used only for DDL.
+2. **Backend Vercel project** — root directory `apps/backend`, build via
+   `apps/backend/vercel.json`, one function (`api/index.js`) that requires the
+   compiled `dist/bootstrap`. Region `bom1`. It never imports `src/`: Vercel's
+   TypeScript transpile omits `emitDecoratorMetadata`, which breaks Nest DI.
+3. **Migrations and first admin** — `npm run db:migrate` with
+   `DATABASE_MIGRATION_URL`, then `npm run schema:check`, then
+   `npm run bootstrap:admin`. Never `db:seed`.
+4. **Frontend Vercel project** — root directory `apps/frontend`, Next.js preset,
+   region `bom1`, `NEXT_PUBLIC_API_URL` and `NEXT_PUBLIC_APP_URL` set before the
+   build.
+5. **Close the loop** — set the backend's `FRONTEND_URL` to the deployed origins
+   (comma-separated allowlist) and redeploy the backend.
+6. **Smoke test** — `/api/v1/health`, the public notices read, the feedback form
+   on a real phone, and the inbox with an ADMIN account.
 
-### Advance / hold / roll back thresholds
-
-| Metric | Advance | Hold and investigate | Roll back |
-|---|---|---|---|
-| Error rate | within 10% of baseline | 10–100% above baseline | >2× baseline |
-| P95 latency | within 20% of baseline | 20–50% above baseline | >50% above baseline |
-| Client JS errors | no new error types | new errors <0.1% of sessions | new errors >0.1% of sessions |
-| Business metrics | neutral or positive | decline <5% | decline >5% |
-| Error budget burn | normal | faster than baseline | budget exhausted |
-
-Roll back immediately on data-integrity issues, a security finding, or a spike in
-user-reported failures.
+`DRIZZLE_POOL_SIZE=1` and `MIKRO_POOL_SIZE=1` are no longer required for
+correctness — the defaults are serverless-aware — but setting them explicitly is
+still recommended so a dashboard change cannot reintroduce a 20-connection pool.
 
 ---
 
 ## Rollback plan
 
 ### Trigger conditions
-- 5xx rate >2× baseline for 10 minutes.
-- P95 latency >50% above baseline for 10 minutes.
-- Any data-corruption signal (duplicate appointments, negative blood stock, missing audit rows).
+
+- 5xx rate more than 2× baseline for 10 minutes.
+- p95 latency more than 50% above baseline for 10 minutes.
+- Any data-corruption signal (duplicate appointments, negative blood stock,
+  missing audit rows).
 - A newly disclosed critical vulnerability in a deployed dependency.
 
-### Application
-```bash
-# Kubernetes
-kubectl rollout undo deployment/backend -n production
-kubectl rollout undo deployment/frontend -n production
-kubectl rollout status deployment/backend -n production
+### Application — Vercel instant rollback
 
-# Compose / VM: redeploy the previous immutable image tag
-docker compose -f docker-compose.yml up -d --no-deps backend frontend
+```bash
+# Promote the previous good deployment back to production, no rebuild.
+vercel rollback <deployment-url> --scope <team>
+
+# Or in the dashboard: Deployments -> previous deployment -> "Promote to Production".
 ```
-Target: under 5 minutes.
+
+Both projects roll back independently, so a bad backend deploy does not force a
+frontend rollback. Target: under 2 minutes.
 
 ### Database
-- Drizzle migrations are **forward-only** (no down migrations committed). Prefer
-  restore-from-backup or point-in-time recovery over ad-hoc SQL.
-- MikroORM reconciliation uses `updateSchema({ safe: true })` and is additive only;
-  it does not drop columns.
-- Before a release, take a verified snapshot and record the restore command and the
-  measured restore time.
+
+Migrations are **forward-only**; there are no down migrations. A bad schema
+change is recovered by restoring the database, not by an ad-hoc `DROP`:
+
 ```bash
-kubectl scale deployment/backend --replicas=0 -n production
-pg_restore --clean --if-exists --no-owner --dbname="$DATABASE_URL" /path/to/backup.dump
-kubectl scale deployment/backend --replicas=5 -n production
+# Supabase dashboard -> Database -> Backups -> restore the pre-release snapshot,
+# or use PITR to the timestamp before the migration.
+# Then re-run the read-only check against the restored database:
+npm run schema:check
 ```
-Target: under 15 minutes, exercised at least once in staging.
+
+`db:migrate` never drops the MikroORM tables unless
+`ALLOW_DESTRUCTIVE_SCHEMA=true`, so a routine re-run of migrations is additive.
+Target: under 30 minutes, and the restore must be exercised once in staging
+before the first public release.
 
 ### Communication
-Notify the on-call engineer, the DevOps lead, and the Project Director; record the
-trigger, the rollback timestamp, and the verification result in the incident log.
+
+Notify the on-call engineer, the DevOps lead, and the Project Director; record
+the trigger, the rollback timestamp, and the verification result in the incident
+log.
 
 ---
 
 ## Post-launch verification (first hour)
 
+Replace the hosts with the real Vercel project domains.
+
 ```bash
-# 1. Health (correct paths — note the /api/v1 prefix)
-curl -fsS https://dhararia.bihar.gov.in/api/v1/health/live
-curl -fsS https://dhararia.bihar.gov.in/api/v1/health/ready
+# 1. Health — note the /api/v1 prefix and that this is the backend project.
+curl -fsS https://<backend>.vercel.app/api/v1/health/live
+curl -fsS https://<backend>.vercel.app/api/v1/health/ready
 
-# 2. Public read path
-curl -fsS "https://dhararia.bihar.gov.in/api/v1/notices?page=1&limit=5"
+# 2. Public read path.
+curl -fsS "https://<backend>.vercel.app/api/v1/notices?page=1&limit=5"
 
-# 3. Error monitoring: confirm no new error types and no 5xx spike
-# 4. Latency dashboard: p50/p95/p99 within the rollout thresholds
-# 5. Manual critical flow: login → book appointment → view blood bank →
-#    submit grievance → read notice
-# 6. Logs: confirm request logs are flowing and readable
-# 7. Rollback: confirm the previous image tag is still available in the registry
+# 3. Public feedback write path (expect 200 and a reference id).
+curl -fsS -X POST https://<backend>.vercel.app/api/v1/feedback \
+  -H 'Content-Type: application/json' \
+  -d '{"departmentId":"<uuid>","serviceArea":"OPD","rating":5}'
+
+# 4. Throttle still works: the sixth POST inside a minute must return 429.
+
+# 5. Frontend: open /feedback on a phone, submit, then confirm the row appears in
+#    /feedback/inbox for an ADMIN and for a granted department viewer, and not
+#    for an ungranted account.
+
+# 6. Logs: confirm request logs and any client_error lines are visible.
+# 7. Rollback: confirm the previous deployment is still listed as promotable.
 ```
 
 ---
@@ -278,8 +260,9 @@ Adopt this before the first release and record the SLOs in the runbook:
 | Exhausted | Freeze feature work; reliability work only. |
 | Reset | Resume normal pace; keep the fix that recovered it. |
 
-Suggested starting SLOs for this service: 99.5% monthly availability for the public
-read paths, 99.0% for appointment booking, and p95 API latency under 500 ms.
+Suggested starting SLOs for this service: 99.5% monthly availability for the
+public read paths, 99.0% for appointment booking and feedback submission, and
+p95 API latency under 500 ms.
 
 ---
 
@@ -291,5 +274,6 @@ read paths, 99.0% for appointment booking, and p95 API latency under 500 ms.
 | Security Officer | | | |
 | Project Director | | | |
 
-A launch is approved only when every P0 item is closed, the staging smoke test and
-rollback drill have passed, and the sign-off row above is complete.
+A public launch is approved when the operator checklist in `docs/DEPLOYMENT.md`
+is complete, the first-hour smoke test above passes, and the sign-off row is
+filled.
