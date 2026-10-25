@@ -50,6 +50,13 @@
       "when": 1792944078293,
       "tag": "0006_funny_ozymandias",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1792945550551,
+      "tag": "0007_lucky_wong",
+      "breakpoints": true
     }
   ]
 }

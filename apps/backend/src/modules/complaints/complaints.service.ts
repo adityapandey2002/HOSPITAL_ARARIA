@@ -2,20 +2,23 @@ import {
   ForbiddenException,
   Inject,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { and, count, desc, eq, isNotNull } from 'drizzle-orm';
+import { and, count, desc, eq, inArray, isNotNull, sql } from 'drizzle-orm';
 import { ComplaintStatus, UserRole, isStaffRole } from '@dh-araria/shared';
 
 import { PaginationDto } from '../../common/dto/pagination.dto';
 import { DRIZZLE, type DrizzleDb } from '../../common/drizzle/drizzle.module';
 import { newId } from '../../common/drizzle/id';
 import {
+  complaintViewers,
   departments,
   grievances,
   type GrievanceRow,
   type NewGrievanceRow,
 } from '../../common/drizzle/schema';
+import { NotificationsService } from '../notifications/notifications.service';
 
 import type { CreateComplaintDto, ComplaintQueryDto, UpdateComplaintStatusDto } from './dto/complaint.dto';
 
@@ -33,10 +36,20 @@ type Insert = typeof grievances.$inferInsert;
  * but are distinguished by a non-null `complaintStatus`. The public submission
  * surface is simpler than the grievance form: no email/phone required, and an
  * image URL (from the camera option) may be attached.
+ *
+ * Department-scoped access: ADMIN sees every complaint; STAFF sees only
+ * complaints from departments they are granted access to via
+ * `complaint_viewers`. Status changes trigger email/SMS notifications to the
+ * complainant.
  */
 @Injectable()
 export class ComplaintsService {
-  constructor(@Inject(DRIZZLE) private readonly db: DrizzleDb) {}
+  private readonly logger = new Logger(ComplaintsService.name);
+
+  constructor(
+    @Inject(DRIZZLE) private readonly db: DrizzleDb,
+    private readonly notifications: NotificationsService
+  ) {}
 
   // -------------------------------------------------------------------------
   // Public write
@@ -75,10 +88,92 @@ export class ComplaintsService {
   }
 
   // -------------------------------------------------------------------------
+  // Public tracking
+  // -------------------------------------------------------------------------
+
+  async track(id: string): Promise<ComplaintWithDetails> {
+    const [row] = await this.db
+      .select({
+        id: grievances.id,
+        userId: grievances.userId,
+        name: grievances.name,
+        email: grievances.email,
+        phone: grievances.phone,
+        departmentId: grievances.departmentId,
+        category: grievances.category,
+        subject: grievances.subject,
+        description: grievances.description,
+        status: grievances.status,
+        complaintStatus: grievances.complaintStatus,
+        imageUrl: grievances.imageUrl,
+        cpgramsId: grievances.cpgramsId,
+        assignedTo: grievances.assignedTo,
+        resolution: grievances.resolution,
+        createdAt: grievances.createdAt,
+        updatedAt: grievances.updatedAt,
+        departmentName: departments.name,
+      })
+      .from(grievances)
+      .leftJoin(departments, eq(grievances.departmentId, departments.id))
+      .where(
+        and(
+          eq(grievances.id, id),
+          isNotNull(grievances.complaintStatus)
+        )
+      )
+      .limit(1);
+
+    if (!row) throw new NotFoundException('Complaint not found');
+    return row;
+  }
+
+  // -------------------------------------------------------------------------
+  // Authorization helpers
+  // -------------------------------------------------------------------------
+
+  /**
+   * Departments the actor may read complaints for, or `null` for unrestricted
+   * (ADMIN). Empty array = no grants = nothing visible.
+   */
+  async accessibleDepartmentIds(userId: string, role: string): Promise<string[] | null> {
+    if (role === UserRole.ADMIN) return null;
+
+    const rows = await this.db
+      .select({ departmentId: complaintViewers.departmentId })
+      .from(complaintViewers)
+      .where(eq(complaintViewers.userId, userId));
+
+    return rows.map((row) => row.departmentId);
+  }
+
+  /**
+   * Returns the department filter condition for the actor, plus whether the
+   * actor is unrestricted (ADMIN).
+   */
+  async departmentCondition(userId: string, role: string): Promise<{ condition: any; unrestricted: boolean }> {
+    if (role === UserRole.ADMIN) {
+      return { condition: undefined, unrestricted: true };
+    }
+
+    const ids = await this.accessibleDepartmentIds(userId, role);
+    if (!ids || ids.length === 0) {
+      // No grants — nothing visible. Use a condition that matches nothing.
+      return { condition: eq(grievances.id, sql`''`), unrestricted: false };
+    }
+
+    return { condition: inArray(grievances.departmentId, ids), unrestricted: false };
+  }
+
+  // -------------------------------------------------------------------------
   // Admin reads
   // -------------------------------------------------------------------------
 
-  async findAll(pagination: PaginationDto, filters: ComplaintQueryDto) {
+  async findAll(
+    pagination: PaginationDto,
+    filters: ComplaintQueryDto,
+    userId?: string,
+    userRole?: string
+  ) {
     const page = pagination.page ?? 1;
     const limit = pagination.limit ?? 10;
     const offset = (page - 1) * limit;
@@ -87,6 +182,13 @@ export class ComplaintsService {
       // Only surface rows submitted through the simple complaint form.
       isNotNull(grievances.complaintStatus),
     ];
+
+    // Department-scoped access for non-ADMIN users.
+    if (userRole && userRole !== UserRole.ADMIN && userId) {
+      const { condition } = await this.departmentCondition(userId, userRole);
+      if (condition) conditions.push(condition);
+    }
+
     if (filters.departmentId) {
       conditions.push(eq(grievances.departmentId, filters.departmentId));
     }
@@ -140,7 +242,7 @@ export class ComplaintsService {
     };
   }
 
-  async findById(id: string): Promise<ComplaintWithDetails> {
+  async findById(id: string, userId?: string, userRole?: string): Promise<ComplaintWithDetails> {
     const [row] = await this.db
       .select({
         id: grievances.id,
@@ -168,6 +270,18 @@ export class ComplaintsService {
       .limit(1);
 
     if (!row) throw new NotFoundException('Complaint not found');
+
+    // Enforce department scope for non-ADMIN users.
+    if (userRole && userRole !== UserRole.ADMIN && userId) {
+      const accessible = await this.accessibleDepartmentIds(userId, userRole);
+      if (
+        accessible === null ||
+        !accessible.includes(row.departmentId ?? '')
+      ) {
+        throw new ForbiddenException('You do not have access to this department');
+      }
+    }
+
     return row;
   }
 
@@ -186,7 +300,20 @@ export class ComplaintsService {
       throw new ForbiddenException('Not authorized to update complaint status');
     }
 
-    await this.findById(id);
+    const existing = await this.findById(id, userId, userRole);
+
+    // Enforce department scope on the update too.
+    if (userRole !== UserRole.ADMIN && userId) {
+      const accessible = await this.accessibleDepartmentIds(userId, userRole);
+      if (
+        accessible === null ||
+        !accessible.includes(existing.departmentId ?? '')
+      ) {
+        throw new ForbiddenException('You do not have access to this department');
+      }
+    }
+
+    const oldStatus = (existing.complaintStatus ?? ComplaintStatus.SUBMITTED) as ComplaintStatus;
 
     const [updated] = await this.db
       .update(grievances)
@@ -203,19 +330,42 @@ export class ComplaintsService {
       .where(eq(grievances.id, id))
       .returning();
 
+    // Best-effort notification: never blocks the status transition.
+    await this.notifications.notifyStatusChange({
+      complaintId: updated.id,
+      name: existing.name,
+      email: existing.email || undefined,
+      phone: existing.phone || undefined,
+      departmentName: existing.departmentName ?? undefined,
+      oldStatus,
+      newStatus: status,
+      resolution: updated.resolution ?? undefined,
+    }).catch((error) => {
+      // Notification failures must not roll back the status change.
+      this.logger?.error?.(
+        `Notification failed for complaint ${id}: ${(error as Error).message}`
+      );
+    });
+
     return updated;
   }
 
-  async getStats() {
-    const total = await this.db
-      .select({ value: count() })
-      .from(grievances)
-      .where(isNotNull(grievances.complaintStatus));
+  async getStats(userId?: string, userRole?: string) {
+    const conditions = [isNotNull(grievances.complaintStatus)];
+
+    if (userRole && userRole !== UserRole.ADMIN && userId) {
+      const { condition } = await this.departmentCondition(userId, userRole);
+      if (condition) conditions.push(condition);
+    }
+
+    const where = conditions.length > 0 ? and(...conditions) : undefined;
+
+    const total = await this.db.select({ value: count() }).from(grievances).where(where);
 
     const byStatus = await this.db
       .select({ status: grievances.complaintStatus, value: count() })
       .from(grievances)
-      .where(isNotNull(grievances.complaintStatus))
+      .where(where)
       .groupBy(grievances.complaintStatus);
 
     const stats: Record<ComplaintStatus, number> = {
@@ -235,5 +385,82 @@ export class ComplaintsService {
       total: Number(total[0]?.value ?? 0),
       byStatus: stats,
     };
+  }
+
+  // -------------------------------------------------------------------------
+  // Export
+  // -------------------------------------------------------------------------
+
+  async exportCsv(userId?: string, userRole?: string): Promise<string> {
+    const conditions = [isNotNull(grievances.complaintStatus)];
+
+    if (userRole && userRole !== UserRole.ADMIN && userId) {
+      const { condition } = await this.departmentCondition(userId, userRole);
+      if (condition) conditions.push(condition);
+    }
+
+    const where = conditions.length > 0 ? and(...conditions) : undefined;
+
+    const rows = await this.db
+      .select({
+        id: grievances.id,
+        name: grievances.name,
+        email: grievances.email,
+        phone: grievances.phone,
+        departmentId: grievances.departmentId,
+        complaint: grievances.description,
+        complaintStatus: grievances.complaintStatus,
+        imageUrl: grievances.imageUrl,
+        resolution: grievances.resolution,
+        createdAt: grievances.createdAt,
+        updatedAt: grievances.updatedAt,
+        departmentName: departments.name,
+      })
+      .from(grievances)
+      .leftJoin(departments, eq(grievances.departmentId, departments.id))
+      .where(where)
+      .orderBy(desc(grievances.createdAt));
+
+    const escapeCsv = (value: string | null | undefined): string => {
+      if (value === null || value === undefined) return '';
+      const str = String(value);
+      if (str.includes(',') || str.includes('"') || str.includes('\n') || str.includes('\r')) {
+        return `"${str.replace(/"/g, '""')}"`;
+      }
+      return str;
+    };
+
+    const header = [
+      'Complaint ID',
+      'Name',
+      'Email',
+      'Phone',
+      'Department',
+      'Complaint',
+      'Status',
+      'Resolution',
+      'Created At',
+      'Updated At',
+      'Image URL',
+    ];
+
+    const lines = [header.join(',')];
+    for (const row of rows) {
+      lines.push([
+        escapeCsv(row.id),
+        escapeCsv(row.name),
+        escapeCsv(row.email),
+        escapeCsv(row.phone),
+        escapeCsv(row.departmentName ?? ''),
+        escapeCsv(row.complaint ?? ''),
+        escapeCsv(String(row.complaintStatus ?? '')),
+        escapeCsv(row.resolution ?? ''),
+        escapeCsv(row.createdAt?.toISOString() ?? ''),
+        escapeCsv(row.updatedAt?.toISOString() ?? ''),
+        escapeCsv(row.imageUrl ?? ''),
+      ].join(','));
+    }
+
+    return lines.join('\n');
   }
 }

@@ -117,8 +117,8 @@ class ApiClient {
   }
 
   // Generic request methods
-  async get<T>(url: string, params?: Record<string, unknown>) {
-    const response = await this.client.get<ApiResponse<T>>(url, { params });
+  async get<T>(url: string, params?: Record<string, unknown>, options?: Record<string, unknown>) {
+    const response = await this.client.get<ApiResponse<T>>(url, { params, ...options });
     return response.data;
   }
 
@@ -273,6 +273,17 @@ class ApiClient {
 
   async updateComplaintStatus(id: string, data: { status: string; resolution?: string }) {
     return this.patch<any>(`/complaints/${id}/status`, data);
+  }
+
+  async trackComplaint(id: string) {
+    return this.get<any>(`/complaints/track/${id}`);
+  }
+
+  async exportComplaintsCsv() {
+    const response = await this.client.get('/complaints/export', {
+      responseType: 'blob',
+    });
+    return response.data;
   }
 
   // Notices

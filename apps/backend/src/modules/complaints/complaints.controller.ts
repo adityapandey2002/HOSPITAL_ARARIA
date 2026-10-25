@@ -7,9 +7,13 @@ import {
   Post,
   Query,
   UseGuards,
+  Res,
+  HttpCode,
+  HttpStatus,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
+import type { Response } from 'express';
 
 import { UserRole } from '@dh-araria/shared';
 
@@ -41,16 +45,31 @@ export class ComplaintsController {
     return this.complaintsService.create(dto);
   }
 
+  @Get('track/:id')
+  @Public()
+  @ApiOperation({ summary: 'Track a complaint by reference ID (public)' })
+  @ApiResponse({ status: 200, description: 'Complaint found' })
+  @ApiResponse({ status: 404, description: 'Complaint not found' })
+  track(@Param('id') id: string) {
+    return this.complaintsService.track(id);
+  }
+
   @Get()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN, UserRole.STAFF)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'List all complaints (Admin/Staff)' })
+  @ApiOperation({ summary: 'List all complaints (Admin/Staff, department-scoped for staff)' })
   @ApiResponse({ status: 200, description: 'Complaints retrieved successfully' })
-  findAll(@Query() query: ComplaintQueryDto) {
+  findAll(
+    @Query() query: ComplaintQueryDto,
+    @CurrentUser('id') userId: string,
+    @CurrentUser('role') userRole: string
+  ) {
     return this.complaintsService.findAll(
       { page: query.page ? Number(query.page) : 1, limit: query.limit ? Number(query.limit) : 10 },
-      query
+      query,
+      userId,
+      userRole
     );
   }
 
@@ -60,17 +79,41 @@ export class ComplaintsController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Complaint status aggregates for the admin panel' })
   @ApiResponse({ status: 200, description: 'Stats retrieved successfully' })
-  getStats() {
-    return this.complaintsService.getStats();
+  getStats(@CurrentUser('id') userId: string, @CurrentUser('role') userRole: string) {
+    return this.complaintsService.getStats(userId, userRole);
+  }
+
+  @Get('export')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.STAFF)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Export complaints as CSV (Admin/Staff, department-scoped for staff)' })
+  @HttpCode(HttpStatus.OK)
+  async export(
+    @CurrentUser('id') userId: string,
+    @CurrentUser('role') userRole: string,
+    @Res() res: Response
+  ) {
+    const csv = await this.complaintsService.exportCsv(userId, userRole);
+
+    res.set({
+      'Content-Type': 'text/csv; charset=utf-8',
+      'Content-Disposition': 'attachment; filename="complaints-export.csv"',
+    });
+    return res.send(csv);
   }
 
   @Get(':id')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Get complaint by ID' })
+  @ApiOperation({ summary: 'Get complaint by ID (department-scoped for staff)' })
   @ApiResponse({ status: 200, description: 'Complaint retrieved successfully' })
-  async findById(@Param('id') id: string) {
-    return this.complaintsService.findById(id);
+  async findById(
+    @Param('id') id: string,
+    @CurrentUser('id') userId: string,
+    @CurrentUser('role') userRole: string
+  ) {
+    return this.complaintsService.findById(id, userId, userRole);
   }
 
   @Patch(':id/status')

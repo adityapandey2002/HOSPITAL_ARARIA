@@ -490,3 +490,35 @@ export type FeedbackRow = typeof feedback.$inferSelect;
 export type NewFeedbackRow = typeof feedback.$inferInsert;
 export type FeedbackViewerRow = typeof feedbackViewers.$inferSelect;
 export type NewFeedbackViewerRow = typeof feedbackViewers.$inferInsert;
+
+/**
+ * Per-department complaint access for staff and nodal officers.
+ *
+ * ADMIN bypasses this table and sees every complaint. A staff member may hold
+ * grants for several departments; the pair (userId, departmentId) is unique.
+ */
+export const complaintViewers = pgTable(
+  'complaint_viewers',
+  {
+    id: text('id').primaryKey(),
+    userId: text('userId')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    departmentId: text('departmentId')
+      .notNull()
+      .references(() => departments.id, { onDelete: 'cascade' }),
+    grantedBy: text('grantedBy').references(() => users.id, { onDelete: 'set null' }),
+    createdAt: timestamp('createdAt', { mode: 'date' }).notNull().defaultNow(),
+  },
+  (t) => ({
+    userDepartmentUnique: uniqueIndex('complaint_viewers_userId_departmentId_key').on(
+      t.userId,
+      t.departmentId
+    ),
+    userIdIdx: index('complaint_viewers_userId_idx').on(t.userId),
+    departmentIdIdx: index('complaint_viewers_departmentId_idx').on(t.departmentId),
+  })
+);
+
+export type ComplaintViewerRow = typeof complaintViewers.$inferSelect;
+export type NewComplaintViewerRow = typeof complaintViewers.$inferInsert;

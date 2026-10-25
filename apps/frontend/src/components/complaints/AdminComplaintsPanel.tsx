@@ -8,6 +8,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Clock,
+  Download,
   Inbox,
   Phone,
   RefreshCw,
@@ -267,6 +268,22 @@ export function AdminComplaintsPanel() {
   const [actionMessage, setActionMessage] = useState('');
   const [actionError, setActionError] = useState<string | null>(null);
 
+  const exportCsv = async () => {
+    try {
+      const blob = await api.exportComplaintsCsv();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `complaints-export-${new Date().toISOString().slice(0, 10)}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      setActionError(getErrorMessage(error, 'Failed to export complaints.'));
+    }
+  };
+
   const loadDepartments = useCallback(async () => {
     setDepartmentsLoading(true);
     try {
@@ -476,6 +493,16 @@ export function AdminComplaintsPanel() {
           >
             <RefreshCw className="h-4 w-4" aria-hidden="true" />
             Refresh
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={exportCsv}
+            className="self-start sm:self-auto"
+          >
+            <Download className="h-4 w-4" aria-hidden="true" />
+            Export CSV
           </Button>
         </div>
 

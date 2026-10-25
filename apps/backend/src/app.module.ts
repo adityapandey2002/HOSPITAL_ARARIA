@@ -18,6 +18,7 @@ import { ContactModule } from './modules/contact/contact.module';
 import { FeedbackModule } from './modules/feedback/feedback.module';
 import { ComplaintsModule } from './modules/complaints/complaints.module';
 import { TelemetryModule } from './modules/telemetry/telemetry.module';
+import { NotificationsModule } from './modules/notifications/notifications.module';
 import { AuditQueryModule } from './modules/audit/audit.module';
 import { HealthModule } from './modules/health/health.module';
 import { AbdmModule } from './modules/abdm/abdm.module';
@@ -74,6 +75,7 @@ import { validationSchema } from './config/validation';
 
     // ABDM (clinical / MikroORM-backed)
     AbdmModule,
+    NotificationsModule,
   ],
   providers: [
     {

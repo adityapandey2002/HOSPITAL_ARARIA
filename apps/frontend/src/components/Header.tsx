@@ -23,6 +23,7 @@ const navItems = [
   { href: '/grievances', label: 'Grievances' },
   { href: '/feedback', label: 'Feedback' },
   { href: '/complaint', label: 'Complaint' },
+  { href: '/complaints/track', label: 'Track Complaint' },
   { href: '/notices', label: 'Notices' },
   { href: '/contact', label: 'Contact' },
 ];
