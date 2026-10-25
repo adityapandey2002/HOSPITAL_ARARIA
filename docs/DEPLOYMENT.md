@@ -107,6 +107,18 @@ instance would hold its own session.
    The install runs at the repo root because this is an npm workspace; the
    build compiles `packages/shared` first (the backend imports its types) and
    then runs `nest build`, which emits `dist/bootstrap.js`.
+
+   **Set the Application Preset to `Other`, not the auto-detected `Container`.**
+   Vercel sees `apps/backend/Dockerfile` and offers container mode, which builds
+   that file with `apps/backend` as the build context — while the Dockerfile
+   starts with `COPY package.json package-lock.json .npmrc ./`, files that only
+   exist at the repository root. The build fails at the first `COPY`. Container
+   mode also ignores the `functions` and `regions` keys below.
+
+   `apps/backend/public/` is committed empty on purpose: with the `Other` preset
+   Vercel looks for an output directory named `public` and fails the build when
+   it is missing. Nothing is served from it — the rewrite below sends every path
+   to the function.
 3. The only route is the function `api/index.js`. Every path is rewritten to it:
 
    ```json
