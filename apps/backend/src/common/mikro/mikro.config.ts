@@ -14,7 +14,7 @@
 import { Options } from '@mikro-orm/core';
 import { PostgreSqlDriver } from '@mikro-orm/postgresql';
 
-import { resolveDatabaseConnection, tlsOptions } from '../../config/database-url';
+import { defaultPoolSize, resolveDatabaseConnection, tlsOptions } from '../../config/database-url';
 
 export function createMikroOrmConfig(
   overrides: Partial<Options<PostgreSqlDriver>> = {}
@@ -41,7 +41,9 @@ export function createMikroOrmConfig(
       // Serverless instances idle out; an eager minimum would hold connections
       // open on every cold instance and exhaust a Supabase pooler.
       min: parseInt(env.MIKRO_POOL_MIN ?? '0', 10),
-      max: parseInt(env.MIKRO_POOL_SIZE ?? '20', 10),
+      // Same serverless-aware ceiling as Drizzle: 1 on a function instance,
+      // 20 on a long-lived server, unless MIKRO_POOL_SIZE overrides it.
+      max: parseInt(env.MIKRO_POOL_SIZE ?? String(defaultPoolSize(env)), 10),
     },
     // Timestamps are stored UTC — CERT-In requires trustworthy audit clocks.
     forceUtcTimezone: true,

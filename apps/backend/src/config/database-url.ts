@@ -117,3 +117,19 @@ export function resolveMigrationConnection(
 export function isServerlessRuntime(env: NodeJS.ProcessEnv = process.env): boolean {
   return Boolean(env.VERCEL || env.AWS_LAMBDA_FUNCTION_NAME || env.FUNCTION_NAME);
 }
+
+/**
+ * Default connection ceiling for one process.
+ *
+ * A serverless instance must hold at most one connection per ORM: a few hundred
+ * warm instances each opening 20 connections would exhaust any managed
+ * Postgres. A long-lived server can hold a real pool.
+ *
+ * This is a *default*, not a validation constraint. It deliberately lives here
+ * rather than in the Joi schema because `@nestjs/config` copies validated
+ * defaults into `process.env`, which would make the serverless branch above
+ * unreachable.
+ */
+export function defaultPoolSize(env: NodeJS.ProcessEnv = process.env): number {
+  return isServerlessRuntime(env) ? 1 : 20;
+}

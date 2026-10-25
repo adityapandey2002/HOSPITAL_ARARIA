@@ -5,7 +5,7 @@
  *   1. a table appears in both schemas (one tool would emit DDL for a table the
  *      other owns), or
  *   2. a checked-in Drizzle migration touches a table Drizzle does not own, or
- *   3. the two halves do not cover the expected 9 + 5 tables.
+ *   3. the two halves do not cover the expected 11 + 5 tables.
  *
  * Runs entirely offline — it reads Drizzle's table objects and MikroORM's entity
  * metadata, not the database — so it is safe in CI before a database exists.

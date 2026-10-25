@@ -46,10 +46,13 @@ export const validationSchema = Joi.object({
     .pattern(/^postgres(ql)?:\/\//)
     .optional(),
 
-  // Dual-ORM pools (must sum to < the server's max_connections). Serverless
-  // instances default to 1 each; see src/config/configuration.ts.
-  DRIZZLE_POOL_SIZE: Joi.number().min(1).default(20),
-  MIKRO_POOL_SIZE: Joi.number().min(1).default(20),
+  // Dual-ORM pools (must sum to < the server's max_connections). No Joi default
+  // here on purpose: a validated default is written into process.env by
+  // @nestjs/config, which would hide the serverless branch in
+  // src/config/database-url.ts (`defaultPoolSize`). Left unset, function
+  // instances get 1 each and long-lived servers get 20.
+  DRIZZLE_POOL_SIZE: Joi.number().min(1).optional(),
+  MIKRO_POOL_SIZE: Joi.number().min(1).optional(),
   MIKRO_POOL_MIN: Joi.number().min(0).default(0),
   MIKRO_DEBUG: Joi.boolean().truthy('true').falsy('false').default(false),
 

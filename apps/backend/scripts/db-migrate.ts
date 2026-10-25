@@ -25,6 +25,7 @@ import { resolveMigrationConnection, tlsOptions } from '../src/config/database-u
 
 async function main() {
   const connection = resolveMigrationConnection(process.env);
+  const ssl = tlsOptions(connection.ssl);
 
   const pool = new Pool({
     host: connection.host,
@@ -32,15 +33,27 @@ async function main() {
     user: connection.user,
     password: connection.password,
     database: connection.database,
-    ssl: tlsOptions(connection.ssl),
+    ssl,
   });
+
+  // MikroORM reads `DATABASE_URL` by default. Reconcile through the same direct
+  // connection as Drizzle, otherwise its DDL silently goes through the
+  // transaction pooler when DATABASE_MIGRATION_URL is the only direct URL.
+  const migrationOverrides = {
+    host: connection.host,
+    port: connection.port,
+    user: connection.user,
+    password: connection.password,
+    dbName: connection.database,
+    driverOptions: ssl ? { ssl } : {},
+  };
 
   try {
     console.log('Applying Drizzle migrations (11 owned tables)...');
     await migrate(drizzle(pool), { migrationsFolder: 'drizzle' });
 
     console.log('Applying MikroORM schema (5 owned tables)...');
-    const orm = await MikroORM.init(createMikroOrmConfig());
+    const orm = await MikroORM.init(createMikroOrmConfig(migrationOverrides));
     try {
       // Dropping the MikroORM tables destroys CERT-In audit history and ABDM
       // records, so it is opt-in and never the default — a routine production

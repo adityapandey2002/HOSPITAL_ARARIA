@@ -1,14 +1,12 @@
 // Configuration for the DH Araria Hospital Backend
-import { isServerlessRuntime, resolveDatabaseConnection } from './database-url';
-
-/** Long-lived servers can hold a real pool; function instances must not. */
-const DEFAULT_POOL_SIZE = isServerlessRuntime() ? '1' : '20';
+import { defaultPoolSize, resolveDatabaseConnection } from './database-url';
 
 export default () => {
   const database = resolveDatabaseConnection(process.env);
+  const poolSize = String(defaultPoolSize());
   const orm = {
-    drizzlePoolSize: parseInt(process.env.DRIZZLE_POOL_SIZE || DEFAULT_POOL_SIZE, 10),
-    mikroPoolSize: parseInt(process.env.MIKRO_POOL_SIZE || DEFAULT_POOL_SIZE, 10),
+    drizzlePoolSize: parseInt(process.env.DRIZZLE_POOL_SIZE || poolSize, 10),
+    mikroPoolSize: parseInt(process.env.MIKRO_POOL_SIZE || poolSize, 10),
     mikroDebug: process.env.MIKRO_DEBUG === 'true',
   };
 
