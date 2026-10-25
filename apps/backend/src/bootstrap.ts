@@ -16,6 +16,7 @@ import compression from 'compression';
 
 import { AppModule } from './app.module';
 import { isServerlessRuntime } from './config/database-url';
+import { resolveFrontendOrigins } from './config/frontend-origins';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
@@ -141,17 +142,4 @@ export async function createApp(options: CreateAppOptions = {}): Promise<NestExp
   }
 
   return app;
-}
-
-/**
- * FRONTEND_URL is a single origin in development and may be a comma-separated
- * allowlist in deployment (production domain + Vercel preview URL).
- */
-function resolveFrontendOrigins(value: string): string | string[] {
-  const origins = value
-    .split(',')
-    .map((origin) => origin.trim())
-    .filter(Boolean);
-
-  return origins.length > 1 ? origins : origins[0];
 }
