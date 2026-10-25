@@ -16,7 +16,7 @@
     "@dh-araria/shared": "*",
     "@dh-araria/ui": "*",
     "@hookform/resolvers": "^3.3.4",
-    "axios": "^1.7.2",
+    "axios": "^1.20.0",
     "clsx": "^2.1.1",
     "date-fns": "^3.6.0",
     "lucide-react": "^0.378.0",
