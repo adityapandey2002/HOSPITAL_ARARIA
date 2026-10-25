@@ -12,6 +12,13 @@
  *   ADMIN_NAME      display name (default: "Hospital Manager")
  *   ADMIN_PHONE     optional
  *
+ * Optional:
+ *   ADMIN_RESET_PASSWORD=true  rotate the password of an existing ADMIN instead
+ *                              of refusing to touch it. This is the only
+ *                              supported password reset in production: there is
+ *                              no mail transport, so `forgot-password` never
+ *                              returns a token there.
+ *
  *   npm run bootstrap:admin --workspace=apps/backend
  */
 import { config as loadEnv } from 'dotenv';
@@ -77,14 +84,31 @@ async function main() {
     const [existing] = await db.select().from(schema.users).where(eq(schema.users.email, email)).limit(1);
 
     if (existing) {
-      if (existing.role === 'ADMIN') {
+      if (existing.role !== 'ADMIN') {
+        fail(
+          `An account with e-mail ${email} already exists with role ${existing.role}. ` +
+            'Refusing to promote it automatically; use the Users admin screen instead.'
+        );
+      }
+
+      // No self-service reset exists in production: `forgot-password` issues a
+      // token in the response body only when NODE_ENV=development, because no
+      // mail transport is configured. This is the supported operator path.
+      if (process.env.ADMIN_RESET_PASSWORD !== 'true') {
         console.log(`Admin account already exists: ${email} (${existing.id}). No change made.`);
+        console.log('To rotate its password, re-run with ADMIN_RESET_PASSWORD=true.');
         return;
       }
-      fail(
-        `An account with e-mail ${email} already exists with role ${existing.role}. ` +
-          'Refusing to promote it automatically; use the Users admin screen instead.'
-      );
+
+      const rotatedHash = await bcrypt.hash(password, BCRYPT_ROUNDS);
+      await db
+        .update(schema.users)
+        .set({ password: rotatedHash, updatedAt: new Date() })
+        .where(eq(schema.users.id, existing.id));
+
+      console.log(`Rotated the password for ${email} (${existing.id}).`);
+      console.log('Store the new password in the hospital password manager immediately.');
+      return;
     }
 
     const passwordHash = await bcrypt.hash(password, BCRYPT_ROUNDS);

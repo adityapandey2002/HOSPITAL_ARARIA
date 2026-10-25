@@ -25,20 +25,74 @@ const LOCAL_HOSTS = new Set(['localhost', '127.0.0.1', '::1', 'postgres']);
 /** `sslmode` values that require TLS, per the libpq connection-string spec. */
 const SSL_MODES_REQUIRING_TLS = new Set(['require', 'verify-ca', 'verify-full', 'prefer', 'allow']);
 
-function parseUrl(url: string): Partial<DatabaseConnection> {
+/** Characters that cannot appear in a URL and usually signal a bad paste. */
+const SUSPECT_CHARACTERS = /[<>[\]{}"'`\s]/;
+
+/**
+ * Values left over from a copy-pasted template.
+ *
+ * `new URL` accepts `<password>` and `db.YOUR_PROJECT_REF.supabase.co` — it
+ * percent-encodes them and hands back a connection that fails authentication
+ * later with a message that names neither the variable nor the placeholder.
+ * Rejecting them here converts a confusing auth failure into an instruction.
+ */
+const PLACEHOLDER_PATTERNS = [
+  /^<[^>]*>$/, // <password>
+  /^\[[^\]]*\]$/, // [YOUR-PASSWORD]
+  /YOUR[_-][A-Z0-9_]+/i, // YOUR_PASSWORD, your-project-ref
+  /^(changeme|yourpassword)$/i,
+];
+
+function assertNotPlaceholder(value: string, variable: string, field: string): void {
+  if (PLACEHOLDER_PATTERNS.some((pattern) => pattern.test(value))) {
+    throw new Error(
+      `${variable} still contains a placeholder for the ${field} ("${value}"). ` +
+        'Replace it with the real value from Supabase -> Project Settings -> Database -> Connection string.'
+    );
+  }
+}
+
+/**
+ * Drop surrounding whitespace and one pair of wrapping quotes.
+ *
+ * Copying a connection string out of a dashboard very often brings a leading or
+ * trailing quote with it. `new URL` rejects that outright, and the resulting
+ * message ("not a valid PostgreSQL connection string") sends the operator
+ * hunting for a database problem that does not exist. Normalising here means a
+ * stray quote is harmless instead of fatal.
+ */
+export function normaliseConnectionValue(value: string): string {
+  const trimmed = value.trim();
+  const quoted = /^(['"`])([\s\S]*)\1$/.exec(trimmed);
+  return quoted ? quoted[2].trim() : trimmed;
+}
+
+/** Mask the password so a diagnostic string is safe to log and paste. */
+function redact(connectionString: string): string {
+  return connectionString.replace(/:\/\/([^:@/]*):[^@/]*@/, '://$1:****@');
+}
+
+function parseUrl(rawValue: string, variable: string): Partial<DatabaseConnection> {
+  const value = normaliseConnectionValue(rawValue);
   let parsed: URL;
   try {
-    parsed = new URL(url);
+    parsed = new URL(value);
   } catch {
+    const suspects = [...new Set([...value].filter((ch) => SUSPECT_CHARACTERS.test(ch)))];
     throw new Error(
-      'DATABASE_URL is not a valid PostgreSQL connection string. ' +
-        'Expected postgresql://user:password@host:port/database'
+      `${variable} is not a valid PostgreSQL connection string. ` +
+        'Expected postgresql://user:password@host:port/database. ' +
+        `Received "${redact(value)}"` +
+        (suspects.length ? ` containing ${JSON.stringify(suspects)}` : '') +
+        '. If the value in .env looks correct, an exported shell variable is overriding it ' +
+        `(dotenv never overrides the environment): run "Remove-Item Env:${variable}" in ` +
+        `PowerShell or "unset ${variable}" in bash, then retry.`
     );
   }
 
   if (parsed.protocol !== 'postgresql:' && parsed.protocol !== 'postgres:') {
     throw new Error(
-      `DATABASE_URL must use the postgresql:// or postgres:// scheme, got "${parsed.protocol}".`
+      `${variable} must use the postgresql:// or postgres:// scheme, got "${parsed.protocol}".`
     );
   }
 
@@ -56,20 +110,31 @@ function parseUrl(url: string): Partial<DatabaseConnection> {
   const sslFromUrl =
     sslMode === null ? undefined : SSL_MODES_REQUIRING_TLS.has(sslMode.toLowerCase());
 
+  const decodedUser = parsed.username ? decode(parsed.username) : undefined;
+  const decodedPassword = parsed.password ? decode(parsed.password) : undefined;
+  const hostname = parsed.hostname || undefined;
+  const database = parsed.pathname.replace(/^\//, '') || undefined;
+
+  if (hostname) assertNotPlaceholder(hostname, variable, 'host');
+  if (decodedPassword) assertNotPlaceholder(decodedPassword, variable, 'password');
+  if (database) assertNotPlaceholder(database, variable, 'database name');
+
   return {
-    host: parsed.hostname || undefined,
+    host: hostname,
     port: parsed.port ? parseInt(parsed.port, 10) : undefined,
-    user: parsed.username ? decode(parsed.username) : undefined,
-    password: parsed.password ? decode(parsed.password) : undefined,
-    database: parsed.pathname.replace(/^\//, '') || undefined,
+    user: decodedUser,
+    password: decodedPassword,
+    database,
     ssl: sslFromUrl,
   };
 }
 
 export function resolveDatabaseConnection(
-  env: NodeJS.ProcessEnv = process.env
+  env: NodeJS.ProcessEnv = process.env,
+  variable: 'DATABASE_URL' | 'DATABASE_MIGRATION_URL' = 'DATABASE_URL'
 ): DatabaseConnection {
-  const fromUrl = env.DATABASE_URL ? parseUrl(env.DATABASE_URL) : {};
+  const rawUrl = env[variable];
+  const fromUrl = rawUrl ? parseUrl(rawUrl, variable) : {};
 
   // Explicit DB_* values win over the URL, which is what makes the local
   // docker-compose container work while a managed URL stays in .env.
@@ -105,8 +170,10 @@ export function tlsOptions(ssl: boolean): { rejectUnauthorized: false } | undefi
 export function resolveMigrationConnection(
   env: NodeJS.ProcessEnv = process.env
 ): DatabaseConnection {
-  const url = env.DATABASE_MIGRATION_URL ?? env.DATABASE_URL;
-  return resolveDatabaseConnection({ ...env, DATABASE_URL: url });
+  // Name the variable in diagnostics: "DATABASE_URL is invalid" is actively
+  // misleading when the broken value is DATABASE_MIGRATION_URL.
+  const variable = env.DATABASE_MIGRATION_URL ? 'DATABASE_MIGRATION_URL' : 'DATABASE_URL';
+  return resolveDatabaseConnection({ ...env, DATABASE_URL: env[variable] }, variable);
 }
 
 /**

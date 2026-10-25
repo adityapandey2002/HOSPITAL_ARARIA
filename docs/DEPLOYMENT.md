@@ -248,6 +248,24 @@ It connects through `DATABASE_URL`, so it runs inside the operator session set
 up in step 3 (direct connection) and needs no Vercel access. Store the password
 in the hospital password manager; it is not recoverable.
 
+### Rotating the Hospital Manager password
+
+There is no self-service reset in production: `forgot-password` only returns the
+token in the response body when `NODE_ENV=development`, because no mail transport
+is configured. The operator path is the same script with an explicit flag:
+
+```bash
+ADMIN_EMAIL=hm@dhararia.bihar.gov.in \
+ADMIN_PASSWORD='<the new password>' \
+ADMIN_RESET_PASSWORD=true \
+npm run bootstrap:admin
+```
+
+Without `ADMIN_RESET_PASSWORD=true` the script never touches an existing
+account. Rotation also refuses a non-admin account with that e-mail. Use it after
+anyone who has seen the password leaves the project, and before go-live if the
+password was ever shared over chat or e-mail.
+
 The `ADMIN` role is what the documentation calls HM. That account sees every
 department in the feedback inbox and is the only role allowed to manage
 `feedback_viewers` grants.
@@ -423,6 +441,8 @@ ADMIN_EMAIL=hm@example.test ADMIN_PASSWORD='a-unique-12-char-password' npm run b
 | Symptom | Likely cause | Resolution |
 |---------|--------------|------------|
 | 503 from `/api/v1/health`, logs show `too many clients already` or `remaining connection slots are reserved` | Pool exhaustion. The default is 1 per ORM on Vercel, so this usually means the variables were set too high in the dashboard, or many instances are cold at once. | Confirm `DRIZZLE_POOL_SIZE=1` and `MIKRO_POOL_SIZE=1` in the backend project, then check the pooler's client limit in the Supabase dashboard. |
+| `db:migrate` fails with `DATABASE_URL is not a valid PostgreSQL connection string`, but the value in `.env` looks correct | A variable exported earlier in the same shell session is overriding the file — `dotenv` never overrides an existing environment variable. The error names whichever variable actually failed (`DATABASE_URL` or `DATABASE_MIGRATION_URL`). | Run `Remove-Item Env:DATABASE_URL, Env:DATABASE_MIGRATION_URL` in PowerShell (`unset` in bash), or open a fresh terminal, then retry. |
+| The same error appears after pasting a connection string | A wrapping quote, or a leftover placeholder such as `<password>` or `YOUR_PROJECT_REF`. | Quotes and surrounding whitespace are stripped automatically; placeholders are rejected with a message naming the field. Paste the raw URI from Supabase → Project Settings → Database → Connection string, with no quotes. |
 | `db:migrate` fails with a DDL or prepared-statement error | `DATABASE_MIGRATION_URL` is the transaction pooler (port 6543), or `DATABASE_URL` is. | Run migrations with both variables on the direct connection (port 5432), as in step 3. |
 | `db:migrate` connects but MikroORM reconciliation fails | The operator session is pointed at the pooler, or the database role lacks DDL rights on the MikroORM tables. | `db:migrate` reconciles MikroORM through `DATABASE_MIGRATION_URL`; confirm that variable, not just `DATABASE_URL`, is the direct connection. |
 | Frontend requests go to `http://localhost:3001` in production, or 404 on every call | `NEXT_PUBLIC_API_URL` was missing or wrong at build time. | Set it to `https://<backend-origin>/api/v1`, then **redeploy** the frontend. |

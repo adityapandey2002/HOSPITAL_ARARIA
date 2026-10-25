@@ -113,6 +113,11 @@ Additional blockers found and fixed after the previous assessment:
   not detected. Pinning Supabase's CA bundle is the fix; it is not wired yet.
 - **Logout does not revoke the refresh token.** The API is stateless and has no
   denylist; the client discards both tokens.
+- **No self-service password reset in production.** `forgot-password` returns the
+  token in the response body only when `NODE_ENV=development`, because no mail
+  transport exists. The operator path is `ADMIN_RESET_PASSWORD=true` on
+  `bootstrap:admin`, which is manual and depends on the operator having shell
+  access; a mail transport and a token table are the real fix.
 - **The 180-day audit-log purge exists only as a documented intention.** There is
   no scheduled job, so `audit_logs` grows indefinitely until one is added.
 - **React 18 is deprecated by Next 16.** The build prints a warning and Next 17
