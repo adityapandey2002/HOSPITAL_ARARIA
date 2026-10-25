@@ -99,7 +99,7 @@ instance would hold its own session.
    `apps/backend/vercel.json`, which sets:
 
    ```json
-   "installCommand": "cd ../.. && npm ci",
+   "installCommand": "cd ../.. && npm ci --include=dev",
    "buildCommand": "cd ../.. && npm run build --workspace=packages/shared && npm run build:backend",
    "regions": ["bom1"]
    ```
@@ -107,6 +107,14 @@ instance would hold its own session.
    The install runs at the repo root because this is an npm workspace; the
    build compiles `packages/shared` first (the backend imports its types) and
    then runs `nest build`, which emits `dist/bootstrap.js`.
+
+   `--include=dev` is required, not decorative. `NODE_ENV=production` (below) is
+   in the install environment, and npm treats that as `omit=dev`: a plain
+   `npm ci` installs production dependencies only — about 325 of the lockfile's
+   1,259 packages — and drops `typescript` and `@nestjs/cli`. The build then
+   dies with `sh: line 1: tsc: command not found` (exit 127) inside
+   `packages/shared`, which looks like a broken install but is a deliberately
+   trimmed one.
 
    **Set the Application Preset to `Other`, not the auto-detected `Container`.**
    Vercel sees `apps/backend/Dockerfile` and offers container mode, which builds
@@ -141,7 +149,7 @@ instance would hold its own session.
 
 | Variable | Required | Default | Notes |
 |----------|----------|---------|-------|
-| `NODE_ENV` | yes | `development` | Set to `production`. Disables Swagger UI and redacts 5xx bodies. |
+| `NODE_ENV` | yes | `development` | Set to `production`. Disables Swagger UI and redacts 5xx bodies. Also makes npm skip devDependencies, hence `--include=dev` in the install command. |
 | `DATABASE_URL` | yes | — | Supabase transaction pooler (port 6543). Read by both ORMs. |
 | `FRONTEND_URL` | yes | `http://localhost:3000` | Comma-separated origin allowlist; see step 6. |
 | `JWT_SECRET` | yes | — | At least 32 characters. The `.env.example` placeholder is rejected when `NODE_ENV=production`. |
@@ -482,6 +490,7 @@ ADMIN_EMAIL=hm@example.test ADMIN_PASSWORD='a-unique-12-char-password' npm run b
 | The same error appears after pasting a connection string | A wrapping quote, or a leftover placeholder such as `<password>` or `YOUR_PROJECT_REF`. | Quotes and surrounding whitespace are stripped automatically; placeholders are rejected with a message naming the field. Paste the raw URI from Supabase → Project Settings → Database → Connection string, with no quotes. |
 | `db:migrate` fails with a DDL or prepared-statement error | `DATABASE_MIGRATION_URL` is the transaction pooler (port 6543), or `DATABASE_URL` is. | Run migrations with both variables on the direct connection (port 5432), as in step 3. |
 | `db:migrate` connects but MikroORM reconciliation fails | The operator session is pointed at the pooler, or the database role lacks DDL rights on the MikroORM tables. | `db:migrate` reconciles MikroORM through `DATABASE_MIGRATION_URL`; confirm that variable, not just `DATABASE_URL`, is the direct connection. |
+| Backend build fails with `sh: line 1: tsc: command not found` (exit 127), right after `added 3xx packages` | `NODE_ENV=production` is in the install environment, so npm set `omit=dev` and skipped `typescript` and `@nestjs/cli`. The package count is the tell: a full install is ~1,250 packages. | Ensure `installCommand` is `cd ../.. && npm ci --include=dev` (committed in `apps/backend/vercel.json`), then redeploy. |
 | Frontend build fails with `Module not found: Can't resolve '@dh-araria/shared'` (or `@dh-araria/ui`) | `next build` ran without the workspace packages. Both publish only `dist/`, which is gitignored, so a fresh clone has no module to resolve. | Keep `buildCommand` in `apps/frontend/vercel.json`: `cd ../.. && npm run build:packages && npm run build:frontend`. |
 | The import screen offers "Services" instead of a single app | The repository is a monorepo, so Vercel proposes grouping both apps into one project. | Set **Root Directory** to `apps/backend` (or `apps/frontend`) before importing. Do not accept the services grouping — see step 2. |
 | Frontend requests go to `http://localhost:3001` in production, or 404 on every call | `NEXT_PUBLIC_API_URL` was missing or wrong at build time. | Set it to `https://<backend-origin>/api/v1`, then **redeploy** the frontend. |
