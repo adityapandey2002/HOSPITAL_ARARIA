@@ -1,4 +1,5 @@
-import type { Metadata } from 'next';
+'use client';
+
 import { useState } from 'react';
 import Link from 'next/link';
 import {
@@ -17,12 +18,6 @@ import { api, handleApiResponse } from '@/lib/api';
 import { cn } from '@dh-araria/shared/utils';
 import { COMPLAINT_STATUS_LABELS, COMPLAINT_STATUS_COLORS } from '@dh-araria/shared/constants';
 import { ComplaintStatus } from '@dh-araria/shared';
-
-export const metadata: Metadata = {
-  title: 'Track Complaint',
-  description:
-    'Track the status of your complaint at District Hospital Araria using your reference ID.',
-};
 
 function StatusIcon({ status, className }: { status: ComplaintStatus; className?: string }): JSX.Element {
   const IconMap: Record<ComplaintStatus, LucideIcon> = {
