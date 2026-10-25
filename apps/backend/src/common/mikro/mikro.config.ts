@@ -15,6 +15,30 @@ import { Options } from '@mikro-orm/core';
 import { PostgreSqlDriver } from '@mikro-orm/postgresql';
 
 import { defaultPoolSize, resolveDatabaseConnection, tlsOptions } from '../../config/database-url';
+import { AbhaProfile } from '../../modules/abdm/entities/abha-profile.entity';
+import { CareContext } from '../../modules/abdm/entities/care-context.entity';
+import { ConsentArtefact } from '../../modules/abdm/entities/consent-artefact.entity';
+import { FhirBundle } from '../../modules/abdm/entities/fhir-bundle.entity';
+import { AuditLog } from './entities/audit-log.entity';
+
+/**
+ * Entity classes are registered **explicitly** rather than by glob.
+ *
+ * The glob form (`dist/**\/*.entity.js`) fails on Vercel for two independent
+ * reasons:
+ *
+ * 1. It is resolved against `process.cwd()`. In a Vercel function the cwd and
+ *    the project root are not guaranteed to agree, so the glob matches nothing
+ *    and `MikroORM.init()` throws `MetadataError: No entities were discovered`
+ *    — at cold start, before any route exists, so every request returns 500.
+ * 2. Vercel decides what to ship inside a function by statically tracing
+ *    `require` calls. A glob buried in a config object is invisible to that
+ *    tracer, so the entity files can be left out of the bundle entirely.
+ *
+ * Importing the classes fixes both: the dependency is a real `require`, and
+ * discovery no longer depends on the working directory.
+ */
+const ENTITIES = [AbhaProfile, CareContext, ConsentArtefact, FhirBundle, AuditLog];
 
 export function createMikroOrmConfig(
   overrides: Partial<Options<PostgreSqlDriver>> = {}
@@ -33,9 +57,8 @@ export function createMikroOrmConfig(
     // MikroORM v6 has no top-level `ssl`; pg/knex TLS settings are forwarded
     // verbatim through `driverOptions`.
     driverOptions: ssl ? { ssl } : {},
-    // `entities` is used from `dist` (production), `entitiesTs` from `src` (dev/test).
-    entities: ['dist/modules/abdm/entities/*.entity.js', 'dist/common/mikro/entities/*.entity.js'],
-    entitiesTs: ['src/modules/abdm/entities/*.entity.ts', 'src/common/mikro/entities/*.entity.ts'],
+    // Registered as classes, not globs — see the note above ENTITIES.
+    entities: ENTITIES,
     debug: env.MIKRO_DEBUG === 'true',
     pool: {
       // Serverless instances idle out; an eager minimum would hold connections

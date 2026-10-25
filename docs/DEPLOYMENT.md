@@ -444,6 +444,16 @@ Record the restore timestamp and the measured restore time in the incident log.
 
 Local development keeps one PostgreSQL instance and one `.env` per app.
 
+> **Never keep a `.env` at the repository root.** `ConfigModule` resolves its
+> `envFilePath` (`['.env.local', '.env']`) against the **working directory**, and
+> `@nestjs/config` lets those values overwrite ones already in the environment,
+> including an explicitly supplied `DATABASE_URL`. A root `.env` left over from
+> an earlier database therefore wins over `apps/backend/.env` for any command
+> run from the repository root, and the failure looks like a wrong database
+> rather than a stray file. `npm run dev` is unaffected because npm sets the
+> working directory to `apps/backend`; ad-hoc `node dist/main.js` from the root
+> is not.
+
 ```bash
 # 1. Install once, at the repository root
 npm ci
@@ -490,6 +500,8 @@ ADMIN_EMAIL=hm@example.test ADMIN_PASSWORD='a-unique-12-char-password' npm run b
 | The same error appears after pasting a connection string | A wrapping quote, or a leftover placeholder such as `<password>` or `YOUR_PROJECT_REF`. | Quotes and surrounding whitespace are stripped automatically; placeholders are rejected with a message naming the field. Paste the raw URI from Supabase → Project Settings → Database → Connection string, with no quotes. |
 | `db:migrate` fails with a DDL or prepared-statement error | `DATABASE_MIGRATION_URL` is the transaction pooler (port 6543), or `DATABASE_URL` is. | Run migrations with both variables on the direct connection (port 5432), as in step 3. |
 | `db:migrate` connects but MikroORM reconciliation fails | The operator session is pointed at the pooler, or the database role lacks DDL rights on the MikroORM tables. | `db:migrate` reconciles MikroORM through `DATABASE_MIGRATION_URL`; confirm that variable, not just `DATABASE_URL`, is the direct connection. |
+| Every path returns 500 — including `/favicon.ico` and `/` — and the function log shows `MetadataError: No entities were discovered` | MikroORM entities were registered as file globs (`dist/**/*.entity.js`). A glob is invisible to Vercel's static file tracer and resolves against the working directory, so the entity files can be missing or unmatched at cold start. | Already fixed: `mikro.config.ts` imports and registers the five entity classes. If it reappears, look for a glob reintroduced into `entities`. |
+| `/favicon.ico` returns 404 on the backend URL | Correct behaviour — the backend is an API, not a website. Browsers request a favicon from every origin they visit. | None. The favicon belongs to the frontend project. |
 | Backend build fails with `sh: line 1: tsc: command not found` (exit 127), right after `added 3xx packages` | `NODE_ENV=production` is in the install environment, so npm set `omit=dev` and skipped `typescript` and `@nestjs/cli`. The package count is the tell: a full install is ~1,250 packages. | Ensure `installCommand` is `cd ../.. && npm ci --include=dev` (committed in `apps/backend/vercel.json`), then redeploy. |
 | Frontend build fails with `Module not found: Can't resolve '@dh-araria/shared'` (or `@dh-araria/ui`) | `next build` ran without the workspace packages. Both publish only `dist/`, which is gitignored, so a fresh clone has no module to resolve. | Keep `buildCommand` in `apps/frontend/vercel.json`: `cd ../.. && npm run build:packages && npm run build:frontend`. |
 | The import screen offers "Services" instead of a single app | The repository is a monorepo, so Vercel proposes grouping both apps into one project. | Set **Root Directory** to `apps/backend` (or `apps/frontend`) before importing. Do not accept the services grouping — see step 2. |
