@@ -192,6 +192,21 @@ can reach the database, before the first request is served.
    Expect 16 tables: the 11 Drizzle-owned application tables and the 5
    MikroORM-owned clinical/audit tables.
 
+A fresh database also has **no departments**, and `db:seed` is not allowed to fix
+that in production. The public directory, the doctor form and the public feedback
+form all need at least one, so `/feedback` would otherwise have an empty
+dropdown and reject every submission:
+
+```bash
+npm run bootstrap:departments
+```
+
+It inserts the 15 standard district-hospital departments defined in
+`apps/backend/scripts/data/departments.ts`, keyed on `name`. It never updates or
+deletes a row, so re-running it is a no-op and any edit made later in the portal
+survives. Check the names against the hospital's own signage and amend that file
+before the first public link is shared.
+
 Never run `db:seed` against this database: it inserts the demo accounts whose
 passwords are published in this repository. The script refuses to run when
 `NODE_ENV=production` unless `ALLOW_PROD_SEED=true`, but the guard is not a

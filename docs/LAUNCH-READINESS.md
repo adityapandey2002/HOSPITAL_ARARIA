@@ -123,7 +123,8 @@ Additional blockers found and fixed after the previous assessment:
 - Create the Supabase project and both connection strings.
 - Create the two Vercel projects, set every environment variable, and redeploy
   the frontend once `NEXT_PUBLIC_API_URL` is final (it is baked in at build time).
-- Run `db:migrate` with `DATABASE_MIGRATION_URL`, then `bootstrap:admin`.
+- Run `db:migrate` with `DATABASE_MIGRATION_URL`, then `bootstrap:admin` and
+  `bootstrap:departments`.
 - Set `FRONTEND_URL` to the real origins after the first frontend deployment.
 - Confirm the Supabase plan's PITR/backup retention and the Vercel function
   limits actually applied in the dashboard.

@@ -20,6 +20,7 @@ Run from the repo root; the root `package.json` forwards into workspaces.
 - `npm run db:seed` — idempotent demo data
 - `npm run db:studio` — Drizzle Studio
 - `npm run bootstrap:admin` — create or promote the first ADMIN account
+- `npm run bootstrap:departments` — insert the reference department list on a fresh database (idempotent, production-safe)
 - `npm run schema:check` — enforce the Drizzle/MikroORM table-ownership boundary (offline)
 - `npm run audit:ci` — production dependency audit gate (fails on critical/high unless allowlisted)
 

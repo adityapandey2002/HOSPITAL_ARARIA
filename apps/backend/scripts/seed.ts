@@ -27,6 +27,7 @@ import {
 import { newId } from '../src/common/drizzle/id';
 import * as schema from '../src/common/drizzle/schema';
 import { resolveDatabaseConnection, tlsOptions } from '../src/config/database-url';
+import { DEPARTMENTS } from './data/departments';
 
 async function ensureUser(
   db: NodePgDatabase<typeof schema>,
@@ -108,23 +109,11 @@ async function main() {
   });
   console.log('  patient user: demo@dhararia.gov.in');
 
-  const departmentsData = [
-    ['General Medicine', 'Comprehensive medical care for adults with chronic and acute conditions', 'stethoscope'],
-    ['Pediatrics', 'Child healthcare, immunization, growth monitoring, and neonatal care', 'baby'],
-    ['Obstetrics & Gynecology', "Women's health, maternity care, high-risk pregnancies, and gynecological surgeries", 'heart'],
-    ['Orthopedics', 'Bone, joint, and muscle disorders including joint replacement and trauma', 'bone'],
-    ['General Surgery', 'Surgical procedures including laparoscopic, gastrointestinal, and breast surgery', 'scalpel'],
-    ['Ophthalmology', 'Eye care, cataract surgery, glaucoma treatment, and vision correction', 'eye'],
-    ['ENT', 'Ear, nose, and throat disorders including endoscopic sinus surgery', 'ear'],
-    ['Dermatology', 'Skin, hair, and nail conditions with laser and cosmetic procedures', 'sparkles'],
-    ['Psychiatry', 'Mental health, de-addiction, counseling, and behavioral therapy', 'brain'],
-    ['Radiology', 'X-ray, ultrasound, CT scan, MRI, and interventional radiology', 'scan'],
-    ['Pathology', 'Clinical pathology, biochemistry, microbiology, and blood bank', 'microscope'],
-    ['Anesthesiology', 'Anesthesia, pain management, and critical care support', 'droplet'],
-    ['Emergency Medicine', '24/7 emergency and trauma care with resuscitation facilities', 'ambulance'],
-    ['Dental Surgery', 'Oral health, dental implants, orthodontics, and maxillofacial surgery', 'tooth'],
-    ['Physiotherapy', 'Rehabilitation, electrotherapy, exercise therapy, and sports injury', 'activity'],
-  ] as const;
+  const departmentsData = DEPARTMENTS.map((department) => [
+    department.name,
+    department.description,
+    department.icon,
+  ]) as ReadonlyArray<readonly [string, string, string]>;
 
   const departmentIds = new Map<string, string>();
   for (const [name, description, icon] of departmentsData) {

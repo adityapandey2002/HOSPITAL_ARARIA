@@ -22,6 +22,7 @@
     "db:migrate": "npm run db:migrate --workspace=apps/backend",
     "db:seed": "npm run db:seed --workspace=apps/backend",
     "bootstrap:admin": "npm run bootstrap:admin --workspace=apps/backend",
+    "bootstrap:departments": "npm run bootstrap:departments --workspace=apps/backend",
     "db:studio": "npm run db:studio --workspace=apps/backend",
     "schema:check": "npm run schema:check --workspace=apps/backend",
     "audit:ci": "node scripts/audit-gate.mjs"
