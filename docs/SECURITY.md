@@ -258,9 +258,8 @@ direct port to the operator's egress addresses.
   rollback does not revert a database migration, so migrations must be
   backward compatible for one release.
 - `vercel.json` pins region `bom1`. The backend requests 1024 MB and a
-  30-second `maxDuration`; the `functions` key currently names `api/index.ts`
-  while the entry point is `api/index.js`, so confirm the effective limits in
-  the dashboard.
+  30-second `maxDuration` for the `api/index.js` function; confirm the effective
+  limits in the dashboard.
 - Function instances are short-lived and share nothing. Do not rely on the
   filesystem for sessions or uploads; no upload endpoint exists today and
   `UPLOAD_PATH` is unused.
@@ -309,6 +308,15 @@ longer matches a finding so it can be deleted rather than left to rot.
 | `axios` | SSRF/proxy-credential advisories with no fixed 1.x release | The browser client only calls `NEXT_PUBLIC_API_URL`, a build-time constant; it never accepts a user-supplied URL or proxy | 2027-01-31 |
 | `form-data` | Multipart parsing advisory, no fixed 4.x release | Reached only through `axios` and `supertest`; public forms submit JSON, and no multipart body is built from user-controlled field names | 2027-01-31 |
 | `zod` | Oversized-collection memory DoS, fix unpublished | Frontend form validation only, with bounded string fields; the backend re-validates every request with class-validator DTOs and Joi | 2027-01-31 |
+| `body-parser` | DoS via trailing bytes after a compressed body; fix (2.4.0) unpublished | Both parsers are mounted explicitly in `src/bootstrap.ts` with a 100 kB limit, bounding decompressed size per request; the Vercel function is capped at 30 s and 1024 MB | 2027-01-31 |
+| `express` | Flagged only because it depends on the vulnerable `body-parser` | Same 100 kB parser limit and serverless timeout; no advisory names Express itself | 2027-01-31 |
+| `@nestjs/platform-express` | Aggregate finding through Express 5 / body-parser | 11.2.5 is the newest release outside the separately flagged ranges; 12.x would force TypeScript 6. Tracked through `body-parser` | 2027-01-31 |
+| `multer` | Multipart DoS advisories; the fix (2.5.0) is unpublished and Nest pins 2.2.0 | No upload endpoint exists in `apps/backend/src`, so the multipart parser is never reached | 2027-01-31 |
+
+Where a fix needs a version that the registry does not publish yet, the entry
+records the control that makes the advisory unreachable rather than a promise to
+upgrade. `docs/LAUNCH-READINESS.md` carries the same table with the audit counts
+for the current tree.
 
 Renewing an entry means re-justifying the compensating control and moving the
 date, not deleting the reason. The gate runs in CI on every push and pull
@@ -552,10 +560,15 @@ Shipping logs to a 180-day retention store is an operator task.
 1. `npm ci`
 2. `npm run schema:check` - fails if the Drizzle/MikroORM boundary drifts
 3. build of `packages/shared`
-4. backend build
-5. frontend build
-6. `npm test`
-7. `npm run audit:ci`
+4. backend lint (`npm run lint --workspace=apps/backend`)
+5. backend build
+6. frontend lint (`npm run lint --workspace=apps/frontend`)
+7. frontend build
+8. `npm test`
+9. `npm run audit:ci`
+
+Next 16 no longer lints during `next build`, so the frontend lint step is the
+only thing enforcing that config on a pull request.
 
 The workflow uses placeholder `DATABASE_URL` and `JWT_SECRET` values because no
 step connects to a database.

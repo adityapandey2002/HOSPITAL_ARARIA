@@ -102,9 +102,9 @@ instance would hold its own session.
    (`createApp({ init: true })`) and reuses it; a failed bootstrap is not cached,
    so the next request retries instead of failing for the instance's lifetime.
 4. The committed `vercel.json` asks for 1024 MB of memory and a 30 s maximum
-   duration. **Verify in the Vercel dashboard** that the deployed function shows
-   those limits: the `functions` key in `vercel.json` still names
-   `api/index.ts` while the committed entry is `api/index.js`.
+   duration, keyed to the function entry point `api/index.js`. Confirm in the
+   Vercel dashboard that the deployed function shows those limits; the dashboard
+   is authoritative if the two ever disagree.
 5. Add the environment variables from the table below, for **Production** (and
    **Preview** if you use preview deployments).
 6. Deploy. The first deployment will build and boot, but `/api/v1/health` returns
@@ -118,8 +118,8 @@ instance would hold its own session.
 | `DATABASE_URL` | yes | — | Supabase transaction pooler (port 6543). Read by both ORMs. |
 | `FRONTEND_URL` | yes | `http://localhost:3000` | Comma-separated origin allowlist; see step 6. |
 | `JWT_SECRET` | yes | — | At least 32 characters. The `.env.example` placeholder is rejected when `NODE_ENV=production`. |
-| `DRIZZLE_POOL_SIZE` | **yes** | `20` | Set to `1` explicitly — see the note below. |
-| `MIKRO_POOL_SIZE` | **yes** | `20` | Set to `1` explicitly — see the note below. |
+| `DRIZZLE_POOL_SIZE` | no | `1` on Vercel, `20` elsewhere | Recommended: pin `1` so a dashboard change cannot widen it. See the note below. |
+| `MIKRO_POOL_SIZE` | no | `1` on Vercel, `20` elsewhere | Recommended: pin `1`. See the note below. |
 | `MIKRO_POOL_MIN` | no | `0` | Keep at `0`; an eager minimum holds connections open on idle instances. |
 | `JWT_ACCESS_EXPIRY` | no | `15m` | |
 | `JWT_REFRESH_EXPIRY` | no | `7d` | |
@@ -135,14 +135,12 @@ The optional integration variables (`ABDM_*`, `BHASHINI_*`, `EPRAAMAN_*`,
 `apps/backend/src/config/validation.ts` and default to empty. None is needed to
 serve the portal.
 
-> **Pool sizing.** Set `DRIZZLE_POOL_SIZE=1` and `MIKRO_POOL_SIZE=1` in the
-> dashboard. Do not rely on runtime detection: `configuration.ts` lowers its
-> default to 1 when `VERCEL`/`AWS_LAMBDA_FUNCTION_NAME`/`FUNCTION_NAME` is set,
-> but the Joi schema in `validation.ts` gives both variables a default of `20`,
-> and `@nestjs/config` copies that default into `process.env` before the
-> configuration factory runs. An unset variable therefore resolves to 20.
-> `mikro.config.ts` reads `MIKRO_POOL_SIZE` directly, so the same applies to
-> MikroORM. One connection per pool per warm instance is the safe starting
+> **Pool sizing.** Both ORMs resolve their ceiling through
+> `defaultPoolSize()` in `src/config/database-url.ts`: 1 connection when
+> `VERCEL`/`AWS_LAMBDA_FUNCTION_NAME`/`FUNCTION_NAME` is set, 20 otherwise.
+> Setting `DRIZZLE_POOL_SIZE=1` and `MIKRO_POOL_SIZE=1` explicitly is still
+> recommended, so the value is visible in the dashboard and cannot be widened by
+> accident. One connection per pool per warm instance is the safe starting
 > point; raise it only after checking Supabase's connection limit.
 
 ---
@@ -409,9 +407,9 @@ ADMIN_EMAIL=hm@example.test ADMIN_PASSWORD='a-unique-12-char-password' npm run b
 
 | Symptom | Likely cause | Resolution |
 |---------|--------------|------------|
-| 503 from `/api/v1/health`, logs show `too many clients already` or `remaining connection slots are reserved` | Pool exhaustion. Each warm function instance opens its own pool, and `MIKRO_POOL_SIZE` defaults to 20. | Set `DRIZZLE_POOL_SIZE=1` and `MIKRO_POOL_SIZE=1` in the backend project and redeploy. Check the pooler's client limit in the Supabase dashboard. |
+| 503 from `/api/v1/health`, logs show `too many clients already` or `remaining connection slots are reserved` | Pool exhaustion. The default is 1 per ORM on Vercel, so this usually means the variables were set too high in the dashboard, or many instances are cold at once. | Confirm `DRIZZLE_POOL_SIZE=1` and `MIKRO_POOL_SIZE=1` in the backend project, then check the pooler's client limit in the Supabase dashboard. |
 | `db:migrate` fails with a DDL or prepared-statement error | `DATABASE_MIGRATION_URL` is the transaction pooler (port 6543), or `DATABASE_URL` is. | Run migrations with both variables on the direct connection (port 5432), as in step 3. |
-| `db:migrate` connects but MikroORM reconciliation fails | `DATABASE_URL` still points at the pooler while only `DATABASE_MIGRATION_URL` was changed. | `createMikroOrmConfig()` reads `DATABASE_URL`; override it for the operator session. |
+| `db:migrate` connects but MikroORM reconciliation fails | The operator session is pointed at the pooler, or the database role lacks DDL rights on the MikroORM tables. | `db:migrate` reconciles MikroORM through `DATABASE_MIGRATION_URL`; confirm that variable, not just `DATABASE_URL`, is the direct connection. |
 | Frontend requests go to `http://localhost:3001` in production, or 404 on every call | `NEXT_PUBLIC_API_URL` was missing or wrong at build time. | Set it to `https://<backend-origin>/api/v1`, then **redeploy** the frontend. |
 | Browser console shows a CORS error | The calling origin is not in `FRONTEND_URL`. | Add the exact origin (scheme + host, no trailing slash), comma-separated, then redeploy the backend. |
 | Function times out at 30 s, usually on the first request after idle | Cold start: container creation plus `createApp()` plus the first database connection. | Expected on a cold instance. If it persists, check database latency, and confirm in the dashboard that the function still has 1024 MB / 30 s. |

@@ -394,7 +394,8 @@ instance owns a pool, so the number of instances multiplies the pool size.
 Supabase's transaction pooler multiplexes those connections, but it still has a
 per-project limit.
 
-Set both sizes explicitly in the backend Vercel project:
+Setting both sizes explicitly in the backend Vercel project is recommended, so
+the value is visible in the dashboard:
 
 | Client | Env var | Vercel | Local (unset) |
 |--------|---------|--------|---------------|
@@ -402,13 +403,12 @@ Set both sizes explicitly in the backend Vercel project:
 | MikroORM | `MIKRO_POOL_SIZE` | `1` | 20 |
 | MikroORM idle floor | `MIKRO_POOL_MIN` | `0` | 0 |
 
-Do not rely on the serverless detection in `src/config/configuration.ts`. The
-Joi schema in `src/config/validation.ts` gives `DRIZZLE_POOL_SIZE` and
-`MIKRO_POOL_SIZE` a default of 20, and `@nestjs/config` copies those defaults
-into `process.env` before the configuration factory runs. An unset variable
-therefore resolves to 20 even when `VERCEL` is set. `MIKRO_POOL_MIN=0` is
-already the code default and stops a cold instance from opening connections
-eagerly.
+The unset case is not accidental: both ORMs resolve their ceiling through
+`defaultPoolSize()` in `src/config/database-url.ts`, which returns 1 when
+`VERCEL`/`AWS_LAMBDA_FUNCTION_NAME`/`FUNCTION_NAME` is set and 20 otherwise. The
+Joi schema leaves both variables optional on purpose — a validated default would
+be copied into `process.env` by `@nestjs/config` and shadow that function.
+`MIKRO_POOL_MIN=0` stops a cold instance from opening connections eagerly.
 
 Locally, `docker-compose.yml` raises `max_connections` to 200, so the default
 sizes are safe there. `GET /api/v1/health` reports Drizzle and MikroORM
@@ -673,10 +673,8 @@ C4Deployment
 
 The backend project is a single Vercel Function: `api/index.js` rewrites every
 path to the Nest application, which applies its own `/api` prefix and URI
-versioning. `vercel.json` pins `bom1`, 1024 MB and a 30-second `maxDuration`.
-The `functions` key still names `api/index.ts` while the committed entry point
-is `api/index.js`; until those agree, treat the memory and duration values as
-advisory and confirm the effective limits in the Vercel dashboard.
+versioning. `vercel.json` pins `bom1`, 1024 MB and a 30-second `maxDuration` for
+that function path. The dashboard is authoritative if the two ever disagree.
 
 ## Security Architecture
 

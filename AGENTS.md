@@ -60,9 +60,11 @@ the direct connection for migrations; it falls back to `DATABASE_URL` locally.
 
 The deployed backend is one Vercel Function (`apps/backend/api/index.js`) that
 loads the compiled app from `dist/`; `src/main.ts` exists for local development.
-Set `DRIZZLE_POOL_SIZE=1` and `MIKRO_POOL_SIZE=1` in the Vercel project. Do not
-rely on the serverless defaults: the Joi schema assigns both a default of 20
-before the configuration factory can detect Vercel.
+Setting `DRIZZLE_POOL_SIZE=1` and `MIKRO_POOL_SIZE=1` in the Vercel project is
+recommended but no longer required: `defaultPoolSize()` in
+`src/config/database-url.ts` returns 1 when a serverless marker is present and 20
+otherwise, and the Joi schema deliberately leaves both variables optional so it
+cannot overwrite that default with a validated `20`.
 
 ## Agent skills
 
