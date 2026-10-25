@@ -87,6 +87,13 @@ Additional blockers found and fixed after the previous assessment:
 - **The password-reset token was written to the debug log in every
   environment.** It is now logged only when `NODE_ENV=development`, matching the
   response-body gate.
+- **Migration `0000` could not repair a database created by `drizzle-kit push`.**
+  Because it uses `CREATE TABLE IF NOT EXISTS`, the seven tables the push had
+  created kept their missing `"updatedAt"` DEFAULT, and every insert into them
+  failed with SQLSTATE 23502 — including `bootstrap:admin`, which is how the gap
+  was found during the first deployment attempt. Migration
+  `0004_timestamp_defaults` restores the default and is a no-op on a database
+  that `db:migrate` created.
 
 ---
 
