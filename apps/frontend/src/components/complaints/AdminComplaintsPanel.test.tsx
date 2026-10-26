@@ -36,14 +36,50 @@ const complaint = {
   description: 'The pharmacy ran out of my medicine.',
   complaintStatus: 'SUBMITTED',
   imageUrl: null as string | null,
-  resolution: null,
-  assignedTo: null,
+  resolution: null as string | null,
+  assignedTo: null as string | null,
   createdAt: '2026-10-26T09:00:00.000Z',
   updatedAt: '2026-10-26T09:00:00.000Z',
 };
 
 const photoDataUrl =
   'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==';
+
+interface HistoryFixture {
+  id: string;
+  fromStatus: string | null;
+  toStatus: string;
+  resolution?: string | null;
+  changedByName: string;
+  changedByRole?: string | null;
+  createdAt: string;
+}
+
+type ComplaintFixture = typeof complaint & {
+  assignedToName?: string | null;
+  history?: HistoryFixture[];
+};
+
+const statusHistory: HistoryFixture[] = [
+  {
+    id: 'history-1',
+    fromStatus: null,
+    toStatus: 'SUBMITTED',
+    resolution: null,
+    changedByName: 'Test Complainant',
+    changedByRole: null,
+    createdAt: '2026-10-26T09:00:00.000Z',
+  },
+  {
+    id: 'history-2',
+    fromStatus: 'SUBMITTED',
+    toStatus: 'IN_PROGRESS',
+    resolution: null,
+    changedByName: 'Asha Kumari',
+    changedByRole: 'STAFF',
+    createdAt: '2026-10-26T10:30:00.000Z',
+  },
+];
 
 /**
  * Mirrors the payload the backend TransformInterceptor actually sends:
@@ -55,7 +91,7 @@ function backendResponse<T>(data: T, meta?: Record<string, unknown>) {
   return { success: true, data, meta };
 }
 
-function mockApi(complaints: (typeof complaint)[] = [complaint]) {
+function mockApi(complaints: ComplaintFixture[] = [complaint]) {
   mockGet.mockImplementation((url: string) => {
     if (url === '/departments') {
       return Promise.resolve(backendResponse([]));
@@ -127,6 +163,30 @@ describe('AdminComplaintsPanel', () => {
     const list = await screen.findByRole('list', { name: /complaints/i });
     expect(list).toHaveClass('sm:grid-cols-2', 'lg:grid-cols-3', 'xl:grid-cols-4');
     expect(list).toHaveClass('2xl:grid-cols-5');
+  });
+
+  it('shows who last moved a complaint and the full status trail', async () => {
+    mockApi([
+      {
+        ...complaint,
+        complaintStatus: 'IN_PROGRESS',
+        assignedTo: 'staff-1',
+        assignedToName: 'Asha Kumari',
+        history: statusHistory,
+      },
+    ]);
+    render(<AdminComplaintsPanel />);
+
+    expect(await screen.findByText(/by Asha Kumari/)).toBeInTheDocument();
+
+    fireEvent.click(screen.getByText('Status history (2)'));
+
+    const trail = screen.getByText('Submitted → In Progress').closest('ol');
+    expect(trail).not.toBeNull();
+
+    // The initial citizen submission is part of the trail too.
+    expect(within(trail as HTMLElement).getByText('Submitted')).toBeInTheDocument();
+    expect(within(trail as HTMLElement).getByText(/Asha Kumari · STAFF/)).toBeInTheDocument();
   });
 
   it('shows the attached photo and opens it in a full-screen viewer', async () => {
