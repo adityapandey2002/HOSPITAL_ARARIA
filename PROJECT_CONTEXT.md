@@ -7,6 +7,10 @@
 >
 > Verification date: 2026-10-08 · Commit: `f5fccfe` (plus uncommitted working-tree changes)
 >
+> **Superseded (frontend pages):** the "10 pages" figure and the route list in
+> §5 are a historical snapshot. `docs/UI_OUTLINE_PROMPT.md` is the authoritative
+> route and page inventory, including pages that are planned but not yet built.
+>
 > **Superseded (ORM):** since this snapshot the backend dropped Prisma entirely.
 > It now runs on Drizzle (DDL owner for 9 tables) and MikroORM (5 tables), with
 > the boundary enforced by `npm run schema:check`. Any Prisma references below —
