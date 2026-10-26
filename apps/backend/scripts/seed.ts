@@ -90,7 +90,7 @@ async function main() {
   console.log(`  admin user: ${admin.email}`);
 
   const staffPassword = await bcrypt.hash('Staff@123', 12);
-  await ensureUser(db, {
+  const staff = await ensureUser(db, {
     email: 'staff@dhararia.gov.in',
     password: staffPassword,
     name: 'Hospital Staff',
@@ -135,6 +135,34 @@ async function main() {
     departmentIds.set(name, created.id);
   }
   console.log(`  departments: ${departmentIds.size}`);
+
+  // Demo staff can sign in and immediately see a real department's complaint
+  // queue. Grants are idempotent like every other seed write.
+  for (const departmentName of ['General Medicine', 'Emergency Medicine']) {
+    const departmentId = departmentIds.get(departmentName);
+    if (!departmentId) continue;
+
+    const [existingGrant] = await db
+      .select({ id: schema.complaintViewers.id })
+      .from(schema.complaintViewers)
+      .where(
+        and(
+          eq(schema.complaintViewers.userId, staff.id),
+          eq(schema.complaintViewers.departmentId, departmentId)
+        )
+      )
+      .limit(1);
+
+    if (!existingGrant) {
+      await db.insert(schema.complaintViewers).values({
+        id: newId(),
+        userId: staff.id,
+        departmentId,
+        grantedBy: admin.id,
+      });
+    }
+  }
+  console.log('  staff access: General Medicine + Emergency Medicine complaints');
 
   const doctorsData = [
     {
