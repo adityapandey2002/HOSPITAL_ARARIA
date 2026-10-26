@@ -12,7 +12,11 @@ import {
   User,
   Calendar,
   Droplet,
+  LogOut,
+  Shield,
 } from 'lucide-react';
+import { useAuth } from '@/context/AuthContext';
+import { Button } from '@dh-araria/ui/components';
 
 const navItems = [
   { href: '/', label: 'Home' },
@@ -39,8 +43,10 @@ function cn(...classes: (string | undefined | null | false)[]): string {
 }
 
 export function Header() {
+  const { user, isAuthenticated, isLoading, logout } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const isAdmin = user?.role === 'ADMIN';
 
   useEffect(() => {
     const handleScroll = () => {
@@ -49,6 +55,100 @@ export function Header() {
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  const handleLogout = async () => {
+    await logout();
+  };
+
+  // While auth is loading, show a neutral state (no login/logout toggle yet)
+  if (isLoading) {
+    return (
+      <header
+        className={cn(
+          'fixed left-0 right-0 top-0 z-40 transition-all duration-300',
+          isScrolled ? 'bg-white/95 shadow-md backdrop-blur-sm' : 'bg-transparent'
+        )}
+      >
+        {/* Top Bar */}
+        <div className="hidden items-center justify-between bg-blue-700 px-4 py-2 text-sm text-white md:flex">
+          <div className="flex items-center gap-6">
+            <div className="flex items-center gap-2">
+              <MapPin className="h-4 w-4" />
+              <span>Araria, Bihar - 854311</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Phone className="h-4 w-4" />
+              <span>+91-6453-222123</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <AlertCircle className="h-4 w-4 text-yellow-200" />
+              <span className="text-yellow-100">Emergency: 108 / 102</span>
+            </div>
+          </div>
+          <div className="flex items-center gap-4">
+            <Link href="/appointments" className="transition-colors hover:text-blue-100">
+              Book Appointment
+            </Link>
+            <div className="rounded-lg bg-white/10 px-4 py-1.5 transition-colors hover:bg-white/20">
+              Loading…
+            </div>
+          </div>
+        </div>
+        <nav className="relative border-b border-gray-100 bg-white" aria-label="Main navigation">
+          <div className="container mx-auto px-4">
+            <div className="flex h-16 items-center justify-between">
+              <Link
+                href="/"
+                className="flex items-center gap-3"
+                aria-label="District Hospital Araria Home"
+              >
+                <div className="rounded-lg bg-blue-600 p-2">
+                  <Hospital className="h-7 w-7 text-white" />
+                </div>
+                <div className="hidden sm:block xl:hidden 2xl:block">
+                  <h1 className="text-xl font-bold text-gray-900">District Hospital Araria</h1>
+                  <p className="text-xs text-gray-500">Government of Bihar</p>
+                </div>
+              </Link>
+              <div className="hidden items-center gap-1 xl:flex">
+                {navItems.map((item) => (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className="whitespace-nowrap rounded-lg px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-blue-50 hover:text-blue-600"
+                  >
+                    {item.label}
+                  </Link>
+                ))}
+              </div>
+              <div className="hidden items-center gap-3 xl:flex">
+                <Link
+                  href="/appointments"
+                  className="rounded-lg bg-blue-600 px-4 py-2 font-medium text-white transition-colors hover:bg-blue-700"
+                >
+                  <Calendar className="mr-2 inline h-4 w-4" />
+                  Book Appointment
+                </Link>
+                <div className="rounded-lg bg-white/10 px-4 py-1.5 transition-colors hover:bg-white/20">
+                  Loading…
+                </div>
+              </div>
+              <button
+                className="rounded-lg p-2 text-gray-700 transition-colors hover:bg-gray-100 xl:hidden"
+                onClick={() => setIsMenuOpen(!isMenuOpen)}
+                aria-expanded={isMenuOpen}
+                aria-controls="mobile-menu"
+                aria-label={isMenuOpen ? 'Close menu' : 'Open menu'}
+                disabled
+              >
+                {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+              </button>
+            </div>
+          </div>
+        </nav>
+      </header>
+    );
+  }
 
   return (
     <header
@@ -77,12 +177,24 @@ export function Header() {
           <Link href="/appointments" className="transition-colors hover:text-blue-100">
             Book Appointment
           </Link>
-          <Link
-            href="/login"
-            className="rounded-lg bg-white/10 px-4 py-1.5 transition-colors hover:bg-white/20"
-          >
-            Login / Register
-          </Link>
+          {isAuthenticated ? (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleLogout}
+              className="text-gray-700 border-gray-300 hover:bg-gray-100 hover:text-gray-900"
+            >
+              <LogOut className="mr-2 h-4 w-4" />
+              Logout
+            </Button>
+          ) : (
+            <Link
+              href="/login"
+              className="rounded-lg bg-white/10 px-4 py-1.5 transition-colors hover:bg-white/20"
+            >
+              Login / Register
+            </Link>
+          )}
         </div>
       </div>
 
@@ -116,6 +228,15 @@ export function Header() {
                   {item.label}
                 </Link>
               ))}
+              {isAdmin && (
+                <Link
+                  href="/admin/complaints"
+                  className="whitespace-nowrap rounded-lg px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-blue-50 hover:text-blue-600 bg-blue-50 text-blue-600"
+                >
+                  <Shield className="mr-2 h-4 w-4" />
+                  Admin Panel
+                </Link>
+              )}
             </div>
 
             {/* Desktop Actions */}
@@ -127,13 +248,25 @@ export function Header() {
                 <Calendar className="mr-2 inline h-4 w-4" />
                 Book Appointment
               </Link>
-              <Link
-                href="/login"
-                className="px-4 py-2 font-medium text-gray-700 transition-colors hover:text-blue-600"
-              >
-                <User className="mr-2 inline h-4 w-4" />
-                Login
-              </Link>
+              {isAuthenticated ? (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleLogout}
+                  className="text-gray-700 border-gray-300 hover:bg-gray-100 hover:text-gray-900"
+                >
+                  <LogOut className="mr-2 h-4 w-4" />
+                  Logout
+                </Button>
+              ) : (
+                <Link
+                  href="/login"
+                  className="px-4 py-2 font-medium text-gray-700 transition-colors hover:text-blue-600"
+                >
+                  <User className="mr-2 inline h-4 w-4" />
+                  Login
+                </Link>
+              )}
             </div>
 
             {/* Mobile Menu Button */}
@@ -167,6 +300,16 @@ export function Header() {
                   {item.label}
                 </Link>
               ))}
+              {isAdmin && (
+                <Link
+                  href="/admin/complaints"
+                  className="block rounded-lg px-4 py-3 text-gray-700 transition-colors hover:bg-blue-50 hover:text-blue-600 bg-blue-50 text-blue-600"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  <Shield className="mr-2 h-4 w-4" />
+                  Admin Panel
+                </Link>
+              )}
               <div className="space-y-2 border-t border-gray-100 pt-4">
                 <Link
                   href="/appointments"
@@ -176,14 +319,29 @@ export function Header() {
                   <Calendar className="mr-2 inline h-4 w-4" />
                   Book Appointment
                 </Link>
-                <Link
-                  href="/login"
-                  className="block py-3 text-center font-medium text-gray-700 transition-colors hover:text-blue-600"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  <User className="mr-2 inline h-4 w-4" />
-                  Login / Register
-                </Link>
+                {isAuthenticated ? (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={async () => {
+                      await handleLogout();
+                      setIsMenuOpen(false);
+                    }}
+                    className="w-full text-gray-700 border-gray-300 hover:bg-gray-100 hover:text-gray-900"
+                  >
+                    <LogOut className="mr-2 h-4 w-4" />
+                    Logout
+                  </Button>
+                ) : (
+                  <Link
+                    href="/login"
+                    className="block py-3 text-center font-medium text-gray-700 transition-colors hover:text-blue-600"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    <User className="mr-2 inline h-4 w-4" />
+                    Login / Register
+                  </Link>
+                )}
               </div>
               <div className="border-t border-gray-100 pt-4">
                 <p className="mb-2 px-4 text-sm font-medium text-gray-500">Emergency Contacts</p>
