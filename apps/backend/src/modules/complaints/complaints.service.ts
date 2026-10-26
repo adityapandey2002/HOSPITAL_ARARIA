@@ -1,5 +1,5 @@
 import { BadRequestException, ForbiddenException, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
-import { and, count, desc, eq, inArray, isNotNull } from 'drizzle-orm';
+import { and, count, desc, eq, inArray, isNotNull, sql } from 'drizzle-orm';
 import { ComplaintStatus, UserRole, isStaffRole } from '@dh-araria/shared';
 
 import { PaginationDto } from '../../common/dto/pagination.dto';
@@ -146,6 +146,52 @@ export class ComplaintsService {
   // Admin reads (ADMIN sees everything — no department filtering)
   // -------------------------------------------------------------------------
 
+  /**
+   * Builds the WHERE conditions for complaint queries.
+   *
+   * ADMIN: no department filter — sees every complaint.
+   * STAFF: only departments granted via `complaint_viewers`.
+   *
+   * Used by findAll(), getStats(), and exportCsv() so all three always agree.
+   */
+  private async buildComplaintConditions(
+    userId?: string,
+    userRole?: string,
+    filters?: ComplaintQueryDto
+  ): Promise<any[]> {
+    const conditions = [
+      // Only surface rows submitted through the simple complaint form.
+      isNotNull(grievances.complaintStatus),
+    ];
+
+    // Department-scoped access for STAFF only. ADMIN sees everything.
+    if (userRole && userRole !== UserRole.ADMIN && userId) {
+      const ids = await this.accessibleDepartmentIds(userId);
+      if (ids.length === 0) {
+        conditions.push(eq(grievances.id, sql`''`)); // matches nothing
+      } else {
+        conditions.push(inArray(grievances.departmentId, ids));
+      }
+    }
+
+    if (filters?.departmentId && filters.departmentId.trim().length > 0) {
+      conditions.push(eq(grievances.departmentId, filters.departmentId.trim()));
+    }
+    if (filters?.status && filters.status.trim().length > 0) {
+      conditions.push(
+        eq(
+          grievances.complaintStatus,
+          filters.status.trim() as NonNullable<Select['complaintStatus']>
+        )
+      );
+    }
+    if (filters?.assignedTo && filters.assignedTo.trim().length > 0) {
+      conditions.push(eq(grievances.assignedTo, filters.assignedTo.trim()));
+    }
+
+    return conditions;
+  }
+
   async findAll(
     pagination: PaginationDto,
     filters: ComplaintQueryDto,
@@ -156,32 +202,7 @@ export class ComplaintsService {
     const limit = pagination.limit ?? 10;
     const offset = (page - 1) * limit;
 
-    const conditions = [
-      // Only surface rows submitted through the simple complaint form.
-      isNotNull(grievances.complaintStatus),
-    ];
-
-    // Department-scoped access for STAFF only. ADMIN sees everything.
-    if (userRole && userRole !== UserRole.ADMIN && userId) {
-      const ids = await this.accessibleDepartmentIds(userId);
-      if (ids.length === 0) {
-        return { data: [], meta: { page, limit, total: 0, totalPages: 0 } };
-      }
-      conditions.push(inArray(grievances.departmentId, ids));
-    }
-
-    if (filters.departmentId && filters.departmentId.trim().length > 0) {
-      conditions.push(eq(grievances.departmentId, filters.departmentId.trim()));
-    }
-    if (filters.status && filters.status.trim().length > 0) {
-      conditions.push(
-        eq(grievances.complaintStatus, filters.status.trim() as NonNullable<Select['complaintStatus']>)
-      );
-    }
-    if (filters.assignedTo && filters.assignedTo.trim().length > 0) {
-      conditions.push(eq(grievances.assignedTo, filters.assignedTo.trim()));
-    }
-
+    const conditions = await this.buildComplaintConditions(userId, userRole, filters);
     const where = conditions.length > 0 ? and(...conditions) : undefined;
     const orderBy = desc(grievances.createdAt);
 
@@ -327,27 +348,7 @@ export class ComplaintsService {
   }
 
   async getStats(userId?: string, userRole?: string) {
-    const conditions = [isNotNull(grievances.complaintStatus)];
-
-    // STAFF department scope — ADMIN sees everything.
-    if (userRole && userRole !== UserRole.ADMIN && userId) {
-      const ids = await this.accessibleDepartmentIds(userId);
-      if (ids.length === 0) {
-        return {
-          total: 0,
-          byStatus: {
-            SUBMITTED: 0,
-            UNDER_REVIEW: 0,
-            IN_PROGRESS: 0,
-            RESOLVED: 0,
-            CLOSED: 0,
-            REJECTED: 0,
-          },
-        };
-      }
-      conditions.push(inArray(grievances.departmentId, ids));
-    }
-
+    const conditions = await this.buildComplaintConditions(userId, userRole);
     const where = conditions.length > 0 ? and(...conditions) : undefined;
 
     const total = await this.db.select({ value: count() }).from(grievances).where(where);
@@ -382,16 +383,7 @@ export class ComplaintsService {
   // -------------------------------------------------------------------------
 
   async exportCsv(userId?: string, userRole?: string): Promise<string> {
-    const conditions = [isNotNull(grievances.complaintStatus)];
-
-    // STAFF department scope — ADMIN sees everything.
-    if (userRole && userRole !== UserRole.ADMIN && userId) {
-      const ids = await this.accessibleDepartmentIds(userId);
-      if (ids.length > 0) {
-        conditions.push(inArray(grievances.departmentId, ids));
-      }
-    }
-
+    const conditions = await this.buildComplaintConditions(userId, userRole);
     const where = conditions.length > 0 ? and(...conditions) : undefined;
 
     const rows = await this.db
