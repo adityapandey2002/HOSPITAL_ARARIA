@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState, type ComponentProps } from 'react';
+import { useCallback, useEffect, useRef, useState, type ComponentProps } from 'react';
 import {
   AlertCircle,
   Bell,
@@ -12,21 +12,18 @@ import {
   Inbox,
   Phone,
   RefreshCw,
-  Star,
-  User,
+  X,
   type LucideIcon,
 } from 'lucide-react';
 import Link from 'next/link';
 import type { Department, PaginationMeta } from '@dh-araria/shared/types';
 import { ComplaintStatus, UserRole } from '@dh-araria/shared';
-import {
-  COMPLAINT_STATUS_COLORS,
-  COMPLAINT_STATUS_LABELS,
-} from '@dh-araria/shared/constants';
+import { COMPLAINT_STATUS_LABELS } from '@dh-araria/shared/constants';
 import { cn } from '@dh-araria/shared/utils';
 import { Badge, Button, Select } from '@dh-araria/ui/components';
 import { api, handleApiResponse } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
+import { getDepartmentShortName, getDepartmentTagTone } from '@/lib/department-tag';
 import { formatDateTime } from '@dh-araria/shared/utils';
 
 const PAGE_SIZE = 10;
@@ -81,91 +78,131 @@ function StatCard({ label, value, hint, icon: Icon, tone }: StatCardProps) {
   );
 }
 
+function DepartmentTag({ name }: { name?: string | null }) {
+  const fullName = name?.trim() || 'Department not specified';
+
+  return (
+    <span
+      className={cn(
+        'inline-flex shrink-0 items-center rounded-md px-2 py-1 text-[10px] font-bold uppercase tracking-wider ring-1 ring-inset',
+        getDepartmentTagTone(name)
+      )}
+      title={fullName}
+      aria-label={`Department: ${fullName}`}
+    >
+      {getDepartmentShortName(name)}
+    </span>
+  );
+}
+
 interface ComplaintCardProps {
   item: any;
   pendingStatus: ComplaintStatus | null;
   actionsDisabled: boolean;
   onStatusChange: (item: any, status: ComplaintStatus) => void;
+  onPhotoOpen: (src: string, alt: string, trigger: HTMLElement) => void;
 }
 
-function ComplaintCard({ item, pendingStatus, actionsDisabled, onStatusChange }: ComplaintCardProps) {
+function ComplaintCard({
+  item,
+  pendingStatus,
+  actionsDisabled,
+  onStatusChange,
+  onPhotoOpen,
+}: ComplaintCardProps) {
   const stamp = formatDateTime(item.createdAt);
-  const departmentName = item.departmentName ?? 'Department';
-  const hasImage = Boolean(item.imageUrl);
+  const hasImage = typeof item.imageUrl === 'string' && item.imageUrl.length > 0;
   const hasContact = Boolean(item.phone || item.email);
+  const isResolved =
+    item.complaintStatus === ComplaintStatus.RESOLVED ||
+    item.complaintStatus === ComplaintStatus.CLOSED;
+  const showResolve = item.complaintStatus !== ComplaintStatus.RESOLVED;
 
   return (
-    <li className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="min-w-0">
-          <h3 className="text-lg font-semibold text-gray-900">
-            {item.name}
-          </h3>
-          <p className="mt-0.5 text-sm text-gray-500">{departmentName}</p>
-        </div>
-        <div className="flex flex-col items-start gap-2 sm:items-end">
-          <Badge
-            id={`complaint-status-${item.id}`}
-            tabIndex={-1}
-            variant={STATUS_BADGE[item.complaintStatus as ComplaintStatus]}
-            dot
-          >
-            {COMPLAINT_STATUS_LABELS[item.complaintStatus] ?? item.complaintStatus}
-          </Badge>
-        </div>
+    <li className="flex h-full flex-col rounded-2xl border border-gray-100 bg-white p-4 shadow-sm transition-shadow hover:shadow-md">
+      <div className="flex items-start justify-between gap-2">
+        <DepartmentTag name={item.departmentName} />
+        <Badge
+          id={`complaint-status-${item.id}`}
+          tabIndex={-1}
+          size="sm"
+          variant={STATUS_BADGE[item.complaintStatus as ComplaintStatus]}
+          dot
+        >
+          {COMPLAINT_STATUS_LABELS[item.complaintStatus] ?? item.complaintStatus}
+        </Badge>
       </div>
 
-      <p className="mt-4 break-words text-gray-700">
-        <span className="whitespace-pre-line">{item.complaint ?? item.description}</span>
+      <div className="mt-3 min-w-0">
+        <h3 className="truncate text-base font-semibold text-gray-900" title={item.name}>
+          {item.name}
+        </h3>
+        <time dateTime={item.createdAt} className="text-xs text-gray-500">
+          {stamp}
+        </time>
+      </div>
+
+      <p className="mt-3 line-clamp-4 whitespace-pre-line break-words text-sm text-gray-700">
+        {item.complaint ?? item.description}
       </p>
 
       {hasImage && (
-        <div className="mt-3 flex items-center gap-2 text-xs text-gray-500">
-          <ImageIcon className="h-4 w-4" />
-          <span>Photo attached</span>
-        </div>
+        <button
+          type="button"
+          onClick={(event) =>
+            onPhotoOpen(
+              item.imageUrl,
+              `Photo attached to complaint by ${item.name}`,
+              event.currentTarget
+            )
+          }
+          className="group relative mt-3 block w-full overflow-hidden rounded-xl border border-gray-200 bg-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
+          aria-label={`View photo attached to complaint by ${item.name}`}
+        >
+          <img
+            src={item.imageUrl}
+            alt={`Photo attached to complaint by ${item.name}`}
+            loading="lazy"
+            decoding="async"
+            className="h-32 w-full object-cover transition-transform duration-300 group-hover:scale-105"
+          />
+          <span className="pointer-events-none absolute inset-x-0 bottom-0 flex items-center justify-center gap-1 bg-gradient-to-t from-gray-950/75 via-gray-950/30 to-transparent px-2 pb-2 pt-6 text-[11px] font-medium text-white">
+            <ImageIcon className="h-3.5 w-3.5" />
+            View photo
+          </span>
+        </button>
       )}
 
       {hasContact && (
-        <div className="mt-3 rounded-xl bg-gray-50 p-3">
-          <p className="text-xs font-medium uppercase tracking-wide text-gray-500">Contact</p>
-          <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-gray-700">
-            {item.phone && (
-              <a
-                href={`tel:${item.phone}`}
-                className="inline-flex items-center gap-1.5 rounded transition-colors hover:text-primary-700"
-              >
-                <Phone className="h-4 w-4 text-gray-400" aria-hidden="true" />
-                {item.phone}
-              </a>
-            )}
-          </div>
-        </div>
+        <p className="mt-2 flex items-center gap-1.5 text-xs text-gray-500">
+          <Phone className="h-3.5 w-3.5 shrink-0 text-gray-400" aria-hidden="true" />
+          <span className="truncate">{item.phone || item.email}</span>
+        </p>
       )}
 
       {item.resolution && (
-        <div className="mt-4 rounded-xl border border-success-200 bg-success-50 p-3">
-          <p className="text-xs font-medium uppercase tracking-wide text-success-700">Resolution</p>
-          <p className="mt-1 text-sm text-gray-700 whitespace-pre-line">
+        <div className="mt-3 rounded-lg border border-success-200 bg-success-50 px-3 py-2">
+          <p className="text-[10px] font-semibold uppercase tracking-wide text-success-700">
+            Resolution
+          </p>
+          <p className="mt-0.5 line-clamp-2 whitespace-pre-line text-xs text-gray-700">
             {item.resolution}
           </p>
         </div>
       )}
 
-      <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-gray-100 pt-4">
-        <time dateTime={item.createdAt} className="text-sm text-gray-500">
-          {stamp}
-        </time>
-
-        <div className="flex flex-wrap gap-2">
-          {item.complaintStatus !== ComplaintStatus.RESOLVED && item.complaintStatus !== ComplaintStatus.CLOSED && (
+      <div className="mt-auto border-t border-gray-100 pt-3">
+        <div className="grid grid-cols-3 gap-1.5">
+          {!isResolved && (
             <>
               <Button
                 type="button"
                 size="sm"
+                className="whitespace-nowrap px-2 text-xs"
                 onClick={() => onStatusChange(item, ComplaintStatus.UNDER_REVIEW)}
                 loading={pendingStatus === ComplaintStatus.UNDER_REVIEW}
                 disabled={actionsDisabled || pendingStatus !== null}
+                aria-label={`Move complaint from ${item.name} to review`}
               >
                 Review
               </Button>
@@ -173,24 +210,31 @@ function ComplaintCard({ item, pendingStatus, actionsDisabled, onStatusChange }:
                 type="button"
                 size="sm"
                 variant="primary"
+                className="whitespace-nowrap px-2 text-xs"
                 onClick={() => onStatusChange(item, ComplaintStatus.IN_PROGRESS)}
                 loading={pendingStatus === ComplaintStatus.IN_PROGRESS}
                 disabled={actionsDisabled || pendingStatus !== null}
+                aria-label={`Mark complaint from ${item.name} as in progress`}
               >
-                In Progress
+                Start
               </Button>
             </>
           )}
-          {item.complaintStatus !== ComplaintStatus.RESOLVED && (
+          {showResolve && (
             <Button
               type="button"
               size="sm"
               variant="success"
+              className={cn(
+                'whitespace-nowrap px-2 text-xs',
+                isResolved && 'col-span-3'
+              )}
               onClick={() => onStatusChange(item, ComplaintStatus.RESOLVED)}
               loading={pendingStatus === ComplaintStatus.RESOLVED}
               disabled={actionsDisabled || pendingStatus !== null}
+              aria-label={`Mark complaint from ${item.name} as resolved`}
             >
-              Mark Resolved
+              Resolve
             </Button>
           )}
         </div>
@@ -223,21 +267,25 @@ function ImageIcon({ className }: { className?: string }) {
 
 function ListSkeleton() {
   return (
-    <ul className="space-y-4" aria-hidden="true">
-      {[0, 1, 2].map((row) => (
-        <li key={row} className="animate-pulse rounded-2xl border border-gray-100 bg-white p-5">
-          <div className="flex items-start justify-between gap-4">
-            <div className="space-y-2">
-              <div className="h-5 w-40 rounded bg-gray-200" />
-              <div className="h-3 w-24 rounded bg-gray-100" />
-            </div>
-            <div className="h-6 w-24 rounded-full bg-gray-200" />
+    <ul
+      className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5"
+      aria-hidden="true"
+    >
+      {[0, 1, 2, 3, 4].map((row) => (
+        <li key={row} className="animate-pulse rounded-2xl border border-gray-100 bg-white p-4">
+          <div className="flex items-center justify-between gap-3">
+            <div className="h-5 w-12 rounded bg-gray-200" />
+            <div className="h-5 w-20 rounded-full bg-gray-200" />
           </div>
-          <div className="mt-5 space-y-2">
+          <div className="mt-4 h-4 w-3/4 rounded bg-gray-200" />
+          <div className="mt-2 h-3 w-1/2 rounded bg-gray-100" />
+          <div className="mt-4 space-y-2">
             <div className="h-3 w-full rounded bg-gray-100" />
-            <div className="h-3 w-4/5 rounded bg-gray-100" />
+            <div className="h-3 w-5/6 rounded bg-gray-100" />
+            <div className="h-3 w-2/3 rounded bg-gray-100" />
           </div>
-          <div className="mt-5 h-8 w-40 rounded bg-gray-100" />
+          <div className="mt-4 h-28 w-full rounded-xl bg-gray-100" />
+          <div className="mt-4 h-8 w-full rounded bg-gray-100" />
         </li>
       ))}
     </ul>
@@ -267,6 +315,30 @@ export function AdminComplaintsPanel() {
   const [updating, setUpdating] = useState<{ id: string; status: ComplaintStatus } | null>(null);
   const [actionMessage, setActionMessage] = useState('');
   const [actionError, setActionError] = useState<string | null>(null);
+
+  const [photo, setPhoto] = useState<{ src: string; alt: string } | null>(null);
+  const photoCloseRef = useRef<HTMLButtonElement>(null);
+  const photoTriggerRef = useRef<HTMLElement | null>(null);
+
+  useEffect(() => {
+    if (!photo) return;
+
+    const trigger = photoTriggerRef.current;
+    photoCloseRef.current?.focus();
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setPhoto(null);
+    };
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    window.addEventListener('keydown', onKeyDown);
+
+    return () => {
+      window.removeEventListener('keydown', onKeyDown);
+      document.body.style.overflow = previousOverflow;
+      trigger?.focus();
+    };
+  }, [photo]);
 
   const exportCsv = async () => {
     try {
@@ -392,6 +464,11 @@ export function AdminComplaintsPanel() {
     }
   };
 
+  const openPhoto = (src: string, alt: string, trigger: HTMLElement) => {
+    photoTriggerRef.current = trigger;
+    setPhoto({ src, alt });
+  };
+
   const totalValue = stats ? stats.total.toLocaleString('en-IN') : statsLoading ? '…' : '—';
   const submittedValue = stats
     ? String(stats.byStatus?.[ComplaintStatus.SUBMITTED] ?? 0)
@@ -508,7 +585,7 @@ export function AdminComplaintsPanel() {
           </Button>
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3" aria-busy={statsLoading}>
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4" aria-busy={statsLoading}>
           <StatCard
             label="Total complaints"
             value={totalValue}
@@ -660,7 +737,10 @@ export function AdminComplaintsPanel() {
             </div>
           ) : (
             <div aria-busy={listLoading} className={cn('transition-opacity', listLoading && 'opacity-60')}>
-              <ul className="space-y-4" aria-label="Complaints">
+              <ul
+                className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5"
+                aria-label="Complaints"
+              >
                 {items.map((item) => (
                   <ComplaintCard
                     key={item.id}
@@ -670,6 +750,7 @@ export function AdminComplaintsPanel() {
                     onStatusChange={(complaint, status) =>
                       void handleStatusChange(complaint, status)
                     }
+                    onPhotoOpen={openPhoto}
                   />
                 ))}
               </ul>
@@ -705,6 +786,33 @@ export function AdminComplaintsPanel() {
           )}
         </div>
       </div>
+
+      {photo && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-gray-950/80 p-4 backdrop-blur-sm"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Complaint photo"
+          onClick={() => setPhoto(null)}
+        >
+          <div className="relative w-full max-w-4xl" onClick={(event) => event.stopPropagation()}>
+            <button
+              ref={photoCloseRef}
+              type="button"
+              onClick={() => setPhoto(null)}
+              className="absolute -right-2 -top-2 z-10 inline-flex h-10 w-10 items-center justify-center rounded-full bg-white text-gray-700 shadow-lg transition-colors hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-gray-900"
+              aria-label="Close photo"
+            >
+              <X className="h-5 w-5" aria-hidden="true" />
+            </button>
+            <img
+              src={photo.src}
+              alt={photo.alt}
+              className="max-h-[85vh] w-full rounded-2xl bg-white object-contain shadow-2xl"
+            />
+          </div>
+        </div>
+      )}
     </section>
   );
 }
