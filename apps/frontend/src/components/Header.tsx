@@ -47,6 +47,7 @@ export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const isAdmin = user?.role === 'ADMIN';
+  const isStaff = isAdmin || user?.role === 'STAFF';
 
   useEffect(() => {
     const handleScroll = () => {
@@ -228,13 +229,13 @@ export function Header() {
                   {item.label}
                 </Link>
               ))}
-              {isAdmin && (
+              {isStaff && (
                 <Link
                   href="/admin/complaints"
                   className="whitespace-nowrap rounded-lg px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-blue-50 hover:text-blue-600 bg-blue-50 text-blue-600"
                 >
                   <Shield className="mr-2 h-4 w-4" />
-                  Admin Panel
+                  {isAdmin ? 'Admin Panel' : 'Complaint Desk'}
                 </Link>
               )}
             </div>
@@ -300,14 +301,14 @@ export function Header() {
                   {item.label}
                 </Link>
               ))}
-              {isAdmin && (
+              {isStaff && (
                 <Link
                   href="/admin/complaints"
                   className="block rounded-lg px-4 py-3 text-gray-700 transition-colors hover:bg-blue-50 hover:text-blue-600 bg-blue-50 text-blue-600"
                   onClick={() => setIsMenuOpen(false)}
                 >
                   <Shield className="mr-2 h-4 w-4" />
-                  Admin Panel
+                  {isAdmin ? 'Admin Panel' : 'Complaint Desk'}
                 </Link>
               )}
               <div className="space-y-2 border-t border-gray-100 pt-4">

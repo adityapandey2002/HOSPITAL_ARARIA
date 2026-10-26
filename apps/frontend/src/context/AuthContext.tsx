@@ -8,7 +8,7 @@ interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   isAuthenticated: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<User>;
   register: (data: {
     name: string;
     email: string;
@@ -80,7 +80,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [refreshUser]);
 
-  const login = async (email: string, password: string) => {
+  const login = async (email: string, password: string): Promise<User> => {
     const response = await api.login(email, password);
     if (!response.success) {
       throw new Error(response.error?.message || 'Login failed');
@@ -91,6 +91,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.setItem('refreshToken', refreshToken);
     localStorage.setItem('user', JSON.stringify(userData));
     setUser(userData);
+    return userData as User;
   };
 
   const register = async (data: {

@@ -48,6 +48,29 @@ const STAT_TONES = {
 
 type StatTone = keyof typeof STAT_TONES;
 
+/** One entry in a complaint's append-only status trail. */
+interface ComplaintHistoryEntry {
+  id: string;
+  fromStatus: ComplaintStatus | null;
+  toStatus: ComplaintStatus;
+  resolution?: string | null;
+  changedByName: string;
+  changedByRole?: string | null;
+  createdAt: string;
+}
+
+function statusLabel(status?: ComplaintStatus | null): string {
+  return status ? COMPLAINT_STATUS_LABELS[status] ?? status : '';
+}
+
+/** Date plus time — the audit trail is useless without the time of day. */
+function formatStamp(value?: string | Date | null): string {
+  if (!value) return '';
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+  return date.toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' });
+}
+
 interface StatCardProps {
   label: string;
   value: string;
@@ -117,6 +140,13 @@ function ComplaintCard({
     item.complaintStatus === ComplaintStatus.RESOLVED ||
     item.complaintStatus === ComplaintStatus.CLOSED;
   const showResolve = item.complaintStatus !== ComplaintStatus.RESOLVED;
+
+  const history: ComplaintHistoryEntry[] = Array.isArray(item.history) ? item.history : [];
+  // New rows carry a full trail. Legacy rows fall back to the last writer that
+  // `assignedTo` recorded before history existed.
+  const latest = history.length > 0 ? history[history.length - 1] : null;
+  const lastUpdatedBy = latest?.changedByName ?? item.assignedToName ?? null;
+  const lastUpdatedAt = latest?.createdAt ?? item.updatedAt ?? null;
 
   return (
     <li className="flex h-full flex-col rounded-2xl border border-gray-100 bg-white p-4 shadow-sm transition-shadow hover:shadow-md">
@@ -188,6 +218,43 @@ function ComplaintCard({
           <p className="mt-0.5 line-clamp-2 whitespace-pre-line text-xs text-gray-700">
             {item.resolution}
           </p>
+        </div>
+      )}
+
+      {(lastUpdatedBy || history.length > 0) && (
+        <div className="mt-3 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2">
+          <p className="text-[11px] text-gray-600">
+            <span className="font-semibold text-gray-800">Last update:</span>{' '}
+            {lastUpdatedBy ? `by ${lastUpdatedBy}` : 'no staff action yet'}
+            {lastUpdatedAt ? ` · ${formatStamp(lastUpdatedAt)}` : ''}
+          </p>
+
+          {history.length > 0 && (
+            <details className="group mt-2">
+              <summary className="cursor-pointer list-none text-[11px] font-semibold text-primary-700 hover:text-primary-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-1">
+                Status history ({history.length})
+              </summary>
+              <ol className="mt-2 space-y-2 border-l-2 border-primary-100 pl-3">
+                {history.map((entry) => (
+                  <li key={entry.id} className="text-[11px] leading-snug">
+                    <p className="font-semibold text-gray-800">
+                      {entry.fromStatus
+                        ? `${statusLabel(entry.fromStatus)} → ${statusLabel(entry.toStatus)}`
+                        : statusLabel(entry.toStatus)}
+                    </p>
+                    <p className="text-gray-500">
+                      {entry.changedByName}
+                      {entry.changedByRole ? ` · ${entry.changedByRole}` : ''} ·{' '}
+                      {formatStamp(entry.createdAt)}
+                    </p>
+                    {entry.resolution && (
+                      <p className="mt-1 whitespace-pre-line text-gray-600">{entry.resolution}</p>
+                    )}
+                  </li>
+                ))}
+              </ol>
+            </details>
+          )}
         </div>
       )}
 
@@ -456,6 +523,9 @@ export function AdminComplaintsPanel() {
         ).toLowerCase()}.`
       );
       void loadStats();
+      // Pull the new history entry and actor name back from the API so the
+      // card and the admin-facing trail cannot drift from the database.
+      void loadList();
       window.setTimeout(() => document.getElementById(`complaint-status-${item.id}`)?.focus(), 0);
     } catch (error) {
       setActionError(getErrorMessage(error, 'We could not update the complaint status.'));
@@ -554,9 +624,13 @@ export function AdminComplaintsPanel() {
       <div className="container mx-auto px-4">
         <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Complaints admin panel</h1>
+            <h1 className="text-2xl font-bold text-gray-900">
+              {isAdmin ? 'Complaints admin panel' : 'Complaint desk'}
+            </h1>
             <p className="mt-1 text-sm text-gray-600">
-              Track every complaint live and mark it resolved when fixed.
+              {isAdmin
+                ? 'Track every complaint live, see who last updated it, and mark it resolved when fixed.'
+                : 'Complaints for the departments assigned to you. Update the status as work progresses.'}
             </p>
           </div>
           <Button

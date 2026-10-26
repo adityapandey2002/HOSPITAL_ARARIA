@@ -57,8 +57,8 @@ function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  const callbackUrl =
-    searchParams.get('redirect') || searchParams.get('callbackUrl') || '/appointments';
+  const requestedRedirect =
+    searchParams.get('redirect') || searchParams.get('callbackUrl');
   const expired = searchParams.get('expired') === 'true';
 
   const {
@@ -75,11 +75,15 @@ function LoginForm() {
   const onSubmit = async (data: LoginFormData) => {
     setIsLoading(true);
     try {
-      await login(data.email, data.password);
+      const user = await login(data.email, data.password);
       toast.success('Welcome back!', {
         description: 'You have been successfully logged in.',
       });
-      router.push(callbackUrl);
+
+      // Hospital staff land on the complaint desk, not the patient appointment
+      // page. An explicit ?redirect= still wins so deep links keep working.
+      const isStaff = user.role === 'ADMIN' || user.role === 'STAFF';
+      router.push(requestedRedirect || (isStaff ? '/admin/complaints' : '/appointments'));
       router.refresh();
     } catch (error) {
       toast.error('Login failed', {
