@@ -1,5 +1,5 @@
 /**
- * Drizzle schema — the 11 application tables owned by Drizzle.
+ * Drizzle schema — the 13 application tables owned by Drizzle.
  *
  * This file is the DDL source of truth for these tables: `drizzle-kit generate`
  * diffs it against the database and writes SQL into `drizzle/`. The other five
@@ -525,3 +525,41 @@ export const complaintViewers = pgTable(
 
 export type ComplaintViewerRow = typeof complaintViewers.$inferSelect;
 export type NewComplaintViewerRow = typeof complaintViewers.$inferInsert;
+
+/**
+ * Append-only history of complaint status changes.
+ *
+ * Every transition carries the actor's name as a snapshot (`changedByName`)
+ * rather than relying on a join, so the trail still reads correctly after a
+ * staff account is renamed or deleted. `changedBy` remains the live link for
+ * audit queries; citizens who submit anonymously have no user row and appear
+ * only by the name they typed.
+ */
+export const complaintStatusHistory = pgTable(
+  'complaint_status_history',
+  {
+    id: text('id').primaryKey(),
+    complaintId: text('complaintId')
+      .notNull()
+      .references(() => grievances.id, { onDelete: 'cascade' }),
+    /** Null for the first entry, which records the submission itself. */
+    fromStatus: complaintStatusEnum('fromStatus'),
+    toStatus: complaintStatusEnum('toStatus').notNull(),
+    /** Resolution note attached to this transition, when one was given. */
+    resolution: text('resolution'),
+    changedBy: text('changedBy').references(() => users.id, { onDelete: 'set null' }),
+    /** Snapshot of the actor's display name at the time of the change. */
+    changedByName: text('changedByName').notNull(),
+    /** ADMIN or STAFF for internal changes; null for a citizen submission. */
+    changedByRole: userRoleEnum('changedByRole'),
+    createdAt: timestamp('createdAt', { mode: 'date' }).notNull().defaultNow(),
+  },
+  (t) => ({
+    complaintIdIdx: index('complaint_status_history_complaintId_idx').on(t.complaintId),
+    createdAtIdx: index('complaint_status_history_createdAt_idx').on(t.createdAt),
+    changedByIdx: index('complaint_status_history_changedBy_idx').on(t.changedBy),
+  })
+);
+
+export type ComplaintStatusHistoryRow = typeof complaintStatusHistory.$inferSelect;
+export type NewComplaintStatusHistoryRow = typeof complaintStatusHistory.$inferInsert;

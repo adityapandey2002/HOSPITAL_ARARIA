@@ -51,7 +51,7 @@ C4Container
         Container(backend, "Backend project", "NestJS 10 on the Node runtime; api/index.js", "REST API under /api/v1. One function serves every path; the compiled app is loaded from dist/")
     }
 
-    ContainerDb(db, "Supabase PostgreSQL", "PostgreSQL", "16 tables: 11 Drizzle-owned, 5 MikroORM-owned. JSONB for FHIR R4")
+    ContainerDb(db, "Supabase PostgreSQL", "PostgreSQL", "18 tables: 13 Drizzle-owned, 5 MikroORM-owned. JSONB for FHIR R4")
 
     Container_Ext(abdm, "ABDM Gateway", "National Health Stack APIs")
     Container_Ext(epramaan, "e-Pramaan SSO", "OAuth 2.0 Identity Provider")
@@ -97,7 +97,7 @@ C4Component
     Component(common, "Common Module", "NestJS Module", "DrizzleModule, MikroModule, AuditModule, Guards, Filters")
     Component(abdm, "ABDM Module", "NestJS Module", "M2 HIP / M3 HIU, consent gating, audit trail")
 
-    ComponentDb(drizzle, "Drizzle", "ORM", "Owns DDL and queries for 11 application tables")
+    ComponentDb(drizzle, "Drizzle", "ORM", "Owns DDL and queries for 13 application tables")
     ComponentDb(mikro, "MikroORM", "ORM", "Clinical/ABDM, Unit of Work, owns 5 tables")
     ComponentDb(postgres, "PostgreSQL", "Database", "Single engine; JSONB for FHIR R4")
 
@@ -187,7 +187,7 @@ its own connection pool and a non-overlapping set of tables:
 
 | Client | Owns | Rationale |
 |--------|------|-----------|
-| **Drizzle ORM** | 11 tables: users, departments, doctors, time_slots, appointments, blood_stock, grievances, notices, contact_messages, feedback, feedback_viewers | SQL-first, near-zero abstraction overhead for the high-traffic public endpoints; owns DDL for its tables |
+| **Drizzle ORM** | 13 tables: users, departments, doctors, time_slots, appointments, blood_stock, grievances, notices, contact_messages, feedback, feedback_viewers, complaint_viewers, complaint_status_history | SQL-first, near-zero abstraction overhead for the high-traffic public endpoints; owns DDL for its tables |
 | **MikroORM** | 5 tables: abha_profiles, care_contexts, fhir_bundles, consent_artefacts, audit_logs | Strict Unit of Work so a FHIR bundle, its consent artefact and its audit rows commit atomically |
 
 The boundary exists because the two halves have different transaction needs.
@@ -205,6 +205,11 @@ join table over `users` and `departments`, both already Drizzle-owned, and
 putting it in MikroORM would create a cross-ORM foreign key. The Drizzle count
 became 11 and the MikroORM count stayed 5.
 
+`complaint_viewers` extends the same grant table idea to complaints, and
+`complaint_status_history` is the append-only trail of who moved each complaint
+to which status (ADR-0003). Both are Drizzle-owned, bringing the Drizzle count
+to 13.
+
 #### One schema, two DDL owners: how drift is prevented
 
 Ownership is enforced mechanically rather than by convention
@@ -217,7 +222,7 @@ Ownership is enforced mechanically rather than by convention
   `updateSchema({ safe: true })` in the same `db:migrate` script.
 - `npm run schema:check` reads both schemas **offline** and fails if a table
   appears in both, if a Drizzle migration touches a Mikro-owned table, or if the
-  counts drift from 11 + 5.
+  counts drift from 13 + 5.
 - `npm run schema:check:live` additionally compares the entities against a live
   database.
 
@@ -652,7 +657,7 @@ C4Deployment
     Node(supabase, "Supabase project", "Region chosen at project creation - verify in the console") {
         ContainerDb(pooler, "Transaction pooler :6543", "PgBouncer", "Application traffic from both ORMs")
         ContainerDb(direct, "Direct connection :5432", "PostgreSQL", "DDL, migrations, seed, bootstrap:admin")
-        ContainerDb(db, "Database", "PostgreSQL 15+", "11 Drizzle tables and 5 MikroORM tables")
+        ContainerDb(db, "Database", "PostgreSQL 15+", "13 Drizzle tables and 5 MikroORM tables")
     }
 
     Node(ext, "External systems (Phase 3)") {
@@ -787,7 +792,7 @@ see the compliance table in [SECURITY.md](SECURITY.md).
 
 ### Phase 1: MVP (Current)
 - Next.js frontend and NestJS API as two Vercel projects in `bom1`
-- Supabase PostgreSQL with the 11 + 5 table split
+- Supabase PostgreSQL with the 13 + 5 table split
 - Internal JWT authentication (HS256)
 - No file-upload endpoint and no object storage; `UPLOAD_PATH` is configured but
   unused, and Vercel's function filesystem is ephemeral

@@ -903,7 +903,7 @@ without its data change.
 
 #### Database Commands
 
-Drizzle owns DDL for 9 tables and MikroORM owns 5; the boundary is enforced by
+Drizzle owns DDL for 13 tables and MikroORM owns 5; the boundary is enforced by
 `npm run schema:check` (offline).
 
 ```bash

@@ -37,7 +37,7 @@ dh-araria/
 | **Styling** | Tailwind CSS, lucide-react | Responsive, accessible components |
 | **State** | React Hook Form, Zod, SWR | Form validation, data fetching |
 | **Backend** | NestJS 10, TypeScript | Modular REST API, run as a long-lived server locally and as a serverless function on Vercel |
-| **Database** | Supabase PostgreSQL + Drizzle ORM + MikroORM | Managed Postgres; type-safe access under a strict 11 + 5 table-ownership split |
+| **Database** | Supabase PostgreSQL + Drizzle ORM + MikroORM | Managed Postgres; type-safe access under a strict 13 + 5 table-ownership split |
 | **Deployment** | Vercel (Next.js project + Node function) | Frontend and API in the `bom1` region |
 | **Auth** | JWT + Passport.js | Secure authentication |
 | **Docs** | Swagger/OpenAPI | API documentation |
@@ -121,7 +121,7 @@ npm run db:generate      # Generate a Drizzle SQL migration
 npm run db:migrate       # Apply Drizzle + MikroORM schema
 npm run db:studio        # Open Drizzle Studio
 npm run db:seed          # Seed demo data (refuses to run in production)
-npm run schema:check     # Verify the 11 + 5 table-ownership boundary (offline)
+npm run schema:check     # Verify the 13 + 5 table-ownership boundary (offline)
 npm run start:dev        # Start with hot reload
 npm run start:prod       # Run the compiled server (node dist/main)
 ```
