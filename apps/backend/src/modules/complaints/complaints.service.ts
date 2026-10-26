@@ -85,10 +85,14 @@ export class ComplaintsService {
       const [created] = await this.db.insert(grievances).values(values).returning();
       return created;
     } catch (error) {
-      if (error instanceof NotFoundException) {
-        throw error;
+      const err = error as Error;
+      // Log the full error including PostgreSQL detail for diagnosis
+      this.logger.error(
+        `Failed to create complaint: ${err.message}\nStack: ${err.stack}`,
+      );
+      if (err instanceof NotFoundException) {
+        throw err;
       }
-      this.logger.error(`Failed to create complaint: ${(error as Error).message}`);
       throw new BadRequestException('Unable to submit complaint. Please try again.');
     }
   }
