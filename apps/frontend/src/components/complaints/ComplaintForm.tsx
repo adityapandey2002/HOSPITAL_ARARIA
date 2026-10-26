@@ -7,6 +7,7 @@ import { Button, Input, Select, Textarea } from '@dh-araria/ui/components';
 import type { Department } from '@dh-araria/shared/types';
 import { api, handleApiResponse } from '@/lib/api';
 import { getErrorMessage } from '@/lib/feedback';
+import { useAuth } from '@/context/AuthContext';
 
 type FieldErrors = Partial<Record<'departmentId' | 'name' | 'complaint', string>>;
 
@@ -39,6 +40,15 @@ export function ComplaintForm({ initialDepartmentId }: ComplaintFormProps) {
   const errorSummaryRef = useRef<HTMLDivElement>(null);
   const successHeadingRef = useRef<HTMLHeadingElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const { user, isAuthenticated } = useAuth();
+
+  // Auto-fill name from logged-in user's profile
+  useEffect(() => {
+    if (isAuthenticated && user?.name && !name) {
+      setName(user.name);
+    }
+  }, [isAuthenticated, user?.name, name]);
 
   const loadDepartments = useCallback(async () => {
     setDepartmentsLoading(true);
@@ -181,8 +191,6 @@ export function ComplaintForm({ initialDepartmentId }: ComplaintFormProps) {
   const handleNewComplaint = () => {
     setSubmitted(false);
     setReferenceId(null);
-    setName('');
-    setDepartmentId(initialDepartmentId ?? '');
     setComplaint('');
     setImageFile(null);
     if (imagePreview) URL.revokeObjectURL(imagePreview);
@@ -191,6 +199,13 @@ export function ComplaintForm({ initialDepartmentId }: ComplaintFormProps) {
     setFieldErrors({});
     setSubmitError(null);
     if (fileInputRef.current) fileInputRef.current.value = '';
+
+    // Re-fill name from auth if logged in
+    if (isAuthenticated && user?.name) {
+      setName(user.name);
+    } else {
+      setName('');
+    }
 
     window.setTimeout(() => document.getElementById('complaint-name')?.focus(), 0);
   };
@@ -328,7 +343,23 @@ export function ComplaintForm({ initialDepartmentId }: ComplaintFormProps) {
                 autoComplete="name"
                 error={fieldErrors.name}
                 required
+                readOnly={isAuthenticated && Boolean(user?.name)}
               />
+              {isAuthenticated && user?.name && (
+                <p className="mt-1 text-xs text-gray-500">
+                  Auto-filled from your account.{' '}
+                  <a
+                    href="/login"
+                    className="text-primary-700 font-medium hover:text-primary-800"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      window.location.href = '/login';
+                    }}
+                  >
+                    Use a different name
+                  </a>
+                </p>
+              )}
 
               {/* Department dropdown */}
               <Select

@@ -54,35 +54,43 @@ export class ComplaintsService {
   // -------------------------------------------------------------------------
 
   async create(dto: CreateComplaintDto): Promise<GrievanceRow> {
-    const [department] = await this.db
-      .select({ id: departments.id, name: departments.name, isActive: departments.isActive })
-      .from(departments)
-      .where(eq(departments.id, dto.departmentId))
-      .limit(1);
+    try {
+      const [department] = await this.db
+        .select({ id: departments.id, name: departments.name, isActive: departments.isActive })
+        .from(departments)
+        .where(eq(departments.id, dto.departmentId))
+        .limit(1);
 
-    if (!department || !department.isActive) {
-      throw new NotFoundException('Department not found');
+      if (!department || !department.isActive) {
+        throw new NotFoundException('Department not found');
+      }
+
+      const now = new Date();
+      const values: NewGrievanceRow = {
+        id: newId(),
+        name: dto.name,
+        email: '',
+        phone: '',
+        departmentId: dto.departmentId,
+        category: 'OTHER',
+        subject: `Complaint - ${department.name}`,
+        description: dto.complaint,
+        status: 'SUBMITTED',
+        complaintStatus: ComplaintStatus.SUBMITTED,
+        imageUrl: dto.imageUrl ?? null,
+        createdAt: now,
+        updatedAt: now,
+      } as Insert;
+
+      const [created] = await this.db.insert(grievances).values(values).returning();
+      return created;
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      this.logger.error(`Failed to create complaint: ${(error as Error).message}`);
+      throw new BadRequestException('Unable to submit complaint. Please try again.');
     }
-
-    const now = new Date();
-    const values: NewGrievanceRow = {
-      id: newId(),
-      name: dto.name,
-      email: '',
-      phone: '',
-      departmentId: dto.departmentId,
-      category: 'OTHER',
-      subject: `Complaint - ${department.name}`,
-      description: dto.complaint,
-      status: 'SUBMITTED',
-      complaintStatus: ComplaintStatus.SUBMITTED,
-      imageUrl: dto.imageUrl ?? null,
-      createdAt: now,
-      updatedAt: now,
-    } as Insert;
-
-    const [created] = await this.db.insert(grievances).values(values).returning();
-    return created;
   }
 
   // -------------------------------------------------------------------------
@@ -359,40 +367,45 @@ export class ComplaintsService {
   }
 
   async getStats(userId?: string, userRole?: string) {
-    const conditions = [isNotNull(grievances.complaintStatus)];
+    try {
+      const conditions = [isNotNull(grievances.complaintStatus)];
 
-    if (userRole && userRole !== UserRole.ADMIN && userId) {
-      const { condition } = await this.departmentCondition(userId, userRole);
-      if (condition) conditions.push(condition);
+      if (userRole && userRole !== UserRole.ADMIN && userId) {
+        const { condition } = await this.departmentCondition(userId, userRole);
+        if (condition) conditions.push(condition);
+      }
+
+      const where = conditions.length > 0 ? and(...conditions) : undefined;
+
+      const total = await this.db.select({ value: count() }).from(grievances).where(where);
+
+      const byStatus = await this.db
+        .select({ status: grievances.complaintStatus, value: count() })
+        .from(grievances)
+        .where(where)
+        .groupBy(grievances.complaintStatus);
+
+      const stats: Record<ComplaintStatus, number> = {
+        SUBMITTED: 0,
+        UNDER_REVIEW: 0,
+        IN_PROGRESS: 0,
+        RESOLVED: 0,
+        CLOSED: 0,
+        REJECTED: 0,
+      };
+
+      for (const row of byStatus) {
+        stats[row.status as ComplaintStatus] = Number(row.value);
+      }
+
+      return {
+        total: Number(total[0]?.value ?? 0),
+        byStatus: stats,
+      };
+    } catch (error) {
+      this.logger.error(`Failed to fetch complaint stats: ${(error as Error).message}`);
+      throw new BadRequestException('Unable to fetch complaint statistics. Please try again.');
     }
-
-    const where = conditions.length > 0 ? and(...conditions) : undefined;
-
-    const total = await this.db.select({ value: count() }).from(grievances).where(where);
-
-    const byStatus = await this.db
-      .select({ status: grievances.complaintStatus, value: count() })
-      .from(grievances)
-      .where(where)
-      .groupBy(grievances.complaintStatus);
-
-    const stats: Record<ComplaintStatus, number> = {
-      SUBMITTED: 0,
-      UNDER_REVIEW: 0,
-      IN_PROGRESS: 0,
-      RESOLVED: 0,
-      CLOSED: 0,
-      REJECTED: 0,
-    };
-
-    for (const row of byStatus) {
-      stats[row.status as ComplaintStatus] = Number(row.value);
-    }
-
-    return {
-      total: Number(total[0]?.value ?? 0),
-      byStatus: stats,
-    };
   }
 
   // -------------------------------------------------------------------------
