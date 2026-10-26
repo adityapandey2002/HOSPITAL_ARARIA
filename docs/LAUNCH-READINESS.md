@@ -45,7 +45,7 @@ time-boxed in `docs/security/audit-allowlist.json` with an expiry of
 | `axios` | No 1.x release contains the fix (registry latest is 1.12.2; advisories reference 1.15.0). | Client only calls the build-time `NEXT_PUBLIC_API_URL`; no user-supplied URL or proxy config. |
 | `form-data` | Fix is 4.0.6, unpublished (latest 4.0.4). | Reached only through `axios`/`supertest`; all public forms submit JSON. |
 | `zod` | Fix is 4.6.7, unpublished (latest 4.6.5). | Frontend form validation only; backend re-validates every request with `class-validator` DTOs. |
-| `body-parser`, `express`, `@nestjs/platform-express` | One transitive chain: `body-parser` 2.4.0 (the fix) is unpublished. Express 5 cannot use body-parser 1.x. | Both parsers mounted explicitly in `src/bootstrap.ts` with a 100 kB limit; Vercel caps the function at 30 s / 1024 MB. |
+| `body-parser`, `express`, `@nestjs/platform-express` | One transitive chain: `body-parser` 2.4.0 (the fix) is unpublished. Express 5 cannot use body-parser 1.x. | Both parsers mounted explicitly in `src/bootstrap.ts` with a 100 kB limit (2 MB only for `POST /api/v1/complaints`, which carries an optional photo — see `docs/adr/0004-complaint-image-storage.md`); Vercel caps the function at 30 s / 1024 MB. |
 | `multer` | The newest advisory covers `<2.5.0`; 2.5.0 is unpublished and Nest pins 2.2.0 exactly. | No upload endpoint exists in the backend, so the multipart parser is never reached. |
 
 The registry on this machine is behind the advisory database for all four causes
