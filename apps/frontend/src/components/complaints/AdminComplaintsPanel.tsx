@@ -331,10 +331,12 @@ export function AdminComplaintsPanel() {
       if (departmentFilter) params.departmentId = departmentFilter;
       if (statusFilter) params.status = statusFilter;
 
-      const response = await api.get<any>('/complaints', params);
-      const data = handleApiResponse(response);
-      setItems(data.data ?? []);
-      setMeta(data.meta ?? null);
+      const response = await api.get<any[]>('/complaints', params);
+      // TransformInterceptor flattens `{ data, meta }` into `{ success, data, meta }`,
+      // so `handleApiResponse` already returns the complaint array. Pagination
+      // metadata stays on the envelope, exactly as FeedbackInbox consumes it.
+      setItems(handleApiResponse(response) ?? []);
+      setMeta(response.meta ?? null);
     } catch (error) {
       setListError(getErrorMessage(error, 'We could not load complaints.'));
     } finally {
