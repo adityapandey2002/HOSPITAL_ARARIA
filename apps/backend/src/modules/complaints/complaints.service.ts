@@ -47,6 +47,20 @@ type Select = typeof grievances.$inferSelect;
 type Insert = typeof grievances.$inferInsert;
 
 /**
+ * Only renderable photo references leave the API.
+ *
+ * Complaints submitted before the photo pipeline was fixed hold `blob:` URLs,
+ * which only ever resolved inside the browser tab that created them. Returning
+ * them hands the admin panel a permanently broken image, so they read as "no
+ * photo" until the row is re-submitted.
+ */
+const DISPLAYABLE_IMAGE_PATTERN = /^(?:https?:\/\/|data:image\/(?:jpeg|png|webp);base64,)/i;
+
+function toDisplayableImageUrl(value: string | null | undefined): string | null {
+  return typeof value === 'string' && DISPLAYABLE_IMAGE_PATTERN.test(value) ? value : null;
+}
+
+/**
  * Owns public complaint submission and admin-side complaint tracking.
  *
  * ADMIN sees every complaint — no department restrictions, period.
@@ -90,7 +104,7 @@ export class ComplaintsService {
         description: dto.complaint,
         status: 'SUBMITTED',
         complaintStatus: ComplaintStatus.SUBMITTED,
-        imageUrl: dto.imageUrl ?? null,
+        imageUrl: toDisplayableImageUrl(dto.imageUrl),
         createdAt: now,
         updatedAt: now,
       } as Insert;
@@ -158,7 +172,7 @@ export class ComplaintsService {
       .limit(1);
 
     if (!row) throw new NotFoundException('Complaint not found');
-    return row;
+    return { ...row, imageUrl: toDisplayableImageUrl(row.imageUrl) };
   }
 
   // -------------------------------------------------------------------------
@@ -282,6 +296,7 @@ export class ComplaintsService {
     return {
       data: rows.map((row) => ({
         ...row,
+        imageUrl: toDisplayableImageUrl(row.imageUrl),
         history: histories.get(row.id) ?? [],
       })),
       meta: { page, limit, total, totalPages: Math.ceil(total / limit) },
@@ -366,7 +381,11 @@ export class ComplaintsService {
       }
     }
 
-    return { ...row, history: await this.getHistory(id) };
+    return {
+      ...row,
+      imageUrl: toDisplayableImageUrl(row.imageUrl),
+      history: await this.getHistory(id),
+    };
   }
 
   // -------------------------------------------------------------------------
@@ -548,7 +567,7 @@ export class ComplaintsService {
           escapeCsv(row.resolution ?? ''),
           escapeCsv(row.createdAt?.toISOString() ?? ''),
           escapeCsv(row.updatedAt?.toISOString() ?? ''),
-          escapeCsv(row.imageUrl ?? ''),
+          escapeCsv(toDisplayableImageUrl(row.imageUrl) ?? ''),
         ].join(',')
       );
     }

@@ -36,12 +36,18 @@ export class CreateComplaintDto {
   complaint!: string;
 
   @ApiPropertyOptional({
-    maxLength: 2000,
-    description: 'Optional photo taken with the camera option',
+    maxLength: 2_000_000,
+    description:
+      'Optional photo, either an https URL or a base64 data URL (data:image/jpeg;base64,…)',
   })
   @IsOptional()
   @IsString()
-  @MaxLength(2000)
+  @MaxLength(2_000_000)
+  // `blob:` URLs only resolve inside the browser tab that created them, so
+  // storing one guarantees a permanently broken photo.
+  @Matches(/^(?:https?:\/\/|data:image\/(?:jpeg|png|webp);base64,)/i, {
+    message: 'imageUrl must be an http(s) URL or a base64-encoded image',
+  })
   imageUrl?: string;
 }
 

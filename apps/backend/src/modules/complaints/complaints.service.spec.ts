@@ -225,4 +225,38 @@ describe('ComplaintsService', () => {
     expect(result.data[0].history).toEqual([historyEntry as never]);
     expect(result.meta).toEqual({ page: 1, limit: 10, total: 1, totalPages: 1 });
   });
+
+  it('drops a blob: photo instead of storing a URL that dies with the tab', async () => {
+    await setup([[department], [complaint]]);
+
+    await service.create({
+      name: 'Test Citizen',
+      departmentId: 'dept-1',
+      complaint: 'The pharmacy ran out of my medicine.',
+      imageUrl: 'blob:http://localhost:3000/4c2da3ca-ad2d-4ac6-8356-1ce73c12eb28',
+    });
+
+    const complaintInsert = builderOf(db, 'insert', 0);
+    expect(complaintInsert.values.mock.calls[0][0]).toEqual(
+      expect.objectContaining({ imageUrl: null })
+    );
+  });
+
+  it('keeps a stored photo and hides legacy blob references in the list', async () => {
+    const photo = 'data:image/jpeg;base64,/9j/4AAQSkZJRg==';
+
+    await setup([
+      [
+        { ...complaint, imageUrl: photo },
+        { ...complaint, id: 'complaint-2', imageUrl: 'blob:http://localhost:3000/dead' },
+      ],
+      [{ value: 2 }],
+      [historyEntry, { ...historyEntry, id: 'history-2', complaintId: 'complaint-2' }],
+    ]);
+
+    const result = await service.findAll({ page: 1, limit: 10 }, {}, 'admin-1', UserRole.ADMIN);
+
+    expect(result.data[0].imageUrl).toBe(photo);
+    expect(result.data[1].imageUrl).toBeNull();
+  });
 });

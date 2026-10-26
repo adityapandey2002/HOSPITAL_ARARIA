@@ -13,6 +13,7 @@ import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import helmet from 'helmet';
 import compression from 'compression';
+import { json, type NextFunction, type Request, type Response } from 'express';
 
 import { AppModule } from './app.module';
 import { isServerlessRuntime } from './config/database-url';
@@ -71,6 +72,19 @@ export async function createApp(options: CreateAppOptions = {}): Promise<NestExp
   // shorter. A 100 kB ceiling bounds decompression work per request, which is
   // the mitigating control for the unfixed body-parser advisory (see
   // docs/SECURITY.md), and it fails fast with a 413 instead of buffering.
+  //
+  // The single exception is complaint submission, where an optional photo
+  // travels as a base64 data URL (see docs/adr/0004-complaint-image-storage.md).
+  // Only POST to that path gets the larger ceiling: body-parser marks the
+  // request as read, so the global 100 kB parser skips it, and every other
+  // method and route keeps the tight limit.
+  app.use(
+    '/api/v1/complaints',
+    (req: Request, res: Response, next: NextFunction) => {
+      if (req.method !== 'POST') return next();
+      return json({ limit: '2mb' })(req, res, next);
+    }
+  );
   app.useBodyParser('json', { limit: '100kb' });
   app.useBodyParser('urlencoded', { limit: '100kb', extended: true });
 
