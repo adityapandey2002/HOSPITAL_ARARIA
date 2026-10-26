@@ -6,12 +6,12 @@ import Link from 'next/link';
 import { Button, Input, Select, Textarea } from '@dh-araria/ui/components';
 import type { Department } from '@dh-araria/shared/types';
 import { api, handleApiResponse } from '@/lib/api';
+import { compressImageToDataUrl, validateImageFile } from '@/lib/complaint-image';
 import { getErrorMessage } from '@/lib/feedback';
 import { useAuth } from '@/context/AuthContext';
 
 type FieldErrors = Partial<Record<'departmentId' | 'name' | 'complaint', string>>;
 
-const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const ACCEPTED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 
 interface ComplaintFormProps {
@@ -27,8 +27,12 @@ export function ComplaintForm({ initialDepartmentId }: ComplaintFormProps) {
   const [name, setName] = useState('');
   const [departmentId, setDepartmentId] = useState(initialDepartmentId ?? '');
   const [complaint, setComplaint] = useState('');
-  const [imageFile, setImageFile] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  /**
+   * The compressed JPEG as a data URL — this is what gets submitted. A blob
+   * URL would die with the tab, so it is never stored or sent.
+   */
+  const [imageDataUrl, setImageDataUrl] = useState<string | null>(null);
+  const [imageProcessing, setImageProcessing] = useState(false);
   const [imageError, setImageError] = useState<string | null>(null);
 
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
@@ -40,6 +44,8 @@ export function ComplaintForm({ initialDepartmentId }: ComplaintFormProps) {
   const errorSummaryRef = useRef<HTMLDivElement>(null);
   const successHeadingRef = useRef<HTMLHeadingElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  /** Guards against a slow compression overwriting a newer selection. */
+  const imageRequestRef = useRef(0);
 
   const { user, isAuthenticated } = useAuth();
 
@@ -115,32 +121,46 @@ export function ComplaintForm({ initialDepartmentId }: ComplaintFormProps) {
     return errors;
   };
 
-  const handleImageChange = (event: ChangeEvent<HTMLInputElement>) => {
+  const handleImageChange = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0] ?? null;
     setImageError(null);
 
     if (!file) return;
 
-    if (!ACCEPTED_IMAGE_TYPES.includes(file.type)) {
-      setImageError('Please upload a JPEG, PNG or WebP image.');
+    const problem = validateImageFile(file);
+    if (problem) {
+      setImageError(problem);
       if (fileInputRef.current) fileInputRef.current.value = '';
       return;
     }
 
-    if (file.size > MAX_FILE_SIZE) {
-      setImageError('Image must be smaller than 5 MB.');
-      if (fileInputRef.current) fileInputRef.current.value = '';
-      return;
-    }
+    const requestId = imageRequestRef.current + 1;
+    imageRequestRef.current = requestId;
+    setImageProcessing(true);
 
-    setImageFile(file);
-    setImagePreview(URL.createObjectURL(file));
+    try {
+      // Shrink and re-encode in the browser: the compressed data URL is what
+      // travels in the JSON payload and what later renders in the admin panel.
+      const dataUrl = await compressImageToDataUrl(file);
+      if (imageRequestRef.current !== requestId) return;
+      setImageDataUrl(dataUrl);
+    } catch (error) {
+      if (imageRequestRef.current !== requestId) return;
+      setImageDataUrl(null);
+      // Deliberately not `getErrorMessage`: browser/canvas internals ("URL.createObjectURL
+      // is not a function") are not something a citizen can act on.
+      setImageError('We could not process that photo. Please try another image.');
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    } finally {
+      if (imageRequestRef.current === requestId) setImageProcessing(false);
+    }
   };
 
   const removeImage = () => {
-    if (imagePreview) URL.revokeObjectURL(imagePreview);
-    setImageFile(null);
-    setImagePreview(null);
+    // Invalidate any compression still in flight.
+    imageRequestRef.current += 1;
+    setImageDataUrl(null);
+    setImageProcessing(false);
     setImageError(null);
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
@@ -157,19 +177,11 @@ export function ComplaintForm({ initialDepartmentId }: ComplaintFormProps) {
       return;
     }
 
-    let imageUrl: string | undefined;
-    if (imageFile) {
-      // Convert the image to a base64 data URL so it can be sent as a string
-      // in the JSON payload. For production, this would be uploaded to object
-      // storage and the URL stored instead.
-      imageUrl = imagePreview!;
-    }
-
     const payload = {
       name: name.trim(),
       departmentId,
       complaint: complaint.trim(),
-      ...(imageUrl ? { imageUrl } : {}),
+      ...(imageDataUrl ? { imageUrl: imageDataUrl } : {}),
     };
 
     setIsSubmitting(true);
@@ -192,9 +204,9 @@ export function ComplaintForm({ initialDepartmentId }: ComplaintFormProps) {
     setSubmitted(false);
     setReferenceId(null);
     setComplaint('');
-    setImageFile(null);
-    if (imagePreview) URL.revokeObjectURL(imagePreview);
-    setImagePreview(null);
+    imageRequestRef.current += 1;
+    setImageDataUrl(null);
+    setImageProcessing(false);
     setImageError(null);
     setFieldErrors({});
     setSubmitError(null);
@@ -405,13 +417,14 @@ export function ComplaintForm({ initialDepartmentId }: ComplaintFormProps) {
                 </div>
                 <p className="mb-4 text-sm text-gray-600">
                   You can take a picture with your camera or upload an image to support your
-                  complaint. JPEG, PNG or WebP, up to 5 MB.
+                  complaint. JPEG, PNG or WebP, up to 5 MB. The photo is optimised before it is
+                  attached.
                 </p>
 
-                {imagePreview ? (
+                {imageDataUrl ? (
                   <div className="relative inline-block mb-3">
                     <img
-                      src={imagePreview}
+                      src={imageDataUrl}
                       alt="Complaint photo preview"
                       className="rounded-lg border border-gray-300 max-w-[300px] max-h-[300px] object-cover"
                     />
@@ -426,6 +439,12 @@ export function ComplaintForm({ initialDepartmentId }: ComplaintFormProps) {
                     </Button>
                   </div>
                 ) : null}
+
+                {imageProcessing && (
+                  <p className="mb-3 text-sm text-gray-600" role="status">
+                    Optimising your photo…
+                  </p>
+                )}
 
                 {imageError && (
                   <p className="mb-3 text-sm text-danger-600" role="alert">
@@ -449,9 +468,16 @@ export function ComplaintForm({ initialDepartmentId }: ComplaintFormProps) {
                     variant="outline"
                     size="sm"
                     onClick={() => fileInputRef.current?.click()}
-                    disabled={Boolean(imageFile)}
+                    disabled={Boolean(imageDataUrl) || imageProcessing}
+                    loading={imageProcessing}
                   >
-                    {imageFile ? 'Photo attached' : <><Camera className="mr-2 h-4 w-4" /> Take or upload photo</>}
+                    {imageDataUrl ? (
+                      'Photo attached'
+                    ) : (
+                      <>
+                        <Camera className="mr-2 h-4 w-4" /> Take or upload photo
+                      </>
+                    )}
                   </Button>
                 </label>
                 <p className="mt-1 text-xs text-gray-500">

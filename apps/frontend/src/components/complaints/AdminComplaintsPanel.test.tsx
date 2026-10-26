@@ -189,8 +189,20 @@ describe('AdminComplaintsPanel', () => {
     expect(within(trail as HTMLElement).getByText(/Asha Kumari · STAFF/)).toBeInTheDocument();
   });
 
-  it('shows the attached photo and opens it in a full-screen viewer', async () => {
-    mockApi([{ ...complaint, imageUrl: photoDataUrl }]);
+  it('shows no photo for a dead blob reference stored by the old form', async () => {
+    mockApi([
+      {
+        ...complaint,
+        imageUrl: 'blob:http://localhost:3000/4c2da3ca-ad2d-4ac6-8356-1ce73c12eb28',
+      },
+    ]);
+    render(<AdminComplaintsPanel />);
+
+    expect(await screen.findByText('Test Complainant')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /view photo attached/i })).not.toBeInTheDocument();
+  });
+
+  it('shows the attached photo and opens it in a full-screen viewer', async () => {    mockApi([{ ...complaint, imageUrl: photoDataUrl }]);
     render(<AdminComplaintsPanel />);
 
     const thumbnail = await screen.findByRole('img', {

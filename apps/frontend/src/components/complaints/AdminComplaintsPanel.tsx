@@ -23,6 +23,7 @@ import { cn } from '@dh-araria/shared/utils';
 import { Badge, Button, Select } from '@dh-araria/ui/components';
 import { api, handleApiResponse } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
+import { isDisplayableImageUrl } from '@/lib/complaint-image';
 import { getDepartmentShortName, getDepartmentTagTone } from '@/lib/department-tag';
 import { formatDateTime } from '@dh-araria/shared/utils';
 
@@ -134,7 +135,8 @@ function ComplaintCard({
   onPhotoOpen,
 }: ComplaintCardProps) {
   const stamp = formatDateTime(item.createdAt);
-  const hasImage = typeof item.imageUrl === 'string' && item.imageUrl.length > 0;
+  // Legacy rows hold dead `blob:` URLs, so only render a photo we can load.
+  const hasImage = isDisplayableImageUrl(item.imageUrl);
   const hasContact = Boolean(item.phone || item.email);
   const isResolved =
     item.complaintStatus === ComplaintStatus.RESOLVED ||
