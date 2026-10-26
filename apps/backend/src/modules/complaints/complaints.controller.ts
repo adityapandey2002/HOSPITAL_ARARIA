@@ -103,6 +103,22 @@ export class ComplaintsController {
     return res.send(csv);
   }
 
+  @Get(':id/history')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.STAFF)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Status trail for one complaint (Admin/Staff, department-scoped for staff)' })
+  @ApiResponse({ status: 200, description: 'History retrieved successfully' })
+  async getHistory(
+    @Param('id') id: string,
+    @CurrentUser('id') userId: string,
+    @CurrentUser('role') userRole: string
+  ) {
+    // findById performs the department-scope check before any history is read.
+    await this.complaintsService.findById(id, userId, userRole);
+    return this.complaintsService.getHistory(id);
+  }
+
   @Get(':id')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
@@ -126,8 +142,16 @@ export class ComplaintsController {
     @Param('id') id: string,
     @Body() dto: UpdateComplaintStatusDto,
     @CurrentUser('id') userId: string,
-    @CurrentUser('role') userRole: string
+    @CurrentUser('role') userRole: string,
+    @CurrentUser('name') actorName: string
   ) {
-    return this.complaintsService.updateStatus(id, dto.status, userId, userRole, dto.resolution);
+    return this.complaintsService.updateStatus(
+      id,
+      dto.status,
+      userId,
+      userRole,
+      actorName,
+      dto.resolution
+    );
   }
 }

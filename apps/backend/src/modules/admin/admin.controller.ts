@@ -22,8 +22,11 @@ import { AdminService } from './admin.service';
 import {
   AssignDepartmentAccessDto,
   CreateDoctorDto,
+  CreateStaffDto,
   DepartmentAccessResponseDto,
+  StaffMemberDto,
   UpdateDoctorDto,
+  UpdateStaffDto,
 } from './dto/admin.dto';
 
 @ApiTags('Admin')
@@ -68,6 +71,40 @@ export class AdminController {
   @ApiResponse({ status: 200, description: 'Doctor removed successfully' })
   deleteDoctor(@Param('id') id: string) {
     return this.adminService.deleteDoctor(id);
+  }
+
+  // -------------------------------------------------------------------------
+  // Department staff accounts
+  // -------------------------------------------------------------------------
+
+  @Get('staff')
+  @ApiOperation({ summary: 'List department staff accounts and their access (Admin)' })
+  @ApiResponse({ status: 200, description: 'Staff retrieved successfully' })
+  listStaff(): Promise<StaffMemberDto[]> {
+    return this.adminService.listStaff();
+  }
+
+  @Post('staff')
+  @ApiOperation({ summary: 'Create a STAFF account with department complaint access (Admin)' })
+  @ApiResponse({ status: 201, description: 'Staff account created' })
+  @ApiResponse({ status: 409, description: 'Email or phone already in use' })
+  createStaff(
+    @Body() dto: CreateStaffDto,
+    @CurrentUser('id') grantedBy: string
+  ): Promise<StaffMemberDto> {
+    return this.adminService.createStaff(dto, grantedBy);
+  }
+
+  @Patch('staff/:id')
+  @ApiOperation({ summary: 'Update a staff account, password, or department access (Admin)' })
+  @ApiResponse({ status: 200, description: 'Staff account updated' })
+  @ApiResponse({ status: 404, description: 'Staff member not found' })
+  updateStaff(
+    @Param('id') id: string,
+    @Body() dto: UpdateStaffDto,
+    @CurrentUser('id') grantedBy: string
+  ): Promise<StaffMemberDto> {
+    return this.adminService.updateStaff(id, dto, grantedBy);
   }
 
   // -------------------------------------------------------------------------

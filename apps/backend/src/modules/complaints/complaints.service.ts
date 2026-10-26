@@ -1,14 +1,16 @@
 import { BadRequestException, ForbiddenException, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
-import { and, count, desc, eq, inArray, isNotNull, sql } from 'drizzle-orm';
+import { and, asc, count, desc, eq, inArray, isNotNull, sql } from 'drizzle-orm';
 import { ComplaintStatus, UserRole, isStaffRole } from '@dh-araria/shared';
 
 import { PaginationDto } from '../../common/dto/pagination.dto';
 import { DRIZZLE, type DrizzleDb } from '../../common/drizzle/drizzle.module';
 import { newId } from '../../common/drizzle/id';
 import {
+  complaintStatusHistory,
   complaintViewers,
   departments,
   grievances,
+  users,
   type GrievanceRow,
   type NewGrievanceRow,
 } from '../../common/drizzle/schema';
@@ -22,6 +24,23 @@ import type {
 
 export interface ComplaintWithDetails extends GrievanceRow {
   departmentName?: string | null;
+  /** Display name of the account that last moved this complaint. */
+  assignedToName?: string | null;
+  /** Oldest first, so the UI can render it as a timeline. */
+  history?: ComplaintHistoryEntry[];
+}
+
+/** One status transition as returned to ADMIN and STAFF callers. */
+export interface ComplaintHistoryEntry {
+  id: string;
+  complaintId: string;
+  fromStatus: ComplaintStatus | null;
+  toStatus: ComplaintStatus;
+  resolution: string | null;
+  changedBy: string | null;
+  changedByName: string;
+  changedByRole: string | null;
+  createdAt: Date;
 }
 
 type Select = typeof grievances.$inferSelect;
@@ -76,8 +95,25 @@ export class ComplaintsService {
         updatedAt: now,
       } as Insert;
 
-      const [created] = await this.db.insert(grievances).values(values).returning();
-      return created;
+      // The complaint and its first history entry are one unit: a complaint
+      // must never exist without a row explaining how it got its status.
+      return await this.db.transaction(async (tx) => {
+        const [created] = await tx.insert(grievances).values(values).returning();
+
+        await tx.insert(complaintStatusHistory).values({
+          id: newId(),
+          complaintId: created.id,
+          fromStatus: null,
+          toStatus: ComplaintStatus.SUBMITTED,
+          resolution: null,
+          changedBy: null,
+          changedByName: dto.name,
+          changedByRole: null,
+          createdAt: now,
+        });
+
+        return created;
+      });
     } catch (error) {
       const err = error as Error;
       this.logger.error(
@@ -227,9 +263,11 @@ export class ComplaintsService {
           createdAt: grievances.createdAt,
           updatedAt: grievances.updatedAt,
           departmentName: departments.name,
+          assignedToName: users.name,
         })
         .from(grievances)
         .leftJoin(departments, eq(grievances.departmentId, departments.id))
+        .leftJoin(users, eq(grievances.assignedTo, users.id))
         .where(where)
         .orderBy(orderBy)
         .limit(limit)
@@ -237,11 +275,56 @@ export class ComplaintsService {
       this.db.select({ value: count() }).from(grievances).where(where),
     ]);
 
+    // One batched query for the page, not one per card.
+    const histories = await this.loadHistories(rows.map((row) => row.id));
+
     const total = totals[0]?.value ?? 0;
     return {
-      data: rows,
+      data: rows.map((row) => ({
+        ...row,
+        history: histories.get(row.id) ?? [],
+      })),
       meta: { page, limit, total, totalPages: Math.ceil(total / limit) },
     };
+  }
+
+  // -------------------------------------------------------------------------
+  // Status history
+  // -------------------------------------------------------------------------
+
+  private async loadHistories(complaintIds: string[]) {
+    const byComplaint = new Map<string, ComplaintHistoryEntry[]>();
+    if (complaintIds.length === 0) return byComplaint;
+
+    const rows = await this.db
+      .select({
+        id: complaintStatusHistory.id,
+        complaintId: complaintStatusHistory.complaintId,
+        fromStatus: complaintStatusHistory.fromStatus,
+        toStatus: complaintStatusHistory.toStatus,
+        resolution: complaintStatusHistory.resolution,
+        changedBy: complaintStatusHistory.changedBy,
+        changedByName: complaintStatusHistory.changedByName,
+        changedByRole: complaintStatusHistory.changedByRole,
+        createdAt: complaintStatusHistory.createdAt,
+      })
+      .from(complaintStatusHistory)
+      .where(inArray(complaintStatusHistory.complaintId, complaintIds))
+      .orderBy(asc(complaintStatusHistory.createdAt));
+
+    for (const row of rows) {
+      const list = byComplaint.get(row.complaintId) ?? [];
+      list.push(row as ComplaintHistoryEntry);
+      byComplaint.set(row.complaintId, list);
+    }
+
+    return byComplaint;
+  }
+
+  /** Oldest-first transition list for one complaint. */
+  async getHistory(complaintId: string): Promise<ComplaintHistoryEntry[]> {
+    const histories = await this.loadHistories([complaintId]);
+    return histories.get(complaintId) ?? [];
   }
 
   async findById(id: string, userId?: string, userRole?: string): Promise<ComplaintWithDetails> {
@@ -265,9 +348,11 @@ export class ComplaintsService {
         createdAt: grievances.createdAt,
         updatedAt: grievances.updatedAt,
         departmentName: departments.name,
+        assignedToName: users.name,
       })
       .from(grievances)
       .leftJoin(departments, eq(grievances.departmentId, departments.id))
+      .leftJoin(users, eq(grievances.assignedTo, users.id))
       .where(eq(grievances.id, id))
       .limit(1);
 
@@ -281,7 +366,7 @@ export class ComplaintsService {
       }
     }
 
-    return row;
+    return { ...row, history: await this.getHistory(id) };
   }
 
   // -------------------------------------------------------------------------
@@ -293,6 +378,7 @@ export class ComplaintsService {
     status: ComplaintStatus,
     userId: string,
     userRole: string,
+    actorName: string,
     resolution?: string
   ): Promise<GrievanceRow> {
     if (!isStaffRole(userRole)) {
@@ -310,21 +396,40 @@ export class ComplaintsService {
     }
 
     const oldStatus = (existing.complaintStatus ?? ComplaintStatus.SUBMITTED) as ComplaintStatus;
+    const now = new Date();
 
-    const [updated] = await this.db
-      .update(grievances)
-      .set({
-        complaintStatus: status,
-        status:
-          status === ComplaintStatus.RESOLVED || status === ComplaintStatus.CLOSED
-            ? 'RESOLVED'
-            : status,
-        resolution,
-        assignedTo: userId,
-        updatedAt: new Date(),
-      } as Partial<Insert>)
-      .where(eq(grievances.id, id))
-      .returning();
+    // The status change and its trail commit together, so the admin panel can
+    // never show a status that no history entry explains.
+    const updated = await this.db.transaction(async (tx) => {
+      const [row] = await tx
+        .update(grievances)
+        .set({
+          complaintStatus: status,
+          status:
+            status === ComplaintStatus.RESOLVED || status === ComplaintStatus.CLOSED
+              ? 'RESOLVED'
+              : status,
+          resolution,
+          assignedTo: userId,
+          updatedAt: now,
+        } as Partial<Insert>)
+        .where(eq(grievances.id, id))
+        .returning();
+
+      await tx.insert(complaintStatusHistory).values({
+        id: newId(),
+        complaintId: id,
+        fromStatus: oldStatus,
+        toStatus: status,
+        resolution: resolution ?? null,
+        changedBy: userId,
+        changedByName: actorName,
+        changedByRole: userRole === UserRole.ADMIN ? UserRole.ADMIN : UserRole.STAFF,
+        createdAt: now,
+      });
+
+      return row;
+    });
 
     // Best-effort notification: never blocks the status transition.
     await this.notifications
