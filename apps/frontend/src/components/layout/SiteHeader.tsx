@@ -99,17 +99,12 @@ export function SiteHeader() {
               <MapPin className="h-3.5 w-3.5" aria-hidden="true" />
               {shortAddress()}
             </span>
-            <a
-              href={telHref(HOSPITAL.receptionPhone)}
+            <Link
+              href="/contact"
               className="inline-flex items-center gap-1.5 rounded text-white/85 transition-colors hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-primary-800"
             >
-              <Phone className="h-3.5 w-3.5" aria-hidden="true" />
-              {HOSPITAL.receptionPhone}
-            </a>
-            <span className="inline-flex items-center gap-1.5 font-semibold text-white">
-              <Siren className="h-3.5 w-3.5 text-warning-300" aria-hidden="true" />
-              Emergency 108 / 102
-            </span>
+              Emergency contacts
+            </Link>
           </div>
 
           <div className="flex shrink-0 items-center gap-4">
