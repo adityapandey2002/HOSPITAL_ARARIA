@@ -71,6 +71,13 @@
       "when": 1793088734400,
       "tag": "0009_ordinary_sphinx",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1793089169163,
+      "tag": "0010_optimal_proemial_gods",
+      "breakpoints": true
     }
   ]
 }

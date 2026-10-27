@@ -589,3 +589,63 @@ export const slideshowImages = pgTable(
 
 export type SlideshowImageRow = typeof slideshowImages.$inferSelect;
 export type NewSlideshowImageRow = typeof slideshowImages.$inferInsert;
+
+/**
+ * Hospital-wide quality initiatives (NQAS, KAYAKALP, MUSQAN) launched by
+ * admins. `type` is one of the supported initiative kinds.
+ */
+export const qualityEvents = pgTable(
+  'quality_events',
+  {
+    id: text('id').primaryKey(),
+    type: text('type').notNull(),
+    title: text('title').notNull(),
+    description: text('description'),
+    startDate: timestamp('startDate', { mode: 'date' }).notNull().defaultNow(),
+    endDate: timestamp('endDate', { mode: 'date' }),
+    isActive: boolean('isActive').notNull().default(true),
+    isArchived: boolean('isArchived').notNull().default(false),
+    createdBy: text('createdBy').references(() => users.id, { onDelete: 'set null' }),
+    createdAt: timestamp('createdAt', { mode: 'date' }).notNull().defaultNow(),
+    updatedAt: timestamp('updatedAt', { mode: 'date' }).notNull().defaultNow(),
+  },
+  (t) => ({
+    typeIdx: index('quality_events_type_idx').on(t.type),
+    isActiveIdx: index('quality_events_isActive_idx').on(t.isActive),
+  })
+);
+
+export type QualityEventRow = typeof qualityEvents.$inferSelect;
+export type NewQualityEventRow = typeof qualityEvents.$inferInsert;
+
+/**
+ * Per-department tasks generated when an event is launched. In-charges mark
+ * `isCompleted`; `completedBy`/`completedAt` record who and when.
+ */
+export const qualityEventTasks = pgTable(
+  'quality_event_tasks',
+  {
+    id: text('id').primaryKey(),
+    eventId: text('eventId')
+      .notNull()
+      .references(() => qualityEvents.id, { onDelete: 'cascade' }),
+    departmentId: text('departmentId')
+      .notNull()
+      .references(() => departments.id, { onDelete: 'cascade' }),
+    title: text('title').notNull(),
+    description: text('description'),
+    isCompleted: boolean('isCompleted').notNull().default(false),
+    completedBy: text('completedBy').references(() => users.id, { onDelete: 'set null' }),
+    completedAt: timestamp('completedAt', { mode: 'date' }),
+    createdAt: timestamp('createdAt', { mode: 'date' }).notNull().defaultNow(),
+    updatedAt: timestamp('updatedAt', { mode: 'date' }).notNull().defaultNow(),
+  },
+  (t) => ({
+    eventIdx: index('quality_event_tasks_eventId_idx').on(t.eventId),
+    departmentIdx: index('quality_event_tasks_departmentId_idx').on(t.departmentId),
+    completedIdx: index('quality_event_tasks_isCompleted_idx').on(t.isCompleted),
+  })
+);
+
+export type QualityEventTaskRow = typeof qualityEventTasks.$inferSelect;
+export type NewQualityEventTaskRow = typeof qualityEventTasks.$inferInsert;
