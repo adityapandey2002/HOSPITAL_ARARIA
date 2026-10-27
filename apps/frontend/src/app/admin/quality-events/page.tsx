@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import Link from 'next/link';
 import { Button, Input, Card, Select } from '@dh-araria/ui/components';
 import { api, handleApiResponse } from '@/lib/api';
 import { toast } from 'sonner';
@@ -131,6 +132,9 @@ export default function AdminQualityEventsPage() {
                   <Button size="sm" variant="outline" onClick={() => loadProgress(ev.id)}>
                     Progress
                   </Button>
+                  <Link href={`/admin/quality-events/${ev.id}`} className="text-sm text-primary-700 hover:underline">
+                    Tasks
+                  </Link>
                   <Button size="sm" variant="ghost" onClick={() => toggleArchive(ev)}>
                     {ev.isArchived ? 'Unarchive' : 'Archive'}
                   </Button>
