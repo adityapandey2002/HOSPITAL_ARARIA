@@ -99,13 +99,13 @@ Slideshow:
 - Homepage slideshow uses managed images.
 - All endpoints role-guarded; tests pass; type-check passes.
 
-## Open questions
+## Open questions (resolved)
 
-1. Should task templates be hardcoded per event type or admin-defined?
-2. Is there a dedicated HM role, or reuse ADMIN?
-3. Slideshow storage: upload to existing provider or URL-only initially?
-4. Should events have an end date / auto-archive?
-5. Notifications to in-charges when event launches?
+1. Task templates: **hardcoded per event type** (NQAS/KAYAKALP/MUSQAN).
+2. HM role: **reuse ADMIN**.
+3. Slideshow storage: **both** — URL paste now; file upload when storage provider exists.
+4. Event lifecycle: **manual archive** (admin toggles).
+5. Notifications: **none** for now (no transport).
 
 ## Delivery
 
