@@ -21,6 +21,7 @@ import {
   ScrollText,
   ShieldCheck,
   Stethoscope,
+  Trophy,
   UserCog,
   Users,
 } from 'lucide-react';
@@ -139,6 +140,13 @@ export const ADMIN_NAV: Array<NavLink & { roles: UserRole[] }> = [
     label: 'Slideshow',
     description: 'Homepage slideshow images',
     icon: Images,
+    roles: [UserRole.ADMIN],
+  },
+  {
+    href: '/admin/quality-events',
+    label: 'Quality events',
+    description: 'NQAS, KAYAKALP, MUSQAN progress',
+    icon: Trophy,
     roles: [UserRole.ADMIN],
   },
   {
