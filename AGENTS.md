@@ -38,10 +38,10 @@ No database is required to commit; schema:check, tsc, and Jest all run offline.
 PostgreSQL with two ORMs and a hard ownership boundary (see
 `docs/adr/0001-dual-orm-table-ownership.md`):
 
-- **Drizzle** owns 13 tables: `users`, `departments`, `doctors`, `time_slots`,
+- **Drizzle** owns 14 tables: `users`, `departments`, `doctors`, `time_slots`,
   `appointments`, `blood_stock`, `grievances`, `notices`, `contact_messages`,
   `feedback`, `feedback_viewers`, `complaint_viewers`,
-  `complaint_status_history`. The schema at
+  `complaint_status_history`, `slideshow_images`. The schema at
   `apps/backend/src/common/drizzle/schema.ts` is the DDL source of truth;
   `drizzle/` holds the committed migrations. `feedback` joined this side in
   `docs/adr/0002-feedback-table-ownership.md`; `complaint_status_history` in

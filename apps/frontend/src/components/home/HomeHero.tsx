@@ -56,15 +56,46 @@ export function HomeHero() {
             </Link>
           </div>
 
-          <div className="mt-7 border-t border-outline-variant pt-5">
-            <Link
-              href="/contact"
-              className="inline-flex items-center gap-2 text-label text-primary-700 underline-offset-2 hover:underline"
-            >
-              Contact the hospital and emergency services
-              <ArrowRight className="h-4 w-4" aria-hidden="true" />
-            </Link>
-          </div>
+          <dl className="mt-7 grid gap-x-6 gap-y-4 border-t border-outline-variant pt-5 sm:grid-cols-2">
+            <div className="flex items-start gap-2.5">
+              <Phone className="mt-0.5 h-4 w-4 shrink-0 text-primary-700" aria-hidden="true" />
+              <div className="min-w-0">
+                <dt className="text-label-sm uppercase tracking-wide text-on-surface-variant">
+                  Reception
+                </dt>
+                <dd className="text-label">
+                  <a
+                    href={telHref(HOSPITAL.receptionPhone)}
+                    className="rounded text-on-surface underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-600"
+                  >
+                    {HOSPITAL.receptionPhone}
+                  </a>
+                </dd>
+              </div>
+            </div>
+
+            <div className="flex items-start gap-2.5">
+              <Siren className="mt-0.5 h-4 w-4 shrink-0 text-emergency" aria-hidden="true" />
+              <div className="min-w-0">
+                <dt className="text-label-sm uppercase tracking-wide text-on-surface-variant">
+                  Emergency
+                </dt>
+                <dd className="flex flex-wrap gap-x-2 text-label">
+                  {HOSPITAL.emergencyNumbers.map((entry, index) => (
+                    <span key={entry.number} className="inline-flex items-center gap-2">
+                      {index > 0 && <span className="text-outline" aria-hidden="true">·</span>}
+                      <a
+                        href={telHref(entry.number)}
+                        className="rounded text-emergency underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emergency"
+                      >
+                        {entry.label} {entry.number}
+                      </a>
+                    </span>
+                  ))}
+                </dd>
+              </div>
+            </div>
+          </dl>
         </div>
 
         <MediaFrame priority className="w-full max-w-xl lg:justify-self-end" />

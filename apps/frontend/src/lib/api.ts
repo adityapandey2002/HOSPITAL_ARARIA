@@ -295,6 +295,23 @@ class ApiClient {
     return this.get<any>(`/notices/${id}`);
   }
 
+  // Slideshow (admin)
+  async getSlideshowImages() {
+    return this.get<any[]>('/slideshow/admin');
+  }
+
+  async createSlideshowImage(data: { url: string; alt?: string; caption?: string; sortOrder?: number }) {
+    return this.post<any>('/slideshow/admin', data);
+  }
+
+  async updateSlideshowImage(id: string, data: Partial<{ url: string; alt: string; caption: string; sortOrder: number; isActive: boolean }>) {
+    return this.patch<any>(`/slideshow/admin/${id}`, data);
+  }
+
+  async deleteSlideshowImage(id: string) {
+    return this.delete<any>(`/slideshow/admin/${id}`);
+  }
+
   // Health check
   async healthCheck() {
     return this.get<{ status: string; timestamp: string }>('/health/live');

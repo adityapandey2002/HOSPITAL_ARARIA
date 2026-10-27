@@ -14,6 +14,7 @@ import { AppointmentsModule } from './modules/appointments/appointments.module';
 import { BloodBankModule } from './modules/blood-bank/blood-bank.module';
 import { GrievancesModule } from './modules/grievances/grievances.module';
 import { NoticesModule } from './modules/notices/notices.module';
+import { SlideshowModule } from './modules/slideshow/slideshow.module';
 import { ContactModule } from './modules/contact/contact.module';
 import { FeedbackModule } from './modules/feedback/feedback.module';
 import { ComplaintsModule } from './modules/complaints/complaints.module';
@@ -67,6 +68,7 @@ import { validationSchema } from './config/validation';
     BloodBankModule,
     GrievancesModule,
     NoticesModule,
+    SlideshowModule,
     ContactModule,
     FeedbackModule,
     ComplaintsModule,

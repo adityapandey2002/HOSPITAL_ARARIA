@@ -10,6 +10,7 @@ import {
   FileText,
   HeartHandshake,
   HelpCircle,
+  Images,
   Hospital,
   Info,
   LayoutDashboard,
@@ -131,6 +132,13 @@ export const ADMIN_NAV: Array<NavLink & { roles: UserRole[] }> = [
     label: 'Nodal officers',
     description: 'Department escalation contacts',
     icon: UserCog,
+    roles: [UserRole.ADMIN],
+  },
+  {
+    href: '/admin/slideshow',
+    label: 'Slideshow',
+    description: 'Homepage slideshow images',
+    icon: Images,
     roles: [UserRole.ADMIN],
   },
   {

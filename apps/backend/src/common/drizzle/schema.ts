@@ -563,3 +563,29 @@ export const complaintStatusHistory = pgTable(
 
 export type ComplaintStatusHistoryRow = typeof complaintStatusHistory.$inferSelect;
 export type NewComplaintStatusHistoryRow = typeof complaintStatusHistory.$inferInsert;
+
+/**
+ * Homepage slideshow images managed by admins. `url` may be an uploaded asset
+ * path or an external image link. `sortOrder` controls display order; `isActive`
+ * toggles visibility without deleting.
+ */
+export const slideshowImages = pgTable(
+  'slideshow_images',
+  {
+    id: text('id').primaryKey(),
+    url: text('url').notNull(),
+    alt: text('alt'),
+    caption: text('caption'),
+    sortOrder: integer('sortOrder').notNull().default(0),
+    isActive: boolean('isActive').notNull().default(true),
+    createdAt: timestamp('createdAt', { mode: 'date' }).notNull().defaultNow(),
+    updatedAt: timestamp('updatedAt', { mode: 'date' }).notNull().defaultNow(),
+  },
+  (t) => ({
+    sortOrderIdx: index('slideshow_images_sortOrder_idx').on(t.sortOrder),
+    isActiveIdx: index('slideshow_images_isActive_idx').on(t.isActive),
+  })
+);
+
+export type SlideshowImageRow = typeof slideshowImages.$inferSelect;
+export type NewSlideshowImageRow = typeof slideshowImages.$inferInsert;
