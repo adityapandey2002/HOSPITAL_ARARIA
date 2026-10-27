@@ -149,12 +149,14 @@ describe('AdminComplaintsPanel', () => {
     });
   });
 
-  it('shows the department as a short tag with the full name on hover', async () => {
+  it('shows the full department name in a tag that truncates when space is tight', async () => {
+    mockApi([{ ...complaint, departmentName: 'Obstetrics & Gynecology' }]);
     render(<AdminComplaintsPanel />);
 
-    const tag = await screen.findByLabelText('Department: General Medicine');
-    expect(tag).toHaveTextContent('GM');
-    expect(tag).toHaveAttribute('title', 'General Medicine');
+    const tag = await screen.findByLabelText('Department: Obstetrics & Gynecology');
+    expect(tag).toHaveTextContent('Obstetrics & Gynecology');
+    expect(tag).toHaveAttribute('title', 'Obstetrics & Gynecology');
+    expect(within(tag).getByText('Obstetrics & Gynecology')).toHaveClass('truncate');
   });
 
   it('lays complaints out as a responsive card grid', async () => {

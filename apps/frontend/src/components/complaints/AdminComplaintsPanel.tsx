@@ -24,7 +24,7 @@ import { Badge, Button, Select } from '@dh-araria/ui/components';
 import { api, handleApiResponse } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
 import { isDisplayableImageUrl } from '@/lib/complaint-image';
-import { getDepartmentShortName, getDepartmentTagTone } from '@/lib/department-tag';
+import { getDepartmentTagTone } from '@/lib/department-tag';
 import { formatDateTime } from '@dh-araria/shared/utils';
 
 const PAGE_SIZE = 10;
@@ -108,13 +108,13 @@ function DepartmentTag({ name }: { name?: string | null }) {
   return (
     <span
       className={cn(
-        'inline-flex shrink-0 items-center rounded-md px-2 py-1 text-[10px] font-bold uppercase tracking-wider ring-1 ring-inset',
+        'inline-flex min-w-0 max-w-full flex-1 items-center rounded-md px-2 py-1 text-[11px] font-semibold leading-tight ring-1 ring-inset',
         getDepartmentTagTone(name)
       )}
       title={fullName}
       aria-label={`Department: ${fullName}`}
     >
-      {getDepartmentShortName(name)}
+      <span className="block truncate">{fullName}</span>
     </span>
   );
 }
@@ -158,6 +158,7 @@ function ComplaintCard({
           id={`complaint-status-${item.id}`}
           tabIndex={-1}
           size="sm"
+          className="shrink-0"
           variant={STATUS_BADGE[item.complaintStatus as ComplaintStatus]}
           dot
         >
