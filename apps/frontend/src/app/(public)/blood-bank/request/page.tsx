@@ -1,6 +1,4 @@
 import type { Metadata } from 'next';
-import { Header } from '@/components/Header';
-import { Footer } from '@/components/Footer';
 import { Button } from '@dh-araria/ui/components';
 import Link from 'next/link';
 
@@ -13,8 +11,7 @@ export const metadata: Metadata = {
 export default function BloodRequestPage() {
   return (
     <>
-      <Header />
-      <main id="main-content" className="min-h-screen bg-gray-50 pt-32">
+      <div>
         <section className="bg-danger-600 py-16 text-white sm:py-20">
           <div className="container mx-auto px-4 text-center">
             <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-white/20">
@@ -127,8 +124,7 @@ export default function BloodRequestPage() {
             </div>
           </div>
         </div>
-      </main>
-      <Footer />
+      </div>
     </>
   );
 }

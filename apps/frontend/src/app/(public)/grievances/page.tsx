@@ -1,6 +1,4 @@
 import { Metadata } from 'next';
-import { Header } from '@/components/Header';
-import { Footer } from '@/components/Footer';
 import { GrievanceForm } from '@/components/GrievanceForm';
 
 export const metadata: Metadata = {
@@ -12,8 +10,7 @@ export const metadata: Metadata = {
 export default function GrievancesPage() {
   return (
     <>
-      <Header />
-      <main id="main-content" className="min-h-screen pt-32">
+      <div>
         <section className="bg-warning-600 py-16 text-white">
           <div className="container mx-auto px-4 text-center">
             <h1 className="mb-4 text-4xl font-bold sm:text-5xl">Grievance Redressal</h1>
@@ -25,8 +22,7 @@ export default function GrievancesPage() {
         </section>
 
         <GrievanceForm />
-      </main>
-      <Footer />
+      </div>
     </>
   );
 }

@@ -37,13 +37,13 @@ describe('layout primitives', () => {
         eyebrow="District Hospital"
         title="Book an appointment"
         description="Pick a department and a slot."
-        actions={<a href="/services">Services</a>}
+        actions={<button type="button">Services</button>}
       />
     );
 
     expect(screen.getByRole('heading', { level: 1, name: 'Book an appointment' })).toBeInTheDocument();
     expect(screen.getByText('Pick a department and a slot.')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Services' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Services' })).toBeInTheDocument();
   });
 
   it('PageHero can demote its heading when the page already has an h1', () => {
@@ -79,11 +79,11 @@ describe('status and feedback', () => {
       <EmptyState
         title="No notices"
         description="New notices appear here."
-        action={<a href="/">Home</a>}
+        action={<button type="button">Home</button>}
       />
     );
     expect(screen.getByRole('heading', { name: 'No notices' })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Home' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Home' })).toBeInTheDocument();
   });
 
   it('ErrorState is an alert and calls onRetry', () => {

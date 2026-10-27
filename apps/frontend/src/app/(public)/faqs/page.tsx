@@ -1,6 +1,4 @@
 import type { Metadata } from 'next';
-import { Header } from '@/components/Header';
-import { Footer } from '@/components/Footer';
 import { FAQsContent } from './FAQsContent';
 
 export const metadata: Metadata = {
@@ -11,11 +9,9 @@ export const metadata: Metadata = {
 export default function FAQsPage() {
   return (
     <>
-      <Header />
-      <main id="main-content" className="min-h-screen bg-gray-50 pt-32">
+      <div>
         <FAQsContent />
-      </main>
-      <Footer />
+      </div>
     </>
   );
 }

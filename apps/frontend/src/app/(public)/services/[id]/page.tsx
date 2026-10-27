@@ -1,10 +1,7 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { Header } from '@/components/Header';
-import { Footer } from '@/components/Footer';
 import { api, handleApiResponse } from '@/lib/api';
 import { cn } from '@dh-araria/shared/utils';
-import { Button } from '@dh-araria/ui/components';
 import Link from 'next/link';
 import {
   Stethoscope,
@@ -23,13 +20,9 @@ import {
   SmilePlus,
   Activity,
   Users,
-  Building2,
   Clock,
   Calendar,
   Phone,
-  Mail,
-  MapPin,
-  type LucideIcon,
 } from 'lucide-react';
 
 interface DepartmentDetail {
@@ -54,23 +47,25 @@ interface DepartmentDetail {
   updatedAt: Date;
 }
 
-function iconFor(value: string): LucideIcon {
-  const key = value.toLowerCase();
-  if (key.includes('pediat')) return Baby;
-  if (key.includes('gyne') || key.includes('obstet')) return Heart;
-  if (key.includes('ortho')) return Bone;
-  if (key.includes('surg')) return Scissors;
-  if (key.includes('ophthal') || key.includes('eye')) return Eye;
-  if (key.includes('dent')) return SmilePlus;
-  if (key.includes('ent') || key.includes('ear')) return Ear;
-  if (key.includes('derma')) return Sparkles;
-  if (key.includes('psych')) return Brain;
-  if (key.includes('radio')) return Scan;
-  if (key.includes('path') || key.includes('lab')) return Microscope;
-  if (key.includes('blood')) return Droplet;
-  if (key.includes('emerg')) return Ambulance;
-  if (key.includes('physio') || key.includes('rehab')) return Activity;
-  return Stethoscope;
+function DepartmentIcon({ name, className }: { name: string; className?: string }) {
+  const key = name.toLowerCase();
+  const shared = { className, 'aria-hidden': true } as const;
+
+  if (key.includes('pediat')) return <Baby {...shared} />;
+  if (key.includes('gyne') || key.includes('obstet')) return <Heart {...shared} />;
+  if (key.includes('ortho')) return <Bone {...shared} />;
+  if (key.includes('surg')) return <Scissors {...shared} />;
+  if (key.includes('ophthal') || key.includes('eye')) return <Eye {...shared} />;
+  if (key.includes('dent')) return <SmilePlus {...shared} />;
+  if (key.includes('ent') || key.includes('ear')) return <Ear {...shared} />;
+  if (key.includes('derma')) return <Sparkles {...shared} />;
+  if (key.includes('psych')) return <Brain {...shared} />;
+  if (key.includes('radio')) return <Scan {...shared} />;
+  if (key.includes('path') || key.includes('lab')) return <Microscope {...shared} />;
+  if (key.includes('blood')) return <Droplet {...shared} />;
+  if (key.includes('emerg')) return <Ambulance {...shared} />;
+  if (key.includes('physio') || key.includes('rehab')) return <Activity {...shared} />;
+  return <Stethoscope {...shared} />;
 }
 
 interface ServicePageProps {
@@ -115,16 +110,16 @@ export default async function ServicePage({ params }: ServicePageProps) {
     notFound();
   }
 
-  const Icon = iconFor(department.name);
-
   return (
     <>
-      <Header />
-      <main id="main-content" className="min-h-screen bg-gray-50 pt-32">
+      <div>
         <section className="bg-primary-600 py-16 text-white sm:py-20">
           <div className="container mx-auto px-4 text-center">
             <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-white/20">
-              <Icon className="h-8 w-8 text-primary-600 bg-white p-1" />
+              <DepartmentIcon
+                name={department.name}
+                className="h-8 w-8 rounded bg-white p-1 text-primary-600"
+              />
             </div>
             <h1 className="mb-4 text-4xl font-bold sm:text-5xl">{department.name}</h1>
             <p className="mx-auto max-w-3xl text-xl text-primary-100">
@@ -144,7 +139,7 @@ export default async function ServicePage({ params }: ServicePageProps) {
                       'flex h-14 w-14 items-center justify-center rounded-xl bg-primary-100 text-primary-600'
                     )}
                   >
-                    <Icon className="h-7 w-7" />
+                    <DepartmentIcon name={department.name} className="h-7 w-7" />
                   </div>
                   <div>
                     <h2 className="text-xl font-semibold text-gray-900">{department.name}</h2>
@@ -235,8 +230,7 @@ export default async function ServicePage({ params }: ServicePageProps) {
             </div>
           </div>
         </div>
-      </main>
-      <Footer />
+      </div>
     </>
   );
 }

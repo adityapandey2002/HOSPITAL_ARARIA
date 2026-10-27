@@ -1,6 +1,4 @@
 import type { Metadata } from 'next';
-import { Header } from '@/components/Header';
-import { Footer } from '@/components/Footer';
 import { FeedbackInbox } from '@/components/feedback/FeedbackInbox';
 
 export const metadata: Metadata = {
@@ -12,8 +10,7 @@ export const metadata: Metadata = {
 export default function FeedbackInboxPage() {
   return (
     <>
-      <Header />
-      <main id="main-content" className="min-h-screen bg-gray-50 pt-32">
+      <div>
         <section className="bg-primary-700 py-10 text-white sm:py-12">
           <div className="container mx-auto px-4">
             <h1 className="text-3xl font-bold sm:text-4xl">Feedback inbox</h1>
@@ -25,8 +22,7 @@ export default function FeedbackInboxPage() {
         </section>
 
         <FeedbackInbox />
-      </main>
-      <Footer />
+      </div>
     </>
   );
 }

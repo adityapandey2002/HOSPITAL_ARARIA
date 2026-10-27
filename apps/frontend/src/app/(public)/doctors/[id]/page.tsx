@@ -1,7 +1,5 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { Header } from '@/components/Header';
-import { Footer } from '@/components/Footer';
 import { api, handleApiResponse } from '@/lib/api';
 import { cn } from '@dh-araria/shared/utils';
 import { Button } from '@dh-araria/ui/components';
@@ -106,8 +104,7 @@ export default async function DoctorPage({ params }: DoctorPageProps) {
 
   return (
     <>
-      <Header />
-      <main id="main-content" className="min-h-screen bg-gray-50 pt-32">
+      <div>
         <section className="bg-primary-600 py-16 text-white sm:py-20">
           <div className="container mx-auto px-4 text-center">
             <h1 className="mb-4 text-4xl font-bold sm:text-5xl">Dr. {doctor.name}</h1>
@@ -233,8 +230,7 @@ export default async function DoctorPage({ params }: DoctorPageProps) {
             </div>
           </div>
         </div>
-      </main>
-      <Footer />
+      </div>
     </>
   );
 }

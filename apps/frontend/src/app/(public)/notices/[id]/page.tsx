@@ -1,8 +1,6 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import { Header } from '@/components/Header';
-import { Footer } from '@/components/Footer';
 import { api, handleApiResponse } from '@/lib/api';
 import { cn } from '@dh-araria/shared/utils';
 
@@ -81,8 +79,7 @@ export default async function NoticePage({ params }: NoticePageProps) {
 
   return (
     <>
-      <Header />
-      <main id="main-content" className="min-h-screen bg-gray-50 pt-32">
+      <div>
         <section className="bg-primary-600 py-12 text-white sm:py-16">
           <div className="container mx-auto px-4">
             <div className="mb-4 flex items-center gap-2">
@@ -141,8 +138,7 @@ export default async function NoticePage({ params }: NoticePageProps) {
             </div>
           </div>
         </div>
-      </main>
-      <Footer />
+      </div>
     </>
   );
 }

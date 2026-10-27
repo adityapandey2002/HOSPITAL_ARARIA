@@ -1,6 +1,4 @@
 import type { Metadata } from 'next';
-import { Header } from '@/components/Header';
-import { Footer } from '@/components/Footer';
 
 export const metadata: Metadata = {
   title: 'Terms of Service | District Hospital Araria',
@@ -10,8 +8,7 @@ export const metadata: Metadata = {
 export default function TermsPage() {
   return (
     <>
-      <Header />
-      <main id="main-content" className="min-h-screen bg-gray-50 pt-32">
+      <div>
         <section className="bg-primary-600 py-12 text-white sm:py-16">
           <div className="container mx-auto px-4">
             <h1 className="text-3xl font-bold sm:text-4xl">Terms of Service</h1>
@@ -69,8 +66,7 @@ export default function TermsPage() {
             </div>
           </div>
         </div>
-      </main>
-      <Footer />
+      </div>
     </>
   );
 }

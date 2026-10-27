@@ -5,8 +5,6 @@ import { Departments } from '@/components/Departments';
 import { Doctors } from '@/components/Doctors';
 import { BloodBank } from '@/components/BloodBank';
 import { Notices } from '@/components/Notices';
-import { Footer } from '@/components/Footer';
-import { Header } from '@/components/Header';
 
 export const metadata: Metadata = {
   title: 'Home',
@@ -17,16 +15,14 @@ export const metadata: Metadata = {
 export default function HomePage() {
   return (
     <>
-      <Header />
-      <main id="main-content" className="min-h-screen">
+      <div>
         <Hero />
         <Features />
         <Departments />
         <Doctors />
         <BloodBank />
         <Notices />
-      </main>
-      <Footer />
+      </div>
     </>
   );
 }

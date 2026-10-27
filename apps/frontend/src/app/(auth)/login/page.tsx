@@ -7,7 +7,6 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import {
-  Hospital,
   Mail,
   Lock,
   Eye,
@@ -48,12 +47,7 @@ export default function LoginPage() {
   return (
     <Suspense
       fallback={
-        <main
-          id="main-content"
-          className="flex min-h-screen items-center justify-center bg-gray-50 px-4 py-12 pt-32"
-        >
-          <p className="text-gray-500">Loading sign in…</p>
-        </main>
+        <div className="py-10 text-center text-body-sm text-on-surface-variant">Loading sign in…</div>
       }
     >
       <LoginForm />
@@ -106,25 +100,18 @@ function LoginForm() {
   };
 
   return (
-    <main
-      id="main-content"
-      className="flex min-h-screen items-center justify-center bg-gray-50 px-4 py-12 pt-32 sm:px-6 lg:px-8"
-    >
-      <div className="w-full max-w-md space-y-8">
-        <div className="text-center">
-          <Link href="/" className="mb-6 inline-flex items-center justify-center gap-3">
-            <div className="rounded-lg bg-primary-600 p-2">
-              <Hospital className="h-8 w-8 text-white" />
-            </div>
-            <div>
-              <h1 className="text-xl font-bold text-gray-900">District Hospital Araria</h1>
-              <p className="text-xs text-gray-500">Government of Bihar</p>
-            </div>
-          </Link>
-          <h2 className="text-3xl font-bold text-gray-900">Sign in to your account</h2>
-          <p className="mt-2 text-gray-600">
+    <div className="w-full">
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-balance font-heading text-h2 text-on-surface sm:text-h1">
+            Sign in to your account
+          </h1>
+          <p className="mt-2 text-body text-on-surface-variant">
             Or{' '}
-            <Link href="/register" className="font-medium text-primary-600 hover:text-primary-500">
+            <Link
+              href="/register"
+              className="font-semibold text-primary-700 underline underline-offset-2 hover:text-primary-800"
+            >
               create a new account
             </Link>
           </p>
@@ -234,6 +221,6 @@ function LoginForm() {
           </p>
         </div>
       </div>
-    </main>
+    </div>
   );
 }

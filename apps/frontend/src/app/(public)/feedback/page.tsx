@@ -1,8 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { MessageSquare } from 'lucide-react';
-import { Header } from '@/components/Header';
-import { Footer } from '@/components/Footer';
 import { SimpleFeedbackForm } from '@/components/feedback/SimpleFeedbackForm';
 
 export const metadata: Metadata = {
@@ -14,8 +12,7 @@ export const metadata: Metadata = {
 export default function FeedbackPage() {
   return (
     <>
-      <Header />
-      <main id="main-content" className="min-h-screen bg-gray-50 pt-32">
+      <div>
         <section className="bg-primary-700 py-12 text-white sm:py-16">
           <div className="container mx-auto px-4 text-center">
             <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-white/10">
@@ -51,8 +48,7 @@ export default function FeedbackPage() {
             </p>
           </div>
         </div>
-      </main>
-      <Footer />
+      </div>
     </>
   );
 }
