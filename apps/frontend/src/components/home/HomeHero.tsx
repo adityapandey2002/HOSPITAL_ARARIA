@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { ArrowRight, CalendarCheck, Phone, ShieldCheck, Siren } from 'lucide-react';
 import { Container, buttonStyles } from '@dh-araria/ui/components';
-import { MediaFrame } from '@/components/layout/MediaFrame';
+import { HomeSlideshow } from '@/components/home/HomeSlideshow';
 import { HOSPITAL, telHref } from '@/config/hospital';
 
 /**
@@ -98,7 +98,7 @@ export function HomeHero() {
           </dl>
         </div>
 
-        <MediaFrame priority className="w-full max-w-xl lg:justify-self-end" />
+        <HomeSlideshow />
       </Container>
     </section>
   );
