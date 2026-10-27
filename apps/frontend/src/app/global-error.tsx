@@ -34,7 +34,7 @@ export default function GlobalError({
           padding: '1.5rem',
         }}
       >
-        <main style={{ maxWidth: 480, textAlign: 'center' }}>
+        <main id="main-content" style={{ maxWidth: 480, textAlign: 'center' }}>
           <h1 style={{ fontSize: '1.25rem', marginBottom: '0.5rem' }}>The portal is unavailable</h1>
           <p style={{ fontSize: '0.95rem', color: '#4b5563', lineHeight: 1.6 }}>
             We could not load the page. Please retry in a moment. If this persists, call the

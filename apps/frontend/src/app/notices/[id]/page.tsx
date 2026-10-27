@@ -41,6 +41,28 @@ const PRIORITY_COLORS: Record<string, string> = {
   CRITICAL: 'bg-danger-100 text-danger-800',
 };
 
+const FALLBACK_TITLE = 'Notice | District Hospital Araria';
+
+export async function generateMetadata({ params }: NoticePageProps): Promise<Metadata> {
+  const { id } = await params;
+
+  try {
+    const response = await api.get<NoticeDetail>(`/notices/${id}`);
+    const record = handleApiResponse(response);
+
+    if (record) {
+      return {
+        title: record.title,
+        description: record.content.slice(0, 160),
+      };
+    }
+  } catch {
+    // Fall back to the static title when the record cannot be fetched.
+  }
+
+  return { title: FALLBACK_TITLE };
+}
+
 export default async function NoticePage({ params }: NoticePageProps) {
   const { id } = await params;
 
@@ -57,13 +79,8 @@ export default async function NoticePage({ params }: NoticePageProps) {
     notFound();
   }
 
-  const metadata: Metadata = {
-    title: notice.title,
-    description: notice.content.slice(0, 160),
-  };
-
   return (
-    <>{metadata}
+    <>
       <Header />
       <main id="main-content" className="min-h-screen bg-gray-50 pt-32">
         <section className="bg-primary-600 py-12 text-white sm:py-16">

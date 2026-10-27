@@ -56,6 +56,28 @@ interface DoctorPageProps {
 
 const DAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
+const FALLBACK_TITLE = 'Doctor Profile | District Hospital Araria';
+
+export async function generateMetadata({ params }: DoctorPageProps): Promise<Metadata> {
+  const { id } = await params;
+
+  try {
+    const response = await api.get<DoctorDetail>(`/doctors/${id}`);
+    const record = handleApiResponse(response);
+
+    if (record) {
+      return {
+        title: `Dr. ${record.name} | District Hospital Araria`,
+        description: `${record.specialization} at ${record.department.name}`,
+      };
+    }
+  } catch {
+    // Fall back to the static title when the record cannot be fetched.
+  }
+
+  return { title: FALLBACK_TITLE };
+}
+
 export default async function DoctorPage({ params }: DoctorPageProps) {
   const { id } = await params;
 
@@ -82,13 +104,8 @@ export default async function DoctorPage({ params }: DoctorPageProps) {
   const endTime =
     slots.reduce((max, slot) => (slot.endTime > max ? slot.endTime : max), slots[0]?.endTime ?? '') || '';
 
-  const metadata: Metadata = {
-    title: `Dr. ${doctor.name} | District Hospital Araria`,
-    description: `${doctor.specialization} at ${doctor.department.name}`,
-  };
-
   return (
-    <>{metadata}
+    <>
       <Header />
       <main id="main-content" className="min-h-screen bg-gray-50 pt-32">
         <section className="bg-primary-600 py-16 text-white sm:py-20">

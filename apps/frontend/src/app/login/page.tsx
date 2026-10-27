@@ -31,6 +31,14 @@ const loginSchema = z.object({
 type LoginFormData = z.infer<typeof loginSchema>;
 
 /**
+ * Demo accounts only exist in seeded local databases. Keep them out of the
+ * production bundle unless a deployment explicitly opts in with
+ * NEXT_PUBLIC_SHOW_DEMO=true.
+ */
+const SHOW_DEMO_CREDENTIALS =
+  process.env.NODE_ENV !== 'production' && process.env.NEXT_PUBLIC_SHOW_DEMO === 'true';
+
+/**
  * `useSearchParams()` opts a route into client-side rendering, so Next.js refuses
  * to prerender `/login` unless the hook is isolated behind a <Suspense> boundary.
  * The wrapper below is what the router renders; <LoginForm> bails out to the
@@ -40,9 +48,12 @@ export default function LoginPage() {
   return (
     <Suspense
       fallback={
-        <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4 py-12 pt-32">
+        <main
+          id="main-content"
+          className="flex min-h-screen items-center justify-center bg-gray-50 px-4 py-12 pt-32"
+        >
           <p className="text-gray-500">Loading sign in…</p>
-        </div>
+        </main>
       }
     >
       <LoginForm />
@@ -95,7 +106,10 @@ function LoginForm() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4 py-12 pt-32 sm:px-6 lg:px-8">
+    <main
+      id="main-content"
+      className="flex min-h-screen items-center justify-center bg-gray-50 px-4 py-12 pt-32 sm:px-6 lg:px-8"
+    >
       <div className="w-full max-w-md space-y-8">
         <div className="text-center">
           <Link href="/" className="mb-6 inline-flex items-center justify-center gap-3">
@@ -186,22 +200,26 @@ function LoginForm() {
           </Button>
         </form>
 
-        <div className="relative">
-          <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-gray-200" />
-          </div>
-          <div className="relative flex justify-center text-sm">
-            <span className="bg-gray-50 px-4 text-gray-500">Demo Credentials</span>
-          </div>
-        </div>
+        {SHOW_DEMO_CREDENTIALS && (
+          <>
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-200" />
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="bg-gray-50 px-4 text-gray-500">Demo Credentials</span>
+              </div>
+            </div>
 
-        <div className="rounded-xl bg-gray-50 p-4 text-sm">
-          <p className="mb-2 font-medium text-gray-900">For testing purposes:</p>
-          <div className="space-y-1 font-mono text-xs text-gray-600">
-            <p>Email: demo@dhararia.gov.in</p>
-            <p>Password: Demo@123</p>
-          </div>
-        </div>
+            <div className="rounded-xl bg-gray-50 p-4 text-sm">
+              <p className="mb-2 font-medium text-gray-900">For local testing only:</p>
+              <div className="space-y-1 font-mono text-xs text-gray-600">
+                <p>Email: demo@dhararia.gov.in</p>
+                <p>Password: Demo@123</p>
+              </div>
+            </div>
+          </>
+        )}
 
         <div className="text-center">
           <p className="text-sm text-gray-600">
@@ -216,6 +234,6 @@ function LoginForm() {
           </p>
         </div>
       </div>
-    </div>
+    </main>
   );
 }
