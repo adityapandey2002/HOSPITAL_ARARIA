@@ -122,6 +122,29 @@ If a pair fails, change the token, not the font size. 18.66 px bold / 24 px regu
 
 Compose `packages/ui` primitives; if one is missing, add it there with a test — never inline a one-off variant in a page.
 
+### 5.1 Primitive inventory
+
+Import from `@dh-araria/ui/components`. Every row is exported with its prop types from the same barrel.
+
+| Group | Components |
+|---|---|
+| Layout | `Container` (`prose \| content \| wide \| admin \| full`), `Section`, `PageHero`, `Prose` |
+| Content | `Card` + `CardHeader/Title/Description/Content/Footer`, `StatCard` |
+| Actions | `Button` (`primary \| secondary \| outline \| ghost \| danger \| success \| warning \| emergency`) |
+| Forms | `Input`, `Textarea`, `Select`, `Checkbox`, `RadioCard` |
+| Status | `StatusBadge`, `Alert`, `Skeleton`, `SkeletonRegion`, `EmptyState`, `ErrorState` |
+| Navigation | `Breadcrumbs`, `Pagination`, `Stepper`, `Tabs`, `SegmentedControl` |
+| Overlays | `Dialog`, `Sheet` (portal, scroll lock, focus trap, Escape, focus restore) |
+| Data | `Table` (desktop), `DataList` (cards < `lg`, table ≥ `lg`) |
+
+`MediaFrame` is a frontend component (`apps/frontend/src/components/layout/MediaFrame.tsx`) because it
+wraps `next/image`, which `packages/ui` cannot resolve. It owns the fixed aspect ratio, `sizes`, the
+branded fallback panel and the optional scrim.
+
+Contract tests live in `apps/frontend/src/components/__tests__/primitives.test.tsx`; they assert
+roles, accessible names and keyboard behaviour, not class names (except the two deliberately pinned
+legacy tests).
+
 ## 6. UI states
 
 | State | Requirement |

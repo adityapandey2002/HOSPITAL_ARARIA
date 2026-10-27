@@ -5,7 +5,14 @@ import { cn } from '@dh-araria/shared/utils';
 import { forwardRef } from 'react';
 
 export type ButtonVariant =
-  'primary' | 'secondary' | 'outline' | 'ghost' | 'danger' | 'success' | 'warning';
+  | 'primary'
+  | 'secondary'
+  | 'outline'
+  | 'ghost'
+  | 'danger'
+  | 'success'
+  | 'warning'
+  | 'emergency';
 
 export type ButtonSize = 'sm' | 'md' | 'lg' | 'xl';
 
@@ -14,12 +21,17 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
   size?: ButtonSize;
   /** Shows a spinner and disables the button without changing its layout. */
   loading?: boolean;
+  /** Stretches the button to its container; useful for mobile primary actions. */
+  fullWidth?: boolean;
 }
 
 const Button = forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant = 'primary', size = 'md', disabled, loading, children, ...props }, ref) => {
+  (
+    { className, variant = 'primary', size = 'md', disabled, loading, fullWidth, children, ...props },
+    ref
+  ) => {
     const baseStyles =
-      'inline-flex items-center justify-center font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg';
+      'inline-flex items-center justify-center font-semibold transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg';
 
     const variants: Record<ButtonVariant, string> = {
       primary: 'bg-primary-600 text-white hover:bg-primary-700 focus:ring-primary-500',
@@ -30,6 +42,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       danger: 'bg-danger-600 text-white hover:bg-danger-700 focus:ring-danger-500',
       success: 'bg-success-600 text-white hover:bg-success-700 focus:ring-success-500',
       warning: 'bg-warning-600 text-white hover:bg-warning-700 focus:ring-warning-500',
+      emergency: 'bg-emergency text-white hover:bg-emergency-dark focus:ring-danger-500',
     };
 
     const sizes: Record<ButtonSize, string> = {
@@ -42,7 +55,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     return (
       <button
         ref={ref}
-        className={cn(baseStyles, variants[variant], sizes[size], className)}
+        className={cn(baseStyles, variants[variant], sizes[size], fullWidth && 'w-full', className)}
         disabled={disabled || loading}
         aria-busy={loading || undefined}
         {...props}
