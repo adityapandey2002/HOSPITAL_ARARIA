@@ -1229,20 +1229,28 @@ Page-specific checks:
 
 ### 9.3 Visual system
 
-- **Colours:** existing Tailwind palette. Primary sky (`primary-600` `#0284c7`),
-  secondary fuchsia (`secondary-600` `#c026d3`), semantic success/warning/danger,
-  gray neutrals. Do not introduce a new palette.
-- **Typography:** Inter. One `h1`; `h2` for sections; `h3` for cards. Body 16 px
-  minimum.
-- **Spacing:** Tailwind scale only; no arbitrary pixel values.
-- **Radius:** cards `rounded-xl`; large feature panels may use `rounded-2xl`
-  sparingly; buttons/inputs `rounded-lg`; badges `rounded-full`. Do not use
-  `rounded-2xl` on every surface.
-- **Elevation:** one subtle shadow level for cards; no shadow-heavy stacks.
-- **Container:** `max-w-7xl` with responsive horizontal padding.
-- **Components:** reuse `@dh-araria/ui` (`Button`, `Card`, `Input`, `Select`,
-  `Textarea`, `Modal`, `Table`, `Alert`, `Badge`, `Avatar`). Prefer composition.
-- **Icons:** lucide-react, 16–24 px, decorative unless labelled.
+The enforceable contract — token tables, measured contrast pairs, component and
+state rules, deprecations, review checklist — is
+[`docs/DESIGN_SYSTEM.md`](DESIGN_SYSTEM.md). Read it before styling any route;
+where this document and that one disagree, `DESIGN_SYSTEM.md` wins.
+
+- **Colour:** primary `#006194` (`primary-600`, full 50–950 ramp), neutrals
+  `#565E74` (`secondary-600`), canvas `surface` `#F7F9FF`, text `on-surface`
+  `#181C20`, dividers `outline-variant` `#BFC7D2`; semantic
+  `success`/`warning`/`danger` ramps; `emergency` `#DC2626` for 102/108. Raw
+  `bg-blue-*` and `text-gray-*` are banned in new code.
+- **Typography:** Atkinson Hyperlegible Next for `h1`–`h3` (`font-heading`),
+  Plus Jakarta Sans for everything else (`font-sans`). Scale: h1 36/44/700, h2
+  28/36/700, h3 22/28/600, body 16/24, label 14/20/600. Body never below 14 px.
+- **Radius:** `rounded` 4 px, `rounded-lg` 8 px, `rounded-xl` 12 px,
+  `rounded-full` for pills. `rounded-2xl` is a deprecated alias for 12 px — use
+  `rounded-xl` instead.
+- **Spacing and elevation:** Tailwind numeric scale only, no arbitrary px;
+  `shadow-sm` cards, `shadow-md` on hover, `shadow-xl` dialogs only.
+- **Container:** `.container` = `max-w-7xl`, responsive 16/24/32 px gutters,
+  `90rem` at `2xl`; do not re-add `container mx-auto px-4`.
+- **Components and states:** compose the `@dh-araria/ui` primitives and follow
+  the loading/empty/error/success/permission rules in `DESIGN_SYSTEM.md` §6.
 
 ### 9.4 The honesty rule
 

@@ -1,10 +1,20 @@
 import type { Metadata, Viewport } from 'next';
-import { Inter } from 'next/font/google';
+import { Atkinson_Hyperlegible_Next, Plus_Jakarta_Sans } from 'next/font/google';
 import '../styles/globals.css';
 import { Toaster } from 'sonner';
 import { Providers } from '@/components/Providers';
 
-const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
+const heading = Atkinson_Hyperlegible_Next({
+  subsets: ['latin'],
+  variable: '--font-heading',
+  display: 'swap',
+});
+
+const body = Plus_Jakarta_Sans({
+  subsets: ['latin'],
+  variable: '--font-body',
+  display: 'swap',
+});
 
 export const metadata: Metadata = {
   // Required so Next can resolve relative OG/Twitter image URLs during build.
@@ -58,10 +68,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#0ea5e9' },
-    { media: '(prefers-color-scheme: dark)', color: '#0369a1' },
-  ],
+  themeColor: '#006194',
   width: 'device-width',
   initialScale: 1,
   maximumScale: 5,
@@ -69,7 +76,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${inter.variable} antialiased`}>
+    <html lang="en" className={`${heading.variable} ${body.variable} antialiased`}>
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
@@ -78,12 +85,16 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
         <link rel="manifest" href="/manifest.json" />
       </head>
-      <body className="min-h-screen bg-gray-50 text-gray-900">
+      <body className="flex min-h-dvh flex-col bg-surface font-sans text-on-surface antialiased">
         <a href="#main-content" className="skip-link">
           Skip to main content
         </a>
         <Providers>{children}</Providers>
-        <Toaster position="top-right" toastOptions={{ className: 'bg-white text-gray-900' }} />
+        <Toaster
+          position="top-right"
+          offset={{ top: 'calc(var(--header-h, 4rem) + 0.75rem)' }}
+          toastOptions={{ className: 'bg-white text-gray-900' }}
+        />
       </body>
     </html>
   );
