@@ -156,7 +156,17 @@ describe('AdminComplaintsPanel', () => {
     const tag = await screen.findByLabelText('Department: Obstetrics & Gynecology');
     expect(tag).toHaveTextContent('Obstetrics & Gynecology');
     expect(tag).toHaveAttribute('title', 'Obstetrics & Gynecology');
-    expect(within(tag).getByText('Obstetrics & Gynecology')).toHaveClass('truncate');
+
+    // The header wraps so the chip gets a readable width instead of being
+    // crushed by the status badge; the chip then truncates rather than
+    // crossing into the badge or the card edge.
+    expect(tag.parentElement).toHaveClass('flex-wrap');
+    expect(tag).toHaveClass('min-w-0', 'basis-32');
+    expect(within(tag).getByText('Obstetrics & Gynecology')).toHaveClass('truncate', 'min-w-0');
+
+    const card = tag.closest('li');
+    expect(card).toHaveClass('min-w-0', 'overflow-hidden');
+    expect(within(card as HTMLElement).getByText('Submitted')).toHaveClass('shrink-0');
   });
 
   it('lays complaints out as a responsive card grid', async () => {
@@ -204,7 +214,8 @@ describe('AdminComplaintsPanel', () => {
     expect(screen.queryByRole('button', { name: /view photo attached/i })).not.toBeInTheDocument();
   });
 
-  it('shows the attached photo and opens it in a full-screen viewer', async () => {    mockApi([{ ...complaint, imageUrl: photoDataUrl }]);
+  it('shows the attached photo and opens it in a full-screen viewer', async () => {
+    mockApi([{ ...complaint, imageUrl: photoDataUrl }]);
     render(<AdminComplaintsPanel />);
 
     const thumbnail = await screen.findByRole('img', {
