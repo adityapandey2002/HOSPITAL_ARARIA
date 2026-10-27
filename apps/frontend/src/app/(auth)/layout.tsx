@@ -1,5 +1,10 @@
+import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
 import { AuthShell } from '@/components/layout/AuthShell';
+
+export const metadata: Metadata = {
+  robots: { index: false, follow: false, nocache: true },
+};
 
 export default function AuthLayout({ children }: { children: ReactNode }) {
   return <AuthShell>{children}</AuthShell>;

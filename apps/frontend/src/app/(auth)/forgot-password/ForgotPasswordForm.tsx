@@ -18,7 +18,8 @@ export function ForgotPasswordForm() {
       const response = await api.post<{ message: string }>('/auth/forgot-password', { email });
       handleApiResponse(response);
       toast.success('Request received', {
-        description: 'If an account exists for this email, reset instructions are on their way.',
+        description:
+          'If an account exists for this email, the help desk will contact you with reset instructions.',
       });
       setEmail('');
     } catch (error) {
@@ -37,8 +38,8 @@ export function ForgotPasswordForm() {
     <div className="w-full">
       <h1 className="text-balance font-heading text-h2 text-on-surface sm:text-h1">Forgot password</h1>
       <p className="mt-2 text-body text-on-surface-variant">
-        Enter the email address linked to your account. If an account exists, we will send
-        instructions to reset the password.
+        Enter the email address linked to your account. Password resets are handled by the hospital
+        help desk; submit your email and the help desk will contact you with reset instructions.
       </p>
 
       <form onSubmit={handleSubmit} className="mt-6 space-y-4">
