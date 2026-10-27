@@ -62,8 +62,14 @@ function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
+  const rawRedirect = searchParams.get('redirect') || searchParams.get('callbackUrl');
+  // Only same-origin relative paths are allowed; reject absolute and
+  // protocol-relative URLs to prevent open redirects.
   const requestedRedirect =
-    searchParams.get('redirect') || searchParams.get('callbackUrl');
+    rawRedirect && rawRedirect.startsWith('/') && !rawRedirect.startsWith('//') &&
+    !/^[a-z][a-z0-9+.-]*:/i.test(rawRedirect)
+      ? rawRedirect
+      : null;
   const expired = searchParams.get('expired') === 'true';
 
   const {
