@@ -4,7 +4,7 @@ import { GrievanceForm } from '@/components/GrievanceForm';
 export const metadata: Metadata = {
   title: 'Grievance Redressal',
   description:
-    'File complaints and track grievance status at District Hospital Araria. Integrated with CPGRAMS for transparent resolution.',
+    'File complaints and track grievance status at District Hospital Araria. Transparent resolution by the hospital administration.',
 };
 
 export default function GrievancesPage() {
@@ -15,7 +15,7 @@ export default function GrievancesPage() {
           <div className="container mx-auto px-4 text-center">
             <h1 className="mb-4 text-4xl font-bold sm:text-5xl">Grievance Redressal</h1>
             <p className="mx-auto max-w-3xl text-xl text-warning-100">
-              File complaints, track status, and get timely resolution. Integrated with CPGRAMS for
+              File complaints, track status, and get timely resolution. Handled by the hospital
               transparent 30-day resolution timeline.
             </p>
           </div>

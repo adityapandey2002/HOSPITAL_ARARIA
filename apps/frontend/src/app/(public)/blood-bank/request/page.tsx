@@ -5,7 +5,7 @@ import Link from 'next/link';
 export const metadata: Metadata = {
   title: 'Blood Request | District Hospital Araria',
   description:
-    'Request blood from District Hospital Araria Blood Bank. Integrated with e-RaktKosh for real-time availability.',
+    'Request blood from District Hospital Araria Blood Bank. Contact the blood bank team by phone for assistance.',
 };
 
 export default function BloodRequestPage() {
@@ -31,95 +31,48 @@ export default function BloodRequestPage() {
             </div>
             <h1 className="mb-4 text-4xl font-bold sm:text-5xl">Request Blood</h1>
             <p className="mx-auto max-w-3xl text-xl text-danger-100">
-              Need blood for a patient? Submit a request and our blood bank team will assist you.
+              Need blood for a patient? Contact the blood bank team directly for availability and
+              collection instructions.
             </p>
           </div>
         </section>
 
         <div className="bg-white py-12">
           <div className="container mx-auto px-4">
-            <div className="max-w-2xl mx-auto">
+            <div className="mx-auto max-w-2xl">
               <div className="rounded-2xl border border-gray-100 bg-white p-8 shadow-sm">
-                <h2 className="text-xl font-bold text-gray-900 mb-6">Blood Request Form</h2>
-                <form className="space-y-4">
-                  <div className="grid gap-4 md:grid-cols-2">
-                    <div>
-                      <label className="block mb-2 text-sm font-medium text-gray-700">
-                        Patient Name
-                      </label>
-                      <input
-                        type="text"
-                        placeholder="Enter patient name"
-                        className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-gray-900 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-danger-500"
-                      />
-                    </div>
-                    <div>
-                      <label className="block mb-2 text-sm font-medium text-gray-700">
-                        Blood Group
-                      </label>
-                      <select
-                        className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-gray-900 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-danger-500"
-                      >
-                        <option>A+</option>
-                        <option>A-</option>
-                        <option>B+</option>
-                        <option>B-</option>
-                        <option>AB+</option>
-                        <option>AB-</option>
-                        <option>O+</option>
-                        <option>O-</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block mb-2 text-sm font-medium text-gray-700">
-                        Units Required
-                      </label>
-                      <input
-                        type="number"
-                        placeholder="1"
-                        min="1"
-                        className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-gray-900 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-danger-500"
-                      />
-                    </div>
-                    <div className="md:col-span-2">
-                      <label className="block mb-2 text-sm font-medium text-gray-700">
-                        Contact Phone
-                      </label>
-                      <input
-                        type="tel"
-                        placeholder="+91 98765 43210"
-                        className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-gray-900 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-danger-500"
-                      />
-                    </div>
-                    <div className="md:col-span-2">
-                      <label className="block mb-2 text-sm font-medium text-gray-700">
-                        Hospital / Ward
-                      </label>
-                      <input
-                        type="text"
-                        placeholder="Enter hospital or ward name"
-                        className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-gray-900 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-danger-500"
-                      />
-                    </div>
-                    <div className="md:col-span-2">
-                      <label className="block mb-2 text-sm font-medium text-gray-700">
-                        Urgency
-                      </label>
-                      <select
-                        className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-gray-900 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-danger-500"
-                      >
-                        <option>Routine</option>
-                        <option>Urgent</option>
-                        <option>Emergency</option>
-                      </select>
-                    </div>
+                <h2 className="mb-6 text-xl font-bold text-gray-900">How to request blood</h2>
+                <div className="space-y-4 text-gray-700">
+                  <p>
+                    Blood requests are handled directly by the hospital blood bank team. Please call
+                    the blood bank for availability, compatibility, and collection instructions.
+                  </p>
+                  <div className="rounded-xl border border-danger-200 bg-danger-50 p-4">
+                    <p className="mb-1 text-sm font-medium text-danger-700">For emergencies</p>
+                    <p className="text-lg font-bold text-danger-800">
+                      Call 102 or 108 and the hospital emergency number immediately. Do not wait for
+                      a web form.
+                    </p>
                   </div>
-                  <div className="mt-6">
-                    <Button type="submit" className="w-full bg-danger-600 hover:bg-danger-700 text-white py-3 text-lg">
-                      Submit Request
-                    </Button>
+                  <div className="flex flex-col gap-3 sm:flex-row">
+                    <a
+                      href="tel:+916453222102"
+                      className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-danger-600 px-4 py-3 text-lg font-medium text-white transition-colors hover:bg-danger-700"
+                    >
+                      Call Blood Bank: +91-6453-222102
+                    </a>
+                    <Link
+                      href="/blood-bank"
+                      className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-gray-300 px-4 py-3 text-lg font-medium text-gray-700 transition-colors hover:bg-gray-50"
+                    >
+                      Check blood availability
+                    </Link>
                   </div>
-                </form>
+                  <p className="text-sm text-gray-500">
+                    Blood bank hours: Monday to Saturday, 9:00 AM to 4:00 PM. Emergency services are
+                    available 24/7.
+                  </p>
+                </div>
               </div>
             </div>
           </div>

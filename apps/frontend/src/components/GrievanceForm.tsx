@@ -114,15 +114,15 @@ export function GrievanceForm() {
                 <p className="break-all font-mono text-lg font-bold text-primary-600">
                   {complaintId}
                 </p>
-                <p className="mt-2 text-sm text-primary-700">Also sent to your email and SMS</p>
+                <p className="mt-2 text-sm text-primary-700">Save this reference number to track your complaint.</p>
               </div>
             </div>
 
             <div className="mb-8 grid gap-4 md:grid-cols-3">
               <div className="rounded-xl bg-gray-50 p-4">
                 <Shield className="mx-auto mb-2 h-6 w-6 text-primary-600" />
-                <p className="text-sm text-gray-600">CPGRAMS Integrated</p>
-                <p className="font-medium text-gray-900">Auto-forwarded to CPGRAMS</p>
+                <p className="text-sm text-gray-600">Complaint Desk</p>
+                <p className="font-medium text-gray-900">Tracked by hospital administration</p>
               </div>
               <div className="rounded-xl bg-gray-50 p-4">
                 <Clock className="mx-auto mb-2 h-6 w-6 text-primary-600" />
@@ -132,7 +132,7 @@ export function GrievanceForm() {
               <div className="rounded-xl bg-gray-50 p-4">
                 <Mail className="mx-auto mb-2 h-6 w-6 text-primary-600" />
                 <p className="text-sm text-gray-600">Updates via</p>
-                <p className="font-medium text-gray-900">Email & SMS</p>
+                <p className="font-medium text-gray-900">Complaint desk follow-up</p>
               </div>
             </div>
 
@@ -162,8 +162,8 @@ export function GrievanceForm() {
           <div className="mb-8 grid gap-4 md:grid-cols-3">
             <div className="rounded-xl border border-primary-200 bg-primary-50 p-4">
               <Shield className="mb-2 h-6 w-6 text-primary-600" />
-              <h4 className="mb-1 font-semibold text-primary-900">CPGRAMS Integrated</h4>
-              <p className="text-sm text-primary-700">Auto-forwarded to national portal</p>
+              <h4 className="mb-1 font-semibold text-primary-900">Complaint Desk</h4>
+              <p className="text-sm text-primary-700">Tracked by hospital administration</p>
             </div>
             <div className="border-warning-200 rounded-xl border bg-warning-50 p-4">
               <Clock className="mb-2 h-6 w-6 text-warning-600" />
@@ -246,11 +246,11 @@ export function GrievanceForm() {
               <ul className="space-y-2 text-sm text-primary-700">
                 <li className="flex items-start gap-2">
                   <CheckCircle className="mt-0.5 h-4 w-4 flex-shrink-0" />
-                  Your complaint will be forwarded to CPGRAMS for centralized tracking
+                  Your complaint is recorded with the hospital complaint desk for tracking
                 </li>
                 <li className="flex items-start gap-2">
                   <CheckCircle className="mt-0.5 h-4 w-4 flex-shrink-0" />
-                  You will receive a unique complaint ID via email and SMS
+                  Save the reference number shown above for future tracking
                 </li>
                 <li className="flex items-start gap-2">
                   <CheckCircle className="mt-0.5 h-4 w-4 flex-shrink-0" />

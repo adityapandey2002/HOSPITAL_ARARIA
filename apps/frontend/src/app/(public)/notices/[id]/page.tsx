@@ -109,10 +109,7 @@ export default async function NoticePage({ params }: NoticePageProps) {
         <div className="bg-white py-12">
           <div className="container mx-auto px-4">
             <article className="max-w-3xl mx-auto prose prose-lg text-gray-700">
-              <div
-                className="whitespace-pre-line"
-                dangerouslySetInnerHTML={{ __html: notice.content }}
-              />
+              <div className="whitespace-pre-line">{notice.content}</div>
             </article>
 
             {notice.attachmentUrl && (

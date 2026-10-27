@@ -4,7 +4,7 @@ import { Button } from '@dh-araria/ui/components';
 export const metadata: Metadata = {
   title: 'Blood Donation | District Hospital Araria',
   description:
-    'Donate blood at District Hospital Araria Blood Bank. Your donation can save lives. Integrated with e-RaktKosh.',
+    'Donate blood at District Hospital Araria Blood Bank. Your donation can save lives.',
 };
 
 export default function BloodDonatePage() {

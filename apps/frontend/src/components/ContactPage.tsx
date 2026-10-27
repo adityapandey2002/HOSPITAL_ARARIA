@@ -336,7 +336,7 @@ export function ContactPage() {
             </div>
             <h3 className="mb-2 text-lg font-semibold text-gray-900">File Grievance</h3>
             <p className="mb-4 text-gray-600">
-              Submit a formal complaint through our CPGRAMS-integrated system.
+              Submit a formal complaint to the hospital administration.
             </p>
             <span className="inline-flex items-center gap-1 text-sm font-medium text-warning-600 transition-all group-hover:gap-2">
               File Complaint

@@ -4,7 +4,7 @@ import { BloodBankInventory } from '@/components/BloodBankInventory';
 export const metadata: Metadata = {
   title: 'Blood Bank',
   description:
-    'Check real-time blood availability at District Hospital Araria Blood Bank. Integrated with e-RaktKosh for up-to-date inventory.',
+    'Check blood availability at District Hospital Araria Blood Bank. Updated by the hospital blood bank.',
 };
 
 export default function BloodBankPage() {
@@ -15,7 +15,7 @@ export default function BloodBankPage() {
           <div className="container mx-auto px-4 text-center">
             <h1 className="mb-4 text-4xl font-bold sm:text-5xl">Blood Bank Inventory</h1>
             <p className="mx-auto max-w-3xl text-xl text-danger-100">
-              Real-time blood stock availability. Integrated with e-RaktKosh for accurate,
+              Blood stock availability. Updated by the hospital blood bank for accurate,
               up-to-date information.
             </p>
           </div>
