@@ -1,20 +1,10 @@
 'use client';
 
 import * as React from 'react';
-import { cn } from '@dh-araria/shared/utils';
 import { forwardRef } from 'react';
+import { buttonStyles, type ButtonSize, type ButtonVariant } from './button-styles';
 
-export type ButtonVariant =
-  | 'primary'
-  | 'secondary'
-  | 'outline'
-  | 'ghost'
-  | 'danger'
-  | 'success'
-  | 'warning'
-  | 'emergency';
-
-export type ButtonSize = 'sm' | 'md' | 'lg' | 'xl';
+export type { ButtonSize, ButtonVariant, ButtonStyleOptions } from './button-styles';
 
 export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: ButtonVariant;
@@ -30,32 +20,10 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     { className, variant = 'primary', size = 'md', disabled, loading, fullWidth, children, ...props },
     ref
   ) => {
-    const baseStyles =
-      'inline-flex items-center justify-center font-semibold transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg';
-
-    const variants: Record<ButtonVariant, string> = {
-      primary: 'bg-primary-600 text-white hover:bg-primary-700 focus:ring-primary-500',
-      secondary: 'bg-secondary-600 text-white hover:bg-secondary-700 focus:ring-secondary-500',
-      outline:
-        'border-2 border-primary-600 text-primary-600 hover:bg-primary-50 focus:ring-primary-500',
-      ghost: 'text-primary-600 hover:bg-primary-50 focus:ring-primary-500',
-      danger: 'bg-danger-600 text-white hover:bg-danger-700 focus:ring-danger-500',
-      success: 'bg-success-600 text-white hover:bg-success-700 focus:ring-success-500',
-      warning: 'bg-warning-600 text-white hover:bg-warning-700 focus:ring-warning-500',
-      emergency: 'bg-emergency text-white hover:bg-emergency-dark focus:ring-danger-500',
-    };
-
-    const sizes: Record<ButtonSize, string> = {
-      sm: 'px-3 py-1.5 text-sm gap-1.5',
-      md: 'px-4 py-2 text-base gap-2',
-      lg: 'px-6 py-3 text-lg gap-2',
-      xl: 'px-8 py-4 text-xl gap-3',
-    };
-
     return (
       <button
         ref={ref}
-        className={cn(baseStyles, variants[variant], sizes[size], fullWidth && 'w-full', className)}
+        className={buttonStyles({ variant, size, fullWidth, className })}
         disabled={disabled || loading}
         aria-busy={loading || undefined}
         {...props}

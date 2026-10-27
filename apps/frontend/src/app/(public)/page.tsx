@@ -1,28 +1,30 @@
-import { Metadata } from 'next';
-import { Hero } from '@/components/Hero';
-import { Features } from '@/components/Features';
-import { Departments } from '@/components/Departments';
-import { Doctors } from '@/components/Doctors';
-import { BloodBank } from '@/components/BloodBank';
-import { Notices } from '@/components/Notices';
+import type { Metadata } from 'next';
+import { EmergencyStrip } from '@/components/home/EmergencyStrip';
+import { HomeHero } from '@/components/home/HomeHero';
+import { QuickServices } from '@/components/home/QuickServices';
+import { DepartmentHighlights } from '@/components/home/DepartmentHighlights';
+import { DoctorHighlights } from '@/components/home/DoctorHighlights';
+import { BloodHighlights } from '@/components/home/BloodHighlights';
+import { NoticeHighlights } from '@/components/home/NoticeHighlights';
+import { VisitBand } from '@/components/home/VisitBand';
 
 export const metadata: Metadata = {
-  title: 'Home',
+  title: { absolute: 'District Hospital Araria | Government of Bihar' },
   description:
-    'District Hospital Araria - Your trusted healthcare partner in Bihar. Book appointments, view doctors, check blood availability, and access healthcare services.',
+    'Book an OPD appointment, find a doctor, check blood availability and read public notices from District Hospital Araria, Bihar.',
 };
 
 export default function HomePage() {
   return (
     <>
-      <div>
-        <Hero />
-        <Features />
-        <Departments />
-        <Doctors />
-        <BloodBank />
-        <Notices />
-      </div>
+      <EmergencyStrip />
+      <HomeHero />
+      <QuickServices />
+      <DepartmentHighlights />
+      <DoctorHighlights />
+      <BloodHighlights />
+      <NoticeHighlights />
+      <VisitBand />
     </>
   );
 }

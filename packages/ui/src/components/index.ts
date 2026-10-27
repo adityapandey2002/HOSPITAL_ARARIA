@@ -1,6 +1,8 @@
 // UI Components exports
 export { Button } from './Button';
 export type { ButtonProps, ButtonSize, ButtonVariant } from './Button';
+export { buttonStyles } from './button-styles';
+export type { ButtonStyleOptions } from './button-styles';
 export { Input } from './Input';
 export { Textarea } from './Textarea';
 export { Select } from './Select';
