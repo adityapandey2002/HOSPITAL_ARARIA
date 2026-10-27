@@ -12,6 +12,15 @@ import {
 import { ComplaintStatus } from '@dh-araria/shared';
 
 /**
+ * A photo reference that survives the tab that created it.
+ *
+ * `blob:` URLs only resolve inside the browser tab that created them, so
+ * storing one guarantees a permanently broken photo. Both complaint creation
+ * and later admin uploads share this rule.
+ */
+const DISPLAYABLE_IMAGE_URL = /^(?:https?:\/\/|data:image\/(?:jpeg|png|webp);base64,)/i;
+
+/**
  * Public complaint submission.
  *
  * Deliberately simpler than the grievance form: only name, department and the
@@ -45,10 +54,25 @@ export class CreateComplaintDto {
   @MaxLength(2_000_000)
   // `blob:` URLs only resolve inside the browser tab that created them, so
   // storing one guarantees a permanently broken photo.
-  @Matches(/^(?:https?:\/\/|data:image\/(?:jpeg|png|webp);base64,)/i, {
+  @Matches(DISPLAYABLE_IMAGE_URL, {
     message: 'imageUrl must be an http(s) URL or a base64-encoded image',
   })
   imageUrl?: string;
+}
+
+/** Attach or replace the photo on an existing complaint. */
+export class UpdateComplaintImageDto {
+  @ApiProperty({
+    maxLength: 2_000_000,
+    description:
+      'Photo as an https URL or a base64 data URL (data:image/jpeg;base64,…)',
+  })
+  @IsString()
+  @MaxLength(2_000_000)
+  @Matches(DISPLAYABLE_IMAGE_URL, {
+    message: 'imageUrl must be an http(s) URL or a base64-encoded image',
+  })
+  imageUrl!: string;
 }
 
 /** Admin-facing status update for a complaint. */

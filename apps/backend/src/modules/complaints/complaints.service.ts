@@ -471,6 +471,45 @@ export class ComplaintsService {
     return updated;
   }
 
+  /**
+   * Attach or replace a complaint's photo.
+   *
+   * `findById` performs the STAFF department-scope check before anything is
+   * written. The DTO already rejects `blob:` URLs, but the same guard is
+   * repeated here so a direct service call cannot store a dead reference.
+   */
+  async updatePhoto(
+    id: string,
+    imageUrl: string,
+    userId: string,
+    userRole: string
+  ): Promise<GrievanceRow> {
+    if (!isStaffRole(userRole)) {
+      throw new ForbiddenException('Not authorized to update complaint photo');
+    }
+
+    await this.findById(id, userId, userRole);
+
+    const displayable = toDisplayableImageUrl(imageUrl);
+    if (!displayable) {
+      throw new BadRequestException(
+        'imageUrl must be an http(s) URL or a base64-encoded image'
+      );
+    }
+
+    const [updated] = await this.db
+      .update(grievances)
+      .set({ imageUrl: displayable, updatedAt: new Date() } as Partial<Insert>)
+      .where(eq(grievances.id, id))
+      .returning();
+
+    if (!updated) {
+      throw new NotFoundException('Complaint not found');
+    }
+
+    return updated;
+  }
+
   async getStats(userId?: string, userRole?: string) {
     const conditions = await this.buildComplaintConditions(userId, userRole);
     const where = conditions.length > 0 ? and(...conditions) : undefined;

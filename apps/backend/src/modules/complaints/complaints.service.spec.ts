@@ -1,4 +1,4 @@
-import { ForbiddenException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException } from '@nestjs/common';
 import { Test, type TestingModule } from '@nestjs/testing';
 
 import { ComplaintStatus, UserRole } from '@dh-araria/shared';
@@ -214,6 +214,61 @@ describe('ComplaintsService', () => {
 
     expect(db.update).not.toHaveBeenCalled();
     expect(notifications.notifyStatusChange).not.toHaveBeenCalled();
+  });
+
+  it('attaches a displayable photo to an existing complaint', async () => {
+    const dataUrl = 'data:image/jpeg;base64,abc';
+    await setup([
+      [complaint], // findById row
+      [historyEntry], // findById -> getHistory
+      [{ ...complaint, imageUrl: dataUrl }], // update returning
+    ]);
+
+    const updated = await service.updatePhoto(
+      'complaint-1',
+      dataUrl,
+      'admin-1',
+      UserRole.ADMIN
+    );
+
+    expect(updated.imageUrl).toBe(dataUrl);
+    expect(builderOf(db, 'update', 0).set).toHaveBeenCalledWith(
+      expect.objectContaining({ imageUrl: dataUrl })
+    );
+  });
+
+  it('refuses a photo change for a department the staff member was not granted', async () => {
+    await setup([
+      [complaint], // findById row
+      [{ departmentId: 'dept-2' }], // staff only holds Emergency Medicine
+      [historyEntry], // never reached: the scope check throws first
+    ]);
+
+    await expect(
+      service.updatePhoto(
+        'complaint-1',
+        'data:image/jpeg;base64,abc',
+        'staff-1',
+        UserRole.STAFF
+      )
+    ).rejects.toBeInstanceOf(ForbiddenException);
+
+    expect(db.update).not.toHaveBeenCalled();
+  });
+
+  it('never stores a blob photo on an existing complaint', async () => {
+    await setup([[complaint], [historyEntry]]);
+
+    await expect(
+      service.updatePhoto(
+        'complaint-1',
+        'blob:http://localhost:3000/dead',
+        'admin-1',
+        UserRole.ADMIN
+      )
+    ).rejects.toBeInstanceOf(BadRequestException);
+
+    expect(db.update).not.toHaveBeenCalled();
   });
 
   it('returns the timeline with each complaint in the list', async () => {

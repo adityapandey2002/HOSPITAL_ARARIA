@@ -9,6 +9,7 @@ import {
   ChevronRight,
   Clock,
   Download,
+  ImagePlus,
   Inbox,
   Phone,
   RefreshCw,
@@ -23,7 +24,11 @@ import { cn } from '@dh-araria/shared/utils';
 import { Badge, Button, Select } from '@dh-araria/ui/components';
 import { api, handleApiResponse } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
-import { isDisplayableImageUrl } from '@/lib/complaint-image';
+import {
+  compressImageToDataUrl,
+  isDisplayableImageUrl,
+  validateImageFile,
+} from '@/lib/complaint-image';
 import { getDepartmentTagTone } from '@/lib/department-tag';
 import { formatDateTime } from '@dh-araria/shared/utils';
 
@@ -123,16 +128,22 @@ interface ComplaintCardProps {
   item: any;
   pendingStatus: ComplaintStatus | null;
   actionsDisabled: boolean;
+  photoUploading: boolean;
+  photoDisabled: boolean;
   onStatusChange: (item: any, status: ComplaintStatus) => void;
   onPhotoOpen: (src: string, alt: string, trigger: HTMLElement) => void;
+  onPhotoUpload: (item: any, file: File) => void;
 }
 
 function ComplaintCard({
   item,
   pendingStatus,
   actionsDisabled,
+  photoUploading,
+  photoDisabled,
   onStatusChange,
   onPhotoOpen,
+  onPhotoUpload,
 }: ComplaintCardProps) {
   const stamp = formatDateTime(item.createdAt);
   // Legacy rows hold dead `blob:` URLs, so only render a photo we can load.
@@ -212,6 +223,41 @@ function ComplaintCard({
           <span className="min-w-0 truncate">{item.phone || item.email}</span>
         </p>
       )}
+
+      <div className="mt-2">
+        <label
+          className={cn(
+            'inline-flex cursor-pointer items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium text-primary-700 transition-colors hover:bg-primary-50 focus-within:ring-2 focus-within:ring-primary-500 focus-within:ring-offset-1',
+            photoDisabled &&
+              'cursor-not-allowed opacity-50 hover:bg-transparent'
+          )}
+        >
+          {photoUploading ? (
+            <RefreshCw className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
+          ) : (
+            <ImagePlus className="h-3.5 w-3.5" aria-hidden="true" />
+          )}
+          <span>
+            {photoUploading
+              ? 'Uploading photo…'
+              : hasImage
+                ? 'Replace photo'
+                : 'Add photo'}
+          </span>
+          <input
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            className="sr-only"
+            disabled={photoDisabled}
+            onChange={(event) => {
+              const file = event.currentTarget.files?.[0] ?? null;
+              // Reset so choosing the same file again still fires onChange.
+              event.currentTarget.value = '';
+              if (file) onPhotoUpload(item, file);
+            }}
+          />
+        </label>
+      </div>
 
       {item.resolution && (
         <div className="mt-3 rounded-lg border border-success-200 bg-success-50 px-3 py-2">
@@ -383,6 +429,7 @@ export function AdminComplaintsPanel() {
   const [departmentsLoading, setDepartmentsLoading] = useState(true);
 
   const [updating, setUpdating] = useState<{ id: string; status: ComplaintStatus } | null>(null);
+  const [photoUploadingId, setPhotoUploadingId] = useState<string | null>(null);
   const [actionMessage, setActionMessage] = useState('');
   const [actionError, setActionError] = useState<string | null>(null);
 
@@ -540,6 +587,37 @@ export function AdminComplaintsPanel() {
   const openPhoto = (src: string, alt: string, trigger: HTMLElement) => {
     photoTriggerRef.current = trigger;
     setPhoto({ src, alt });
+  };
+
+  const handlePhotoUpload = async (item: any, file: File) => {
+    const problem = validateImageFile(file);
+    if (problem) {
+      setActionError(problem);
+      return;
+    }
+
+    setPhotoUploadingId(item.id);
+    setActionError(null);
+    setActionMessage('');
+
+    try {
+      const imageUrl = await compressImageToDataUrl(file);
+      const response = await api.patch<any>(`/complaints/${item.id}/photo`, { imageUrl });
+      const updated = handleApiResponse<any>(response);
+
+      setItems((current) =>
+        current.map((complaint) =>
+          complaint.id === item.id
+            ? { ...complaint, imageUrl: updated?.imageUrl ?? imageUrl }
+            : complaint
+        )
+      );
+      setActionMessage(`Photo attached to the complaint from ${item.name}.`);
+    } catch (error) {
+      setActionError(getErrorMessage(error, 'We could not attach that photo.'));
+    } finally {
+      setPhotoUploadingId((current) => (current === item.id ? null : current));
+    }
   };
 
   const totalValue = stats ? stats.total.toLocaleString('en-IN') : statsLoading ? '…' : '—';
@@ -824,10 +902,13 @@ export function AdminComplaintsPanel() {
                     item={item}
                     pendingStatus={updating && updating.id === item.id ? updating.status : null}
                     actionsDisabled={updating !== null}
+                    photoUploading={photoUploadingId === item.id}
+                    photoDisabled={photoUploadingId !== null || updating !== null}
                     onStatusChange={(complaint, status) =>
                       void handleStatusChange(complaint, status)
                     }
                     onPhotoOpen={openPhoto}
+                    onPhotoUpload={(complaint, file) => void handlePhotoUpload(complaint, file)}
                   />
                 ))}
               </ul>

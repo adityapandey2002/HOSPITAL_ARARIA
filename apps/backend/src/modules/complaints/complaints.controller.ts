@@ -27,6 +27,7 @@ import { ComplaintsService } from './complaints.service';
 import {
   CreateComplaintDto,
   ComplaintQueryDto,
+  UpdateComplaintImageDto,
   UpdateComplaintStatusDto,
 } from './dto/complaint.dto';
 
@@ -130,6 +131,21 @@ export class ComplaintsController {
     @CurrentUser('role') userRole: string
   ) {
     return this.complaintsService.findById(id, userId, userRole);
+  }
+
+  @Patch(':id/photo')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.STAFF)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Attach or replace a complaint photo (Admin/Staff)' })
+  @ApiResponse({ status: 200, description: 'Photo updated successfully' })
+  async updatePhoto(
+    @Param('id') id: string,
+    @Body() dto: UpdateComplaintImageDto,
+    @CurrentUser('id') userId: string,
+    @CurrentUser('role') userRole: string
+  ) {
+    return this.complaintsService.updatePhoto(id, dto.imageUrl, userId, userRole);
   }
 
   @Patch(':id/status')

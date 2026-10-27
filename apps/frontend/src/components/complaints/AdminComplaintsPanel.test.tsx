@@ -23,7 +23,16 @@ jest.mock('@/lib/api', () => {
   };
 });
 
+jest.mock('@/lib/complaint-image', () => {
+  const actual = jest.requireActual('@/lib/complaint-image');
+  return {
+    ...actual,
+    compressImageToDataUrl: jest.fn().mockResolvedValue('data:image/jpeg;base64,uploaded'),
+  };
+});
+
 const mockGet = api.get as jest.Mock;
+const mockPatch = api.patch as jest.Mock;
 
 const complaint = {
   id: 'complaint-1',
@@ -217,7 +226,6 @@ describe('AdminComplaintsPanel', () => {
   it('shows the attached photo and opens it in a full-screen viewer', async () => {
     mockApi([{ ...complaint, imageUrl: photoDataUrl }]);
     render(<AdminComplaintsPanel />);
-
     const thumbnail = await screen.findByRole('img', {
       name: /photo attached to complaint by test complainant/i,
     });
@@ -239,5 +247,30 @@ describe('AdminComplaintsPanel', () => {
     await waitFor(() => {
       expect(screen.queryByRole('dialog', { name: /complaint photo/i })).not.toBeInTheDocument();
     });
+  });
+
+  it('lets an admin attach a photo to an existing complaint', async () => {
+    mockApi();
+    mockPatch.mockResolvedValueOnce(
+      backendResponse({ ...complaint, imageUrl: 'data:image/jpeg;base64,uploaded' })
+    );
+    render(<AdminComplaintsPanel />);
+
+    const input = await screen.findByLabelText('Add photo');
+    const file = new File(['x'.repeat(128)], 'photo.jpg', { type: 'image/jpeg' });
+    fireEvent.change(input, { target: { files: [file] } });
+
+    await waitFor(() =>
+      expect(mockPatch).toHaveBeenCalledWith('/complaints/complaint-1/photo', {
+        imageUrl: 'data:image/jpeg;base64,uploaded',
+      })
+    );
+
+    expect(
+      await screen.findByRole('button', {
+        name: /view photo attached to complaint by test complainant/i,
+      })
+    ).toBeInTheDocument();
+    expect(screen.getByText('Replace photo')).toBeInTheDocument();
   });
 });
