@@ -72,11 +72,24 @@ export class DepartmentsService {
 
   /** Department detail plus its active doctors and their bookable slots. */
   async findById(id: string) {
-    const [department] = await this.db
+    let [department] = await this.db
       .select()
       .from(departments)
       .where(eq(departments.id, id))
       .limit(1);
+
+    // Allow human-readable slugs (e.g. "emergency-medicine") in addition to UUIDs
+    // so links shared from the portal resolve instead of 404ing.
+    if (!department) {
+      const slug = id.trim().toLowerCase();
+      const candidates = await this.db
+        .select()
+        .from(departments)
+        .where(eq(departments.isActive, true));
+      const matched = candidates.find((row) => slugify(row.name) === slug);
+      if (matched) department = matched;
+    }
+
     if (!department) throw new NotFoundException('Department not found');
 
     const staff = await this.db
@@ -148,4 +161,12 @@ export class DepartmentsService {
     await this.db.delete(departments).where(eq(departments.id, id));
     return { success: true };
   }
+}
+
+function slugify(value: string): string {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
 }

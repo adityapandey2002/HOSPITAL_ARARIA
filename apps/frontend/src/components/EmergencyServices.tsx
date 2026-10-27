@@ -43,7 +43,7 @@ const emergencyServices = [
       'Cardiac emergency care',
     ],
     cta: 'Visit Emergency',
-    href: '/services/emergency',
+    href: '/services?q=Emergency',
     color: 'danger',
   },
   {
@@ -53,7 +53,7 @@ const emergencyServices = [
       'Designated trauma center with orthopedic, neurosurgical, and general surgical backup round the clock.',
     features: ['Trauma team activation', 'CT scan on-site', 'Blood bank access', 'ICU backup'],
     cta: 'Learn More',
-    href: '/services/emergency/trauma',
+    href: '/services?q=Emergency',
     color: 'warning',
   },
   {
@@ -68,7 +68,7 @@ const emergencyServices = [
       'District coordination',
     ],
     cta: 'View Plan',
-    href: '/services/emergency/disaster',
+    href: '/services?q=Emergency',
     color: 'secondary',
   },
 ];

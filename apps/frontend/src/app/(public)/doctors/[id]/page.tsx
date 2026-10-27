@@ -212,7 +212,7 @@ export default async function DoctorPage({ params }: DoctorPageProps) {
                   <div>
                     <h3 className="text-sm font-semibold text-gray-700 mb-3">Bio</h3>
                     <p className="text-sm text-gray-600">
-                      {doctor.bio || `Dr. ${doctor.name} is an experienced {doctor.specialization} practicing at the ${doctor.department.name} department of District Hospital Araria.`}
+                      {doctor.bio || `Dr. ${doctor.name} is an experienced ${doctor.specialization} practicing at the ${doctor.department.name} department of District Hospital Araria.`}
                     </p>
                   </div>
                 </div>
