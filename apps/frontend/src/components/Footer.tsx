@@ -17,6 +17,14 @@ import {
   Heart,
 } from 'lucide-react';
 
+/**
+ * `/services/[id]` is keyed by department UUID, so a department name cannot be
+ * turned into a detail URL. Send people to the searchable list instead.
+ */
+function serviceSearchHref(name: string): string {
+  return `/services?q=${encodeURIComponent(name)}`;
+}
+
 const footerLinks = {
   quickLinks: [
     { label: 'Home', href: '/' },
@@ -31,24 +39,24 @@ const footerLinks = {
     { label: 'Contact Us', href: '/contact' },
   ],
   services: [
-    { label: 'Emergency Services', href: '/services/emergency' },
-    { label: 'OPD Services', href: '/services/opd' },
-    { label: 'Diagnostic Services', href: '/services/diagnostics' },
+    { label: 'Emergency Services', href: serviceSearchHref('Emergency Services') },
+    { label: 'OPD Services', href: serviceSearchHref('OPD Services') },
+    { label: 'Diagnostic Services', href: serviceSearchHref('Diagnostic Services') },
     { label: 'Blood Bank', href: '/blood-bank' },
-    { label: 'Ambulance Service', href: '/services/ambulance' },
-    { label: 'Pharmacy', href: '/services/pharmacy' },
-    { label: 'Physiotherapy', href: '/services/physiotherapy' },
-    { label: 'Dietary Services', href: '/services/dietary' },
+    { label: 'Ambulance Service', href: serviceSearchHref('Ambulance Service') },
+    { label: 'Pharmacy', href: serviceSearchHref('Pharmacy') },
+    { label: 'Physiotherapy', href: serviceSearchHref('Physiotherapy') },
+    { label: 'Dietary Services', href: serviceSearchHref('Dietary Services') },
   ],
   departments: [
-    { label: 'General Medicine', href: '/services/general-medicine' },
-    { label: 'Pediatrics', href: '/services/pediatrics' },
-    { label: 'Obstetrics & Gynecology', href: '/services/obstetrics-gynecology' },
-    { label: 'Orthopedics', href: '/services/orthopedics' },
-    { label: 'General Surgery', href: '/services/surgery' },
-    { label: 'Ophthalmology', href: '/services/ophthalmology' },
-    { label: 'ENT', href: '/services/ent' },
-    { label: 'Dermatology', href: '/services/dermatology' },
+    { label: 'General Medicine', href: serviceSearchHref('General Medicine') },
+    { label: 'Pediatrics', href: serviceSearchHref('Pediatrics') },
+    { label: 'Obstetrics & Gynecology', href: serviceSearchHref('Obstetrics & Gynecology') },
+    { label: 'Orthopedics', href: serviceSearchHref('Orthopedics') },
+    { label: 'General Surgery', href: serviceSearchHref('General Surgery') },
+    { label: 'Ophthalmology', href: serviceSearchHref('Ophthalmology') },
+    { label: 'ENT', href: serviceSearchHref('ENT') },
+    { label: 'Dermatology', href: serviceSearchHref('Dermatology') },
   ],
   patientResources: [
     { label: 'Patient Rights', href: '/patient-rights' },

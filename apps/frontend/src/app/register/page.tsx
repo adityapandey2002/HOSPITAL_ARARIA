@@ -107,7 +107,10 @@ export default function RegisterPage() {
   const strengthColors = ['danger', 'warning', 'warning', 'success', 'success'];
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4 py-12 pt-32 sm:px-6 lg:px-8">
+    <main
+      id="main-content"
+      className="flex min-h-screen items-center justify-center bg-gray-50 px-4 py-12 pt-32 sm:px-6 lg:px-8"
+    >
       <div className="w-full max-w-md space-y-8">
         <div className="text-center">
           <Link href="/" className="mb-6 inline-flex items-center justify-center gap-3">
@@ -324,6 +327,6 @@ export default function RegisterPage() {
           </Link>
         </p>
       </div>
-    </div>
+    </main>
   );
 }

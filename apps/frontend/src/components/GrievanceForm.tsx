@@ -141,10 +141,10 @@ export function GrievanceForm() {
                 File Another Complaint
               </Button>
               <Button
-                onClick={() => (window.location.href = '/grievances/track')}
+                onClick={() => (window.location.href = '/complaints/track')}
                 variant="primary"
               >
-                Track Status
+                Track Complaint Status
                 <ArrowRight className="h-4 w-4" />
               </Button>
             </div>
@@ -287,7 +287,7 @@ export function GrievanceForm() {
               Already have a complaint ID?
             </h3>
             <p className="mb-4 text-gray-600">Track the status of your existing grievance</p>
-            <Button variant="outline" onClick={() => (window.location.href = '/grievances/track')}>
+            <Button variant="outline" onClick={() => (window.location.href = '/complaints/track')}>
               Track Complaint Status
               <ArrowRight className="h-4 w-4" />
             </Button>

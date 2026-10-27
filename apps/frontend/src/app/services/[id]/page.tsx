@@ -77,6 +77,28 @@ interface ServicePageProps {
   params: Promise<{ id: string }>;
 }
 
+const FALLBACK_TITLE = 'Service | District Hospital Araria';
+
+export async function generateMetadata({ params }: ServicePageProps): Promise<Metadata> {
+  const { id } = await params;
+
+  try {
+    const response = await api.get<DepartmentDetail>(`/departments/${id}`);
+    const record = handleApiResponse(response);
+
+    if (record) {
+      return {
+        title: `${record.name} | District Hospital Araria`,
+        description: record.description,
+      };
+    }
+  } catch {
+    // Fall back to the static title when the record cannot be fetched.
+  }
+
+  return { title: FALLBACK_TITLE };
+}
+
 export default async function ServicePage({ params }: ServicePageProps) {
   const { id } = await params;
 
@@ -95,13 +117,8 @@ export default async function ServicePage({ params }: ServicePageProps) {
 
   const Icon = iconFor(department.name);
 
-  const metadata: Metadata = {
-    title: `${department.name} | District Hospital Araria`,
-    description: department.description,
-  };
-
   return (
-    <>{metadata}
+    <>
       <Header />
       <main id="main-content" className="min-h-screen bg-gray-50 pt-32">
         <section className="bg-primary-600 py-16 text-white sm:py-20">

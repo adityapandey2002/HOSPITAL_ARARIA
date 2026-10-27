@@ -1,7 +1,6 @@
 import type { Metadata } from 'next';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
-import { Button } from '@dh-araria/ui/components';
 
 export const metadata: Metadata = {
   title: 'Download Forms | District Hospital Araria',
@@ -70,14 +69,23 @@ export default function FormsPage() {
                       {form.type}
                     </span>
                   </div>
-                  <Button className="mt-auto w-full" variant="outline">
-                    <a href="#" className="text-primary-700 font-medium hover:text-primary-800">
-                      Download
-                    </a>
-                  </Button>
+                  <p className="mt-auto rounded-lg border border-dashed border-gray-300 bg-gray-50 px-3 py-2 text-center text-xs font-medium text-gray-600">
+                    Not available online — collect from the hospital counter
+                  </p>
                 </div>
               ))}
             </div>
+
+            <p className="mt-8 text-sm text-gray-600">
+              Need a form before your visit? Call the hospital help desk on{' '}
+              <a
+                href="tel:+91-6453-222123"
+                className="font-medium text-primary-600 hover:text-primary-700"
+              >
+                +91-6453-222123
+              </a>
+              .
+            </p>
           </div>
         </div>
       </main>
