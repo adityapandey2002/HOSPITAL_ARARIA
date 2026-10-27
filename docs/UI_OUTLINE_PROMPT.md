@@ -190,8 +190,9 @@ with the same data.
 | `/feedback/inbox` | Feedback inbox and access grants | STAFF, ADMIN | No | Live | `/feedback`, `/feedback/stats`, `/feedback/access`, `/feedback/scope` |
 | `/admin` | Admin dashboard or redirect | STAFF, ADMIN | No | Planned — `admin/layout.tsx` exists but there is no index page | Aggregates |
 | `/admin/complaints` | Complaint triage | STAFF, ADMIN | No | Live | `/complaints`, `/complaints/stats`, `/complaints/export` |
+| `/admin/staff` | Staff accounts and department access | ADMIN | No | Live | `GET/POST /admin/staff`, `PATCH /admin/staff/:id`, `/departments` |
 | `/admin/doctors` | Doctor management | ADMIN | No | Partial — add and delete work; edit is missing | `/admin/doctors` |
-| `/admin/nodal-officers` | Department access grants | ADMIN | No | Live | `/admin/department-access`, `/users` |
+| `/admin/nodal-officers` | Legacy redirect to `/admin/staff` | ADMIN | No | Redirect — the grant-only screen was replaced by the staff-centric screen | None |
 | `/admin/appointments` | Appointment desk | STAFF, ADMIN, DOCTOR | No | Planned | `/appointments`, `/appointments/doctor/:id` |
 | `/admin/notices` | Notice publishing | STAFF, ADMIN | No | Planned | `/notices` CRUD |
 | `/admin/grievances` | Grievance triage | STAFF, ADMIN | No | Planned | `/grievances` CRUD |
@@ -810,8 +811,9 @@ show a permission-denied page for the wrong role.
   on hiding a link.
 - `noindex` on every admin page.
 - Consistent admin header with the section title, one-sentence description, and
-  tabs: Complaints, Feedback, Appointments, Notices, Grievances, Doctors, Nodal
-  Officers, Blood Bank, Contact Messages, Departments, Users, Audit Log.
+  tabs. Live tabs: Complaints, Feedback, Staff & Access, Doctors (`Staff &
+  Access` and `Doctors` are ADMIN-only). Planned tabs: Appointments, Notices,
+  Grievances, Blood Bank, Contact Messages, Departments, Users, Audit Log.
 - Tabs scroll horizontally on mobile; the active tab is marked.
 - `/admin` should be a dashboard or a redirect to the first permitted tab. A
   layout without an index page is a 404 today.
@@ -836,10 +838,17 @@ show a permission-denied page for the wrong role.
 - KPI strip: total, submitted, under review, in progress, resolved, rejected.
 - Filters: search, status, department, date range, sort.
 - Cards or table: reference, citizen name, department tag, submitted date,
-  status, photo thumbnail, assigned officer.
+  status, photo thumbnail, assigned officer. The department tag shows the full
+  department name and truncates with an ellipsis inside the card; keep the full
+  name available through `title` and the accessible label.
 - Row detail: full complaint, photo with alt text, status history, resolution
-  field, update action.
-- Actions: update status, add resolution, export CSV, refresh.
+  field, update action. Status history lists each transition with actor,
+  timestamp, note, and resolution when present.
+- Actions: update status, add resolution, attach or replace a photo on an
+  existing complaint, export CSV, refresh.
+- Photo upload accepts JPEG, PNG, or WebP. Show an uploading state, disable the
+  control while the request is in flight, and keep upload errors next to the
+  card so the user can retry.
 - Staff see only their department scope; admins see all. Show a scope banner.
 - Optimistic status update is allowed only if the API result is reconciled and
   failures roll back visibly.
@@ -876,16 +885,29 @@ show a permission-denied page for the wrong role.
 - Empty, loading, error states.
 - `noindex`.
 
-### 5.10 Nodal officers (`/admin/nodal-officers`)
+### 5.10 Staff and access (`/admin/staff`)
 
-**Live.**
+**Live.** `/admin/nodal-officers` now redirects here; the grant-only screen was
+replaced by the staff-centric screen.
 
-- Explanation: nodal officers can view and update complaints for their
-  department only.
-- Table: staff member, email, department, role, granted date, actions.
-- Assign modal: staff member select, department select, explanation of scope.
-- Revoke: confirmation.
-- Empty state with a clear "Assign access" CTA.
+- Explanation: administrators create staff logins and choose the departments
+  whose complaints each account may see. Staff see only their scope; admins see
+  every department.
+- Summary: total staff accounts, active accounts, and departments covered.
+- Table: staff member (name, email, phone), department chips, status, actions.
+- Add staff modal: full name, email, optional phone, initial password,
+  department checkboxes, active flag. Validate against the backend DTO — at
+  least 8 characters with upper, lower, number, and special, plus at least one
+  department.
+- Manage modal: edit name, email, phone, and department access; reset the
+  password; activate or deactivate the account. Deactivation keeps history and
+  blocks sign-in.
+- ADMIN-only gate with sign-in and permission-denied states; never rely on
+  hiding the tab.
+- Empty state explains that a staff member needs at least one department before
+  they can see complaints.
+- Show success and error toasts; keep the form open and preserve values on
+  failure.
 - `noindex`.
 
 ### 5.11 Admin appointments (`/admin/appointments`)
@@ -1335,8 +1357,9 @@ A page is done only when all of these are true:
 - [ ] `/account` and sub-routes (planned)
 - [ ] `/admin` (planned)
 - [ ] `/admin/complaints`
+- [ ] `/admin/staff`
 - [ ] `/admin/doctors`
-- [ ] `/admin/nodal-officers`
+- [ ] `/admin/nodal-officers` (redirects to `/admin/staff`)
 - [ ] `/admin/appointments` (planned)
 - [ ] `/admin/notices` (planned)
 - [ ] `/admin/grievances` (planned)
