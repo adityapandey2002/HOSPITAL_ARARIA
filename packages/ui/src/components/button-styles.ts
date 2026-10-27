@@ -37,8 +37,8 @@ const BUTTON_BASE =
 export interface ButtonStyleOptions {
   variant?: ButtonVariant;
   size?: ButtonSize;
-  fullWidth?: boolean;
-  className?: string;
+  fullWidth?: boolean | undefined;
+  className?: string | undefined;
 }
 
 /**
