@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { EmergencyStrip } from '@/components/home/EmergencyStrip';
 import { HomeHero } from '@/components/home/HomeHero';
+import { HomeScrollReset } from '@/components/home/HomeScrollReset';
 import { QuickServices } from '@/components/home/QuickServices';
 import { DepartmentHighlights } from '@/components/home/DepartmentHighlights';
 import { DoctorHighlights } from '@/components/home/DoctorHighlights';
@@ -17,6 +18,7 @@ export const metadata: Metadata = {
 export default function HomePage() {
   return (
     <>
+      <HomeScrollReset />
       <EmergencyStrip />
       <HomeHero />
       <QuickServices />
