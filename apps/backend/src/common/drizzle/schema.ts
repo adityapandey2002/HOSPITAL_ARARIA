@@ -317,6 +317,11 @@ export const grievances = pgTable(
     cpgramsId: text('cpgramsId').unique(),
     assignedTo: text('assignedTo').references(() => users.id, { onDelete: 'set null' }),
     resolution: text('resolution'),
+    /**
+     * Optional photo attached when staff resolve this complaint. Kept separate
+     * from `imageUrl`, which belongs to the complainant's original evidence.
+     */
+    resolutionImageUrl: text('resolutionImageUrl'),
     createdAt: timestamp('createdAt', { mode: 'date' }).notNull().defaultNow(),
     updatedAt: timestamp('updatedAt', { mode: 'date' }).notNull().defaultNow(),
   },
@@ -547,6 +552,8 @@ export const complaintStatusHistory = pgTable(
     toStatus: complaintStatusEnum('toStatus').notNull(),
     /** Resolution note attached to this transition, when one was given. */
     resolution: text('resolution'),
+    /** Optional photo shown with this resolution. */
+    resolutionImageUrl: text('resolutionImageUrl'),
     changedBy: text('changedBy').references(() => users.id, { onDelete: 'set null' }),
     /** Snapshot of the actor's display name at the time of the change. */
     changedByName: text('changedByName').notNull(),
