@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { ArrowLeft, LogOut, Menu, ShieldCheck, X } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
-import { adminNavForRole, isActivePath } from '@/config/navigation';
+import { adminBottomNavForRole, adminNavForRole, isActivePath } from '@/config/navigation';
 import { HOSPITAL } from '@/config/hospital';
 import { cn } from '@dh-araria/shared/utils';
 import { useState } from 'react';
@@ -21,6 +21,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
   const { user, isLoading, isAuthenticated, logout } = useAuth();
   const [navOpen, setNavOpen] = useState(false);
   const items = adminNavForRole(user?.role);
+  const bottomItems = adminBottomNavForRole(user?.role);
 
   const handleLogout = async () => {
     await logout();
@@ -163,7 +164,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
           className="fixed inset-x-0 bottom-0 z-40 border-t border-outline-variant bg-card pb-[env(safe-area-inset-bottom)] shadow-[0_-1px_8px_rgba(0,0,0,0.04)] lg:hidden"
         >
           <ul className="mx-auto flex h-[var(--bottom-nav-h)] max-w-xl items-stretch">
-            {items.map((item) => {
+            {bottomItems.map((item) => {
               const active = isActivePath(pathname, item.href);
               const Icon = item.icon;
               return (

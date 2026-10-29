@@ -220,4 +220,32 @@ export function adminNavForRole(role: UserRole | undefined): Array<NavLink & { r
   return ADMIN_NAV.filter((item) => item.roles.includes(role));
 }
 
+/**
+ * Destinations the admin mobile bar shows, in bar order.
+ *
+ * The sidebar and the drawer carry all eleven entries; a phone bar only has
+ * room for five, so it keeps the ones the desk uses through the day. Anything
+ * not listed here stays reachable from the drawer.
+ */
+const ADMIN_BOTTOM_BAR: Array<{ href: string; label: string }> = [
+  { href: '/admin/complaints', label: 'Complaints' },
+  { href: '/feedback/inbox', label: 'Feedback' },
+  { href: '/admin/appointments', label: 'Appointments' },
+  { href: '/admin/notices', label: 'Notices' },
+  { href: '/admin/doctors', label: 'Doctors' },
+];
+
+/**
+ * Admin links for the mobile bottom bar, filtered to the signed-in role.
+ *
+ * Staff cannot run the doctors register, so their bar shows four entries.
+ */
+export function adminBottomNavForRole(role: UserRole | undefined): NavLink[] {
+  const items = adminNavForRole(role);
+  return ADMIN_BOTTOM_BAR.flatMap((entry) => {
+    const item = items.find((candidate) => candidate.href === entry.href);
+    return item ? [{ ...item, label: entry.label }] : [];
+  });
+}
+
 export const ADMIN_FALLBACK_ICON = LayoutDashboard;
