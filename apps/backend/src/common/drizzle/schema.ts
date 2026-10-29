@@ -348,6 +348,17 @@ export const notices = pgTable(
     expiresAt: timestamp('expiresAt', { mode: 'date' }),
     isPublished: boolean('isPublished').notNull().default(false),
     attachmentUrl: text('attachmentUrl'),
+    /**
+     * Scanned pages the admin attached while drafting, as base64 data URLs.
+     *
+     * The portal has no object storage, so this follows
+     * docs/adr/0004-complaint-image-storage.md. Kept out of list payloads: a
+     * notice board row must stay a few hundred bytes.
+     */
+    imageUrls: text('imageUrls')
+      .array()
+      .notNull()
+      .default(sql`'{}'::text[]`),
     language: text('language').notNull().default('en'),
     authorId: text('authorId')
       .notNull()

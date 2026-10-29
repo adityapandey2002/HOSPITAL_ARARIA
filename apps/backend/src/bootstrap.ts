@@ -86,6 +86,18 @@ export async function createApp(options: CreateAppOptions = {}): Promise<NestExp
     if (!isSubmission && !isPhotoWrite) return next();
     return json({ limit: '2mb' })(req, res, next);
   });
+
+  // Notice scans follow the same rule (docs/adr/0005-notice-attachments-and-extraction.md):
+  // up to three data-URL images on a draft, and one image per extraction call.
+  app.use('/api/v1/notices', (req: Request, res: Response, next: NextFunction) => {
+    const isDraftWrite =
+      (req.method === 'POST' && (req.path === '/' || req.path === '')) ||
+      ((req.method === 'PUT' || req.method === 'PATCH') && /^\/[^/]+\/?$/.test(req.path));
+    const isExtraction = req.method === 'POST' && /^\/extract-text\/?$/.test(req.path);
+
+    if (!isDraftWrite && !isExtraction) return next();
+    return json({ limit: '4mb' })(req, res, next);
+  });
   app.useBodyParser('json', { limit: '100kb' });
   app.useBodyParser('urlencoded', { limit: '100kb', extended: true });
 

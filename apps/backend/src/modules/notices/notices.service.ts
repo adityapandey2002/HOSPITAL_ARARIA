@@ -17,6 +17,28 @@ const SORTABLE: Record<string, AnyPgColumn> = {
   updatedAt: notices.updatedAt,
 };
 
+/**
+ * Columns a list row returns.
+ *
+ * Attached scans are multi-hundred-kilobyte data URLs, so they are only read by
+ * {@link NoticesService.findById}. A notice board page must stay small.
+ */
+const NOTICE_LIST_COLUMNS = {
+  id: notices.id,
+  title: notices.title,
+  content: notices.content,
+  category: notices.category,
+  priority: notices.priority,
+  publishedAt: notices.publishedAt,
+  expiresAt: notices.expiresAt,
+  isPublished: notices.isPublished,
+  attachmentUrl: notices.attachmentUrl,
+  language: notices.language,
+  authorId: notices.authorId,
+  createdAt: notices.createdAt,
+  updatedAt: notices.updatedAt,
+} as const;
+
 export interface NoticeFilters {
   category?: string;
   priority?: string;
@@ -39,7 +61,7 @@ export class NoticesService {
 
     const [rows, totals] = await Promise.all([
       this.db
-        .select()
+        .select(NOTICE_LIST_COLUMNS)
         .from(notices)
         .where(where)
         .orderBy(orderBy)
@@ -70,7 +92,7 @@ export class NoticesService {
 
     const [rows, totals] = await Promise.all([
       this.db
-        .select()
+        .select(NOTICE_LIST_COLUMNS)
         .from(notices)
         .where(where)
         .orderBy(orderBy)

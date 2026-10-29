@@ -25,6 +25,14 @@ const MAX_EDGE = 1280;
  */
 const MAX_DATA_URL_LENGTH = 1_800_000;
 
+export interface CompressImageOptions {
+  /**
+   * Ceiling for the encoded string. Forms that send more than one image pass a
+   * smaller value so the whole JSON body still fits the route's limit.
+   */
+  maxLength?: number;
+}
+
 const MIN_QUALITY = 0.4;
 
 /** Only these can be rendered later, by this tab or any other device. */
@@ -88,10 +96,14 @@ async function loadDrawable(file: File): Promise<ImageBitmap | HTMLImageElement>
  * Downscales and re-encodes a photo as a JPEG data URL small enough to store.
  *
  * Steps the quality down, then the dimensions, until the encoded string fits
- * under {@link MAX_DATA_URL_LENGTH}. Throws when the browser cannot decode the
- * file or no attempt fits, so the form can surface a clear error.
+ * under the caller's limit (1.8M characters by default). Throws when the browser
+ * cannot decode the file or no attempt fits, so the form can surface a clear error.
  */
-export async function compressImageToDataUrl(file: File): Promise<string> {
+export async function compressImageToDataUrl(
+  file: File,
+  options: CompressImageOptions = {}
+): Promise<string> {
+  const maxLength = options.maxLength ?? MAX_DATA_URL_LENGTH;
   const drawable = await loadDrawable(file);
   const sourceWidth = drawable.width;
   const sourceHeight = drawable.height;
@@ -123,7 +135,7 @@ export async function compressImageToDataUrl(file: File): Promise<string> {
       context.drawImage(drawable, 0, 0, width, height);
 
       const dataUrl = canvas.toDataURL('image/jpeg', quality);
-      if (dataUrl.length <= MAX_DATA_URL_LENGTH) {
+      if (dataUrl.length <= maxLength) {
         return dataUrl;
       }
 

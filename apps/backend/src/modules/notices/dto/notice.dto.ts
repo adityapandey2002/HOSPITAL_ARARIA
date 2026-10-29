@@ -1,8 +1,11 @@
 import { ApiProperty, ApiPropertyOptional, PartialType } from '@nestjs/swagger';
 import {
+  ArrayMaxSize,
+  IsArray,
   IsBoolean,
   IsDateString,
   IsEnum,
+  IsIn,
   IsOptional,
   IsString,
   Length,
@@ -55,6 +58,23 @@ export class CreateNoticeDto {
   @MaxLength(2048)
   attachmentUrl?: string;
 
+  /**
+   * Scanned pages attached while drafting, as base64 data URLs.
+   *
+   * Three is the practical ceiling: each image is compressed to stay under
+   * 900,000 characters, and the route body limit is 4 MB.
+   */
+  @ApiPropertyOptional({
+    type: [String],
+    description: 'Attached scans as base64 data URLs (maximum 3)',
+  })
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(3)
+  @IsString({ each: true })
+  @MaxLength(1_000_000, { each: true })
+  imageUrls?: string[];
+
   @ApiPropertyOptional({ default: 'en' })
   @IsOptional()
   @IsString()
@@ -63,3 +83,17 @@ export class CreateNoticeDto {
 }
 
 export class UpdateNoticeDto extends PartialType(CreateNoticeDto) {}
+
+export class ExtractNoticeTextDto {
+  @ApiProperty({
+    description: 'The page to read, as a base64 data URL or an https link',
+  })
+  @IsString()
+  @MaxLength(3_000_000)
+  image!: string;
+
+  @ApiPropertyOptional({ enum: ['auto', 'en', 'hi'], default: 'auto' })
+  @IsOptional()
+  @IsIn(['auto', 'en', 'hi'])
+  language?: 'auto' | 'en' | 'hi';
+}

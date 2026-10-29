@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { api, handleApiResponse } from '@/lib/api';
+import { isDisplayableImageUrl } from '@/lib/complaint-image';
 import { cn } from '@dh-araria/shared/utils';
 
 interface NoticeDetail {
@@ -14,6 +15,8 @@ interface NoticeDetail {
   expiresAt?: Date | null;
   isPublished: boolean;
   attachmentUrl?: string | null;
+  /** Scanned pages attached by the desk, as data URLs. */
+  imageUrls?: string[] | null;
   language: string;
   createdAt: Date;
   updatedAt: Date;
@@ -77,6 +80,9 @@ export default async function NoticePage({ params }: NoticePageProps) {
     notFound();
   }
 
+  // Legacy or hand-edited rows may hold values no browser can render.
+  const scannedPages = (notice.imageUrls ?? []).filter(isDisplayableImageUrl);
+
   return (
     <>
       <div>
@@ -93,7 +99,7 @@ export default async function NoticePage({ params }: NoticePageProps) {
               </span>
               <span
                 className={cn(
-                  'inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-medium uppercase bg-primary-50 text-primary-700'
+                  'inline-flex items-center gap-1 rounded-full bg-primary-50 px-3 py-1 text-xs font-medium uppercase text-primary-700'
                 )}
               >
                 {CATEGORY_LABELS[notice.category] ?? notice.category}
@@ -108,15 +114,33 @@ export default async function NoticePage({ params }: NoticePageProps) {
 
         <div className="bg-white py-12">
           <div className="container mx-auto px-4">
-            <article className="max-w-3xl mx-auto prose prose-lg text-gray-700">
+            <article className="prose prose-lg mx-auto max-w-3xl text-gray-700">
               <div className="whitespace-pre-line">{notice.content}</div>
             </article>
+
+            {scannedPages.length > 0 && (
+              <section className="mx-auto mt-8 max-w-3xl" aria-label="Scanned notice pages">
+                <h2 className="text-lg font-semibold text-gray-900">Scanned notice</h2>
+                <ul className="mt-3 space-y-4">
+                  {scannedPages.map((url, index) => (
+                    <li key={`scan-${index}`}>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={url}
+                        alt={`Scanned page ${index + 1} of ${notice.title}`}
+                        className="w-full rounded-xl border border-gray-200 bg-white"
+                      />
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            )}
 
             {notice.attachmentUrl && (
               <div className="mt-8 rounded-xl border border-gray-200 bg-gray-50 p-4">
                 <a
                   href={notice.attachmentUrl}
-                  className="flex items-center gap-2 text-primary-600 hover:text-primary-700 font-medium"
+                  className="flex items-center gap-2 font-medium text-primary-600 hover:text-primary-700"
                   target="_blank"
                   rel="noopener noreferrer"
                 >
@@ -125,10 +149,10 @@ export default async function NoticePage({ params }: NoticePageProps) {
               </div>
             )}
 
-            <div className="mt-8 flex justify-between items-center">
+            <div className="mt-8 flex items-center justify-between">
               <Link
                 href="/notices"
-                className="text-primary-700 font-medium hover:text-primary-800 hover:underline"
+                className="font-medium text-primary-700 hover:text-primary-800 hover:underline"
               >
                 ← Back to Notices
               </Link>

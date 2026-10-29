@@ -1,0 +1,1 @@
+ALTER TABLE "notices" ADD COLUMN "imageUrls" text[] DEFAULT '{}'::text[] NOT NULL;
