@@ -239,7 +239,14 @@ export function SiteHeader() {
                 {CITIZEN_MENU.title}
               </p>
               <ul className="space-y-1">
-                {CITIZEN_MENU.links.map((item) => {
+                {CITIZEN_MENU.links
+                  // "File a complaint" now appears in PUBLIC_NAV, which the
+                  // drawer already renders above. Filter it here so the drawer
+                  // never shows the same destination twice.
+                  .filter(
+                    (item) => !PUBLIC_NAV.some((publicItem) => publicItem.href === item.href)
+                  )
+                  .map((item) => {
                   const Icon = item.icon;
                   return (
                     <li key={item.href}>

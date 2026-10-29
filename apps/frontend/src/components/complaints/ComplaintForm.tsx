@@ -239,8 +239,8 @@ export function ComplaintForm({ initialDepartmentId }: ComplaintFormProps) {
               Complaint Submitted
             </h2>
             <p className="mt-3 text-gray-700">
-              Your complaint has been recorded and forwarded to the concerned department. The
-              hospital team will review it and get back to you.
+              Your complaint has been recorded and forwarded to the concerned department. Keep the
+              reference below to check its status at any time.
             </p>
 
             {referenceId && (
@@ -322,6 +322,7 @@ export function ComplaintForm({ initialDepartmentId }: ComplaintFormProps) {
                   File a Complaint
                 </h2>
                 <p className="mt-1 text-sm text-gray-600">
+                  Anyone can file a complaint — <strong>no login or account is required</strong>.
                   Fields marked <span className="text-danger-600">*</span> are required. You can
                   describe your complaint in writing, or attach a photo taken with your camera.
                 </p>

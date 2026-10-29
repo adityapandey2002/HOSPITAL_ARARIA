@@ -31,8 +31,10 @@ export default function ComplaintPage() {
             <h1 className="mb-4 text-4xl font-bold sm:text-5xl">File a Complaint</h1>
             <p className="mx-auto max-w-3xl text-xl text-warning-100">
               Tell us about your experience. Select the department, describe your complaint, and
-              optionally attach a photo. Your complaint will be tracked by the hospital
-              administration until it is resolved.
+              optionally attach a photo. <strong className="font-semibold text-white">No login
+              or account is needed.</strong> Your complaint will be tracked by the hospital
+              administration until it is resolved, and you will receive a reference ID to check
+              its status.
             </p>
           </div>
         </section>

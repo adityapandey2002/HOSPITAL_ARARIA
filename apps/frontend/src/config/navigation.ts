@@ -51,6 +51,14 @@ export const PUBLIC_NAV: NavLink[] = [
   { href: '/appointments', label: 'Appointments', description: 'Book or check an OPD slot', icon: CalendarCheck },
   { href: '/blood-bank', label: 'Blood bank', description: 'Live group availability and donation', icon: Droplet },
   { href: '/notices', label: 'Notices', description: 'Orders, tenders and public notices', icon: Bell },
+  // Complaint filing is open to everyone; it must not hide behind the drawer.
+  // No login or account is involved, so the desktop bar links it directly.
+  {
+    href: '/complaint',
+    label: 'File a complaint',
+    description: 'Report a service problem, no login needed',
+    icon: MessageSquare,
+  },
   { href: '/contact', label: 'Contact', description: 'Phone numbers, address and desk hours', icon: Mail },
 ];
 
@@ -58,7 +66,7 @@ export const PUBLIC_NAV: NavLink[] = [
 export const CITIZEN_MENU: NavGroup = {
   title: 'Your voice',
   links: [
-    { href: '/complaint', label: 'File a complaint', description: 'Report a service problem', icon: MessageSquare },
+    { href: '/complaint', label: 'File a complaint', description: 'Report a service problem, no login needed', icon: MessageSquare },
     { href: '/complaints/track', label: 'Track a complaint', description: 'Check status with your reference', icon: ClipboardList },
     { href: '/grievances', label: 'Grievance redressal', description: 'Escalate an unresolved issue', icon: MessagesSquare },
     { href: '/feedback', label: 'Share feedback', description: 'Rate your visit or a department', icon: HeartHandshake },
