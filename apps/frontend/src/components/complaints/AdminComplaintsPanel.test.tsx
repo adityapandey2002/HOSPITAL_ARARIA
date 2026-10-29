@@ -46,6 +46,7 @@ const complaint = {
   complaintStatus: 'SUBMITTED',
   imageUrl: null as string | null,
   resolution: null as string | null,
+  resolutionImageUrl: null as string | null,
   assignedTo: null as string | null,
   createdAt: '2026-10-26T09:00:00.000Z',
   updatedAt: '2026-10-26T09:00:00.000Z',
@@ -59,6 +60,7 @@ interface HistoryFixture {
   fromStatus: string | null;
   toStatus: string;
   resolution?: string | null;
+  resolutionImageUrl?: string | null;
   changedByName: string;
   changedByRole?: string | null;
   createdAt: string;
@@ -272,5 +274,113 @@ describe('AdminComplaintsPanel', () => {
       })
     ).toBeInTheDocument();
     expect(screen.getByText('Replace photo')).toBeInTheDocument();
+  });
+
+  it('resolves a complaint without a note or photo, since both are optional', async () => {
+    mockApi();
+    mockPatch.mockResolvedValueOnce(
+      backendResponse({ ...complaint, complaintStatus: 'RESOLVED' })
+    );
+    render(<AdminComplaintsPanel />);
+
+    fireEvent.click(
+      await screen.findByRole('button', {
+        name: /resolve complaint from test complainant/i,
+      })
+    );
+
+    const dialog = await screen.findByRole('dialog', { name: /resolve complaint/i });
+    expect(
+      within(dialog).getByText(/the note and the photo are both optional/i)
+    ).toBeInTheDocument();
+
+    fireEvent.click(within(dialog).getByRole('button', { name: /mark resolved/i }));
+
+    await waitFor(() =>
+      expect(mockPatch).toHaveBeenCalledWith('/complaints/complaint-1/status', {
+        status: 'RESOLVED',
+      })
+    );
+
+    // Status-only payload: no empty strings or nulls are sent.
+    expect(mockPatch.mock.calls[0][1]).toEqual({ status: 'RESOLVED' });
+
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog', { name: /resolve complaint/i })).not.toBeInTheDocument();
+    });
+  });
+
+  it('sends an optional resolution note and photo when the admin adds them', async () => {
+    mockApi();
+    mockPatch.mockResolvedValueOnce(
+      backendResponse({
+        ...complaint,
+        complaintStatus: 'RESOLVED',
+        resolution: 'Medicine issued from the main store.',
+        resolutionImageUrl: 'data:image/jpeg;base64,uploaded',
+      })
+    );
+    render(<AdminComplaintsPanel />);
+
+    fireEvent.click(
+      await screen.findByRole('button', {
+        name: /resolve complaint from test complainant/i,
+      })
+    );
+
+    const dialog = await screen.findByRole('dialog', { name: /resolve complaint/i });
+    fireEvent.change(within(dialog).getByLabelText(/what was done/i), {
+      target: { value: 'Medicine issued from the main store.' },
+    });
+
+    const file = new File(['x'.repeat(128)], 'resolved.jpg', { type: 'image/jpeg' });
+    fireEvent.change(within(dialog).getByLabelText(/add resolution photo/i), {
+      target: { files: [file] },
+    });
+    expect(await within(dialog).findByAltText(/resolution photo preview/i)).toBeInTheDocument();
+
+    fireEvent.click(within(dialog).getByRole('button', { name: /mark resolved/i }));
+
+    await waitFor(() =>
+      expect(mockPatch).toHaveBeenCalledWith('/complaints/complaint-1/status', {
+        status: 'RESOLVED',
+        resolution: 'Medicine issued from the main store.',
+        resolutionImageUrl: 'data:image/jpeg;base64,uploaded',
+      })
+    );
+  });
+
+  it('shows the resolution note and photo on a resolved card', async () => {
+    mockApi([
+      {
+        ...complaint,
+        complaintStatus: 'RESOLVED',
+        resolution: 'Medicine issued from the main store.',
+        resolutionImageUrl: photoDataUrl,
+        history: [
+          ...statusHistory,
+          {
+            id: 'history-3',
+            fromStatus: 'IN_PROGRESS',
+            toStatus: 'RESOLVED',
+            resolution: 'Medicine issued from the main store.',
+            resolutionImageUrl: photoDataUrl,
+            changedByName: 'Asha Kumari',
+            changedByRole: 'STAFF',
+            createdAt: '2026-10-26T12:00:00.000Z',
+          },
+        ],
+      },
+    ]);
+    render(<AdminComplaintsPanel />);
+
+    expect(
+      (await screen.findAllByText('Medicine issued from the main store.')).length
+    ).toBeGreaterThan(0);
+    expect(
+      screen.getByRole('button', {
+        name: /view resolution photo for the complaint from test complainant/i,
+      })
+    ).toBeInTheDocument();
   });
 });

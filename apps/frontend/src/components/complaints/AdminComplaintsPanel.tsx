@@ -21,7 +21,7 @@ import type { Department, PaginationMeta } from '@dh-araria/shared/types';
 import { ComplaintStatus, UserRole } from '@dh-araria/shared';
 import { COMPLAINT_STATUS_LABELS } from '@dh-araria/shared/constants';
 import { cn } from '@dh-araria/shared/utils';
-import { Badge, Button, Select } from '@dh-araria/ui/components';
+import { Badge, Button, Dialog, Select, Textarea } from '@dh-araria/ui/components';
 import { api, handleApiResponse } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
 import {
@@ -60,6 +60,7 @@ interface ComplaintHistoryEntry {
   fromStatus: ComplaintStatus | null;
   toStatus: ComplaintStatus;
   resolution?: string | null;
+  resolutionImageUrl?: string | null;
   changedByName: string;
   changedByRole?: string | null;
   createdAt: string;
@@ -131,6 +132,8 @@ interface ComplaintCardProps {
   photoUploading: boolean;
   photoDisabled: boolean;
   onStatusChange: (item: any, status: ComplaintStatus) => void;
+  /** Opens the resolve dialog so a note and photo can be attached. */
+  onResolve: (item: any) => void;
   onPhotoOpen: (src: string, alt: string, trigger: HTMLElement) => void;
   onPhotoUpload: (item: any, file: File) => void;
 }
@@ -142,12 +145,14 @@ function ComplaintCard({
   photoUploading,
   photoDisabled,
   onStatusChange,
+  onResolve,
   onPhotoOpen,
   onPhotoUpload,
 }: ComplaintCardProps) {
   const stamp = formatDateTime(item.createdAt);
   // Legacy rows hold dead `blob:` URLs, so only render a photo we can load.
   const hasImage = isDisplayableImageUrl(item.imageUrl);
+  const hasResolutionImage = isDisplayableImageUrl(item.resolutionImageUrl);
   const hasContact = Boolean(item.phone || item.email);
   const isResolved =
     item.complaintStatus === ComplaintStatus.RESOLVED ||
@@ -259,14 +264,42 @@ function ComplaintCard({
         </label>
       </div>
 
-      {item.resolution && (
+      {(item.resolution || hasResolutionImage) && (
         <div className="mt-3 rounded-lg border border-success-200 bg-success-50 px-3 py-2">
           <p className="text-[10px] font-semibold uppercase tracking-wide text-success-700">
             Resolution
           </p>
-          <p className="mt-0.5 line-clamp-2 whitespace-pre-line break-words text-xs text-gray-700">
-            {item.resolution}
-          </p>
+          {item.resolution && (
+            <p className="mt-0.5 line-clamp-2 whitespace-pre-line break-words text-xs text-gray-700">
+              {item.resolution}
+            </p>
+          )}
+          {hasResolutionImage && (
+            <button
+              type="button"
+              onClick={(event) =>
+                onPhotoOpen(
+                  item.resolutionImageUrl,
+                  `Resolution photo for the complaint from ${item.name}`,
+                  event.currentTarget
+                )
+              }
+              className="group relative mt-2 block w-full overflow-hidden rounded-lg border border-success-200 bg-white focus:outline-none focus:ring-2 focus:ring-success-500 focus:ring-offset-1"
+              aria-label={`View resolution photo for the complaint from ${item.name}`}
+            >
+              <img
+                src={item.resolutionImageUrl}
+                alt={`Resolution photo for the complaint from ${item.name}`}
+                loading="lazy"
+                decoding="async"
+                className="h-24 w-full object-cover transition-transform duration-300 group-hover:scale-105"
+              />
+              <span className="pointer-events-none absolute inset-x-0 bottom-0 flex items-center justify-center gap-1 bg-gradient-to-t from-gray-950/75 via-gray-950/30 to-transparent px-2 pb-1.5 pt-5 text-[10px] font-medium text-white">
+                <ImageIcon className="h-3 w-3" />
+                View resolution photo
+              </span>
+            </button>
+          )}
         </div>
       )}
 
@@ -298,6 +331,28 @@ function ComplaintCard({
                     </p>
                     {entry.resolution && (
                       <p className="mt-1 whitespace-pre-line text-gray-600">{entry.resolution}</p>
+                    )}
+                    {isDisplayableImageUrl(entry.resolutionImageUrl) && (
+                      <button
+                        type="button"
+                        onClick={(event) =>
+                          onPhotoOpen(
+                            entry.resolutionImageUrl as string,
+                            `Resolution photo added by ${entry.changedByName}`,
+                            event.currentTarget
+                          )
+                        }
+                        className="mt-1 block w-full overflow-hidden rounded-md border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-1"
+                        aria-label={`View resolution photo added by ${entry.changedByName}`}
+                      >
+                        <img
+                          src={entry.resolutionImageUrl as string}
+                          alt={`Resolution photo added by ${entry.changedByName}`}
+                          loading="lazy"
+                          decoding="async"
+                          className="h-16 w-full object-cover"
+                        />
+                      </button>
                     )}
                   </li>
                 ))}
@@ -345,10 +400,10 @@ function ComplaintCard({
                 'whitespace-nowrap px-2 text-xs',
                 isResolved && 'col-span-3'
               )}
-              onClick={() => onStatusChange(item, ComplaintStatus.RESOLVED)}
+              onClick={() => onResolve(item)}
               loading={pendingStatus === ComplaintStatus.RESOLVED}
               disabled={actionsDisabled || pendingStatus !== null}
-              aria-label={`Mark complaint from ${item.name} as resolved`}
+              aria-label={`Resolve complaint from ${item.name}`}
             >
               Resolve
             </Button>
@@ -432,6 +487,14 @@ export function AdminComplaintsPanel() {
   const [photoUploadingId, setPhotoUploadingId] = useState<string | null>(null);
   const [actionMessage, setActionMessage] = useState('');
   const [actionError, setActionError] = useState<string | null>(null);
+
+  // Resolve dialog. The note and the photo are both optional, so the dialog can
+  // be submitted empty and simply marks the complaint resolved.
+  const [resolveTarget, setResolveTarget] = useState<any | null>(null);
+  const [resolveNote, setResolveNote] = useState('');
+  const [resolvePhoto, setResolvePhoto] = useState<string | null>(null);
+  const [resolvePhotoBusy, setResolvePhotoBusy] = useState(false);
+  const [resolveError, setResolveError] = useState<string | null>(null);
 
   const [photo, setPhoto] = useState<{ src: string; alt: string } | null>(null);
   const photoCloseRef = useRef<HTMLButtonElement>(null);
@@ -550,13 +613,25 @@ export function AdminComplaintsPanel() {
     setPage(1);
   };
 
-  const handleStatusChange = async (item: any, status: ComplaintStatus) => {
+  /**
+   * Sends a status change. Returns an error message on failure, or null on
+   * success, so the resolve dialog can stay open when something goes wrong.
+   */
+  const handleStatusChange = async (
+    item: any,
+    status: ComplaintStatus,
+    details?: { resolution?: string; resolutionImageUrl?: string }
+  ): Promise<string | null> => {
     setUpdating({ id: item.id, status });
     setActionError(null);
     setActionMessage('');
 
     try {
-      const response = await api.patch<any>(`/complaints/${item.id}/status`, { status });
+      const payload: Record<string, unknown> = { status };
+      if (details?.resolution) payload.resolution = details.resolution;
+      if (details?.resolutionImageUrl) payload.resolutionImageUrl = details.resolutionImageUrl;
+
+      const response = await api.patch<any>(`/complaints/${item.id}/status`, payload);
       handleApiResponse(response);
 
       setItems((current) =>
@@ -576,12 +651,72 @@ export function AdminComplaintsPanel() {
       // Pull the new history entry and actor name back from the API so the
       // card and the admin-facing trail cannot drift from the database.
       void loadList();
-      window.setTimeout(() => document.getElementById(`complaint-status-${item.id}`)?.focus(), 0);
+      if (status !== ComplaintStatus.RESOLVED) {
+        window.setTimeout(() => document.getElementById(`complaint-status-${item.id}`)?.focus(), 0);
+      }
+      return null;
     } catch (error) {
-      setActionError(getErrorMessage(error, 'We could not update the complaint status.'));
+      const message = getErrorMessage(error, 'We could not update the complaint status.');
+      setActionError(message);
+      return message;
     } finally {
       setUpdating(null);
     }
+  };
+
+  const openResolve = (item: any) => {
+    setResolveTarget(item);
+    setResolveNote('');
+    setResolvePhoto(null);
+    setResolveError(null);
+  };
+
+  const closeResolve = () => {
+    // Do not lose a submission that is still in flight.
+    if (updating?.status === ComplaintStatus.RESOLVED) return;
+    setResolveTarget(null);
+    setResolveNote('');
+    setResolvePhoto(null);
+    setResolveError(null);
+  };
+
+  const pickResolvePhoto = async (file: File) => {
+    const problem = validateImageFile(file);
+    if (problem) {
+      setResolveError(problem);
+      return;
+    }
+
+    setResolvePhotoBusy(true);
+    setResolveError(null);
+
+    try {
+      setResolvePhoto(await compressImageToDataUrl(file));
+    } catch (error) {
+      setResolveError(getErrorMessage(error, 'We could not read that photo.'));
+    } finally {
+      setResolvePhotoBusy(false);
+    }
+  };
+
+  const submitResolve = async () => {
+    if (!resolveTarget) return;
+
+    const note = resolveNote.trim();
+    const failure = await handleStatusChange(resolveTarget, ComplaintStatus.RESOLVED, {
+      resolution: note || undefined,
+      resolutionImageUrl: resolvePhoto ?? undefined,
+    });
+
+    if (failure) {
+      setResolveError(failure);
+      return;
+    }
+
+    setResolveTarget(null);
+    setResolveNote('');
+    setResolvePhoto(null);
+    setResolveError(null);
   };
 
   const openPhoto = (src: string, alt: string, trigger: HTMLElement) => {
@@ -907,6 +1042,7 @@ export function AdminComplaintsPanel() {
                     onStatusChange={(complaint, status) =>
                       void handleStatusChange(complaint, status)
                     }
+                    onResolve={openResolve}
                     onPhotoOpen={openPhoto}
                     onPhotoUpload={(complaint, file) => void handlePhotoUpload(complaint, file)}
                   />
@@ -944,6 +1080,133 @@ export function AdminComplaintsPanel() {
           )}
         </div>
       </div>
+
+      <Dialog
+        open={resolveTarget !== null}
+        onOpenChange={(open) => {
+          if (!open) closeResolve();
+        }}
+        title="Resolve complaint"
+        description={
+          resolveTarget
+            ? `Update the complaint from ${resolveTarget.name}. The note and the photo are both optional.`
+            : undefined
+        }
+        footer={
+          <>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={closeResolve}
+              disabled={updating?.status === ComplaintStatus.RESOLVED}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              variant="success"
+              onClick={() => void submitResolve()}
+              loading={updating?.status === ComplaintStatus.RESOLVED}
+            >
+              Mark resolved
+            </Button>
+          </>
+        }
+      >
+        <div className="space-y-5">
+          <p className="rounded-lg border border-success-200 bg-success-50 px-3 py-2 text-sm text-success-800">
+            The note and photo you add here are shown on the public tracking page, so the
+            complainant can see how the issue was fixed. You can resolve without either.
+          </p>
+
+          <Textarea
+            id="resolve-note"
+            label="What was done? (optional)"
+            hint="For example: the medicine was issued from the main store on 29 Oct."
+            maxLength={5000}
+            rows={4}
+            value={resolveNote}
+            onChange={(event) => setResolveNote(event.currentTarget.value)}
+            placeholder="Describe the fix in one or two lines."
+          />
+
+          <div>
+            <p className="mb-1.5 text-sm font-medium text-gray-700">Photo (optional)</p>
+
+            {resolvePhoto ? (
+              <div className="space-y-2">
+                <img
+                  src={resolvePhoto}
+                  alt="Resolution photo preview"
+                  className="max-h-56 w-full rounded-xl border border-gray-200 object-contain"
+                />
+                <div className="flex flex-wrap items-center gap-2">
+                  <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-md px-2 py-1 text-sm font-medium text-primary-700 transition-colors hover:bg-primary-50 focus-within:ring-2 focus-within:ring-primary-500 focus-within:ring-offset-1">
+                    <ImagePlus className="h-4 w-4" aria-hidden="true" />
+                    Replace resolution photo
+                    <input
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp"
+                      className="sr-only"
+                      disabled={resolvePhotoBusy}
+                      onChange={(event) => {
+                        const file = event.currentTarget.files?.[0] ?? null;
+                        event.currentTarget.value = '';
+                        if (file) void pickResolvePhoto(file);
+                      }}
+                    />
+                  </label>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setResolvePhoto(null)}
+                    disabled={resolvePhotoBusy}
+                  >
+                    Remove photo
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <label
+                className={cn(
+                  'inline-flex cursor-pointer items-center gap-1.5 rounded-md border border-dashed border-primary-300 bg-primary-50 px-3 py-2 text-sm font-medium text-primary-800 transition-colors hover:bg-primary-100 focus-within:ring-2 focus-within:ring-primary-500 focus-within:ring-offset-1',
+                  resolvePhotoBusy && 'cursor-wait opacity-70'
+                )}
+              >
+                {resolvePhotoBusy ? (
+                  <RefreshCw className="h-4 w-4 animate-spin" aria-hidden="true" />
+                ) : (
+                  <ImagePlus className="h-4 w-4" aria-hidden="true" />
+                )}
+                {resolvePhotoBusy ? 'Preparing photo…' : 'Add resolution photo'}
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  className="sr-only"
+                  disabled={resolvePhotoBusy}
+                  onChange={(event) => {
+                    const file = event.currentTarget.files?.[0] ?? null;
+                    event.currentTarget.value = '';
+                    if (file) void pickResolvePhoto(file);
+                  }}
+                />
+              </label>
+            )}
+
+            <p className="mt-1.5 text-xs text-gray-500">
+              JPEG, PNG or WebP up to 5 MB. The photo is compressed before it is saved.
+            </p>
+          </div>
+
+          {resolveError && (
+            <p role="alert" className="flex items-start gap-2 text-sm text-danger-700">
+              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+              {resolveError}
+            </p>
+          )}
+        </div>
+      </Dialog>
 
       {photo && (
         <div

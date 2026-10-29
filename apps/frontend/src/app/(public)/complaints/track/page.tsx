@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { Button, Input } from '@dh-araria/ui/components';
 import { api, handleApiResponse } from '@/lib/api';
+import { isDisplayableImageUrl } from '@/lib/complaint-image';
 import { cn } from '@dh-araria/shared/utils';
 import { COMPLAINT_STATUS_LABELS, COMPLAINT_STATUS_COLORS } from '@dh-araria/shared/constants';
 import { ComplaintStatus } from '@dh-araria/shared';
@@ -144,14 +145,36 @@ export default function ComplaintTrackPage() {
                   </p>
                 </div>
 
-                {complaint.resolution && (
+                {(complaint.resolution ||
+                  isDisplayableImageUrl(complaint.resolutionImageUrl)) && (
                   <div className="mt-6 rounded-xl border border-success-200 bg-success-50 p-4">
                     <h3 className="text-sm font-semibold text-success-800 uppercase tracking-wide">
                       Resolution
                     </h3>
-                    <p className="mt-2 text-gray-700 whitespace-pre-line">
-                      {complaint.resolution}
-                    </p>
+                    {complaint.resolution && (
+                      <p className="mt-2 text-gray-700 whitespace-pre-line">
+                        {complaint.resolution}
+                      </p>
+                    )}
+                    {isDisplayableImageUrl(complaint.resolutionImageUrl) && (
+                      <a
+                        href={complaint.resolutionImageUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="mt-3 block overflow-hidden rounded-lg border border-success-200 bg-white focus:outline-none focus:ring-2 focus:ring-success-600 focus:ring-offset-2"
+                      >
+                        <img
+                          src={complaint.resolutionImageUrl}
+                          alt="Photo showing how the complaint was resolved"
+                          loading="lazy"
+                          decoding="async"
+                          className="max-h-80 w-full object-contain"
+                        />
+                        <span className="block border-t border-success-200 px-3 py-2 text-center text-xs font-medium text-success-800">
+                          Open full photo
+                        </span>
+                      </a>
+                    )}
                   </div>
                 )}
 
