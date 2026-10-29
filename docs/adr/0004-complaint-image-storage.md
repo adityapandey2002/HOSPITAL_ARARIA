@@ -2,6 +2,7 @@
 
 - Status: Accepted
 - Date: 2026-10-26
+- Updated: 2026-10-29 — added optional photos on resolution
 
 ## Context
 
@@ -22,6 +23,11 @@ The portal has no object storage configured (no S3/Supabase Storage bucket,
 credentials, or upload endpoint), and photos are evidence in a public grievance
 flow, so they must survive the request that created them.
 
+When staff resolve a complaint they may also attach an optional photo (for
+example, a picture of the repaired ward or the issued medicine). That photo is
+part of the public answer, not part of the citizen's original evidence, so it
+must be stored separately and must not overwrite `grievances.imageUrl`.
+
 ## Decision
 
 Store the photo **inline as a base64 data URL** in `grievances.imageUrl`, with
@@ -35,11 +41,19 @@ compression done in the browser before submission.
 3. `CreateComplaintDto` accepts only `http(s)://` or
    `data:image/(jpeg|png|webp);base64,` values, up to 2,000,000 characters.
    Anything else is a 400.
-4. `POST /api/v1/complaints` alone gets a 2 MB JSON parser; every other route
-   keeps the 100 kB ceiling that bounds body-parser decompression work.
+4. `POST /api/v1/complaints` and the two photo-carrying PATCH routes
+   (`/complaints/:id/status`, `/complaints/:id/photo`) get a 2 MB JSON parser;
+   every other route keeps the 100 kB ceiling that bounds body-parser
+   decompression work.
 5. Read paths run `toDisplayableImageUrl()`, so a legacy `blob:` value is
    returned as `null` instead of a broken image, and the admin card falls back to
    "no photo".
+6. Resolution photos follow the same rules but live in
+   `grievances.resolutionImageUrl` and on each
+   `complaint_status_history.resolutionImageUrl` row. Both the resolution note
+   and the photo are optional: resolving with neither sends only
+   `{ status: "RESOLVED" }`. A later transition without a photo leaves the
+   existing `grievances.resolutionImageUrl` untouched.
 
 ## Consequences
 
@@ -52,6 +66,9 @@ compression done in the browser before submission.
 - There is no CDN or thumbnail variant: the same bytes are used for the card
   thumbnail and the full-screen viewer.
 - Rows written by the old form cannot be recovered; they read as "no photo".
+- Resolution photos add at most one more compressed image per complaint to the
+  detail view. The public tracking page only returns that one row, so it stays
+  small.
 - **Migration path:** `isDisplayableImageUrl()` and the DTO already accept
   `https://` URLs. Moving to object storage later means adding an upload endpoint
   that writes the file and returns its URL, then relaxing the size cap — no
