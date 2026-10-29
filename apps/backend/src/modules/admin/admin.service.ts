@@ -124,51 +124,56 @@ export class AdminService {
       .limit(1);
 
     if (existingUser) {
-      throw new BadRequestException('Email already in use');
+      throw new ConflictException('Email already in use');
     }
 
     const now = new Date();
-    const languages = dto.languages ? JSON.parse(dto.languages) : ['English', 'Hindi'];
     const values: NewDoctorRow = {
       id: newId(),
-      name: dto.name,
-      specialization: dto.specialization,
-      qualification: dto.qualification,
+      name: dto.name.trim(),
+      specialization: dto.specialization.trim(),
+      qualification: dto.qualification.trim(),
       experience: Number(dto.experience),
-      hprId: dto.hprId ?? null,
+      hprId: dto.hprId?.trim() || null,
       departmentId: dto.departmentId,
       consultationFee: dto.consultationFee ? Number(dto.consultationFee) : 0,
       rating: 0,
       reviewCount: 0,
-      languages: Array.isArray(languages) ? languages : [languages],
-      bio: dto.bio ?? null,
+      languages: dto.languages?.length ? dto.languages : ['English', 'Hindi'],
+      bio: dto.bio?.trim() || null,
       imageUrl: null,
       isActive: true,
       createdAt: now,
       updatedAt: now,
     } as Insert;
 
-    // Create the user account for the doctor
-    const [user] = await this.db
-      .insert(users)
-      .values({
-        id: newId(),
-        email: dto.email,
-        password: '$2b$12$placeholder', // will be set via password reset
-        name: dto.name,
-        phone: dto.phone,
-        role: dto.role ?? UserRole.DOCTOR,
-        isActive: true,
-        abhaId: null,
-        createdAt: now,
-        updatedAt: now,
-      } as any)
-      .returning({ id: users.id });
+    // The login and the profile are one unit: a half-written doctor would leave
+    // the email taken with no profile to show for it, and every retry would
+    // then fail on "Email already in use".
+    return this.db.transaction(async (tx) => {
+      const [user] = await tx
+        .insert(users)
+        .values({
+          id: newId(),
+          email: dto.email.trim().toLowerCase(),
+          password: '$2b$12$placeholder', // will be set via password reset
+          name: values.name,
+          phone: dto.phone.trim(),
+          role: dto.role ?? UserRole.DOCTOR,
+          isActive: true,
+          abhaId: null,
+          createdAt: now,
+          updatedAt: now,
+        } as any)
+        .returning({ id: users.id });
 
-    values.userId = user.id;
+      const [created] = await tx
+        .insert(doctors)
+        .values({ ...values, userId: user.id })
+        .returning();
 
-    const [created] = await this.db.insert(doctors).values(values).returning();
-    return created;
+      return created;
+    });
   }
 
   async updateDoctor(id: string, dto: UpdateDoctorDto): Promise<DoctorRow> {
@@ -186,19 +191,16 @@ export class AdminService {
       updatedAt: new Date(),
     };
 
-    if (dto.name) updateData.name = dto.name;
-    if (dto.specialization) updateData.specialization = dto.specialization;
-    if (dto.qualification) updateData.qualification = dto.qualification;
+    if (dto.name) updateData.name = dto.name.trim();
+    if (dto.specialization) updateData.specialization = dto.specialization.trim();
+    if (dto.qualification) updateData.qualification = dto.qualification.trim();
     if (dto.experience) updateData.experience = Number(dto.experience);
-    if (dto.hprId !== undefined) updateData.hprId = dto.hprId;
+    if (dto.hprId !== undefined) updateData.hprId = dto.hprId.trim() || null;
     if (dto.departmentId) updateData.departmentId = dto.departmentId;
-    if (dto.consultationFee !== undefined)
-      updateData.consultationFee = Number(dto.consultationFee);
-    if (dto.bio !== undefined) updateData.bio = dto.bio;
-    if (dto.languages) {
-      const parsed = JSON.parse(dto.languages);
-      updateData.languages = Array.isArray(parsed) ? parsed : [parsed];
-    }
+    if (dto.consultationFee !== undefined) updateData.consultationFee = Number(dto.consultationFee);
+    if (dto.bio !== undefined) updateData.bio = dto.bio.trim() || null;
+    if (dto.languages !== undefined)
+      updateData.languages = dto.languages.length ? dto.languages : ['English', 'Hindi'];
 
     const [updated] = await this.db
       .update(doctors)
@@ -458,11 +460,7 @@ export class AdminService {
    * treated as the complete new grant set, so an admin can revoke one
    * department without deleting and recreating the account.
    */
-  async updateStaff(
-    id: string,
-    dto: UpdateStaffDto,
-    grantedBy: string
-  ): Promise<StaffMemberDto> {
+  async updateStaff(id: string, dto: UpdateStaffDto, grantedBy: string): Promise<StaffMemberDto> {
     const [target] = await this.db
       .select({ id: users.id, role: users.role, email: users.email })
       .from(users)
@@ -527,10 +525,7 @@ export class AdminService {
         await tx
           .delete(complaintViewers)
           .where(
-            and(
-              eq(complaintViewers.userId, id),
-              inArray(complaintViewers.departmentId, revoked)
-            )
+            and(eq(complaintViewers.userId, id), inArray(complaintViewers.departmentId, revoked))
           );
       }
 
@@ -551,11 +546,7 @@ export class AdminService {
   }
 
   private async getStaff(id: string): Promise<StaffMemberDto> {
-    const [row] = await this.db
-      .select(STAFF_COLUMNS)
-      .from(users)
-      .where(eq(users.id, id))
-      .limit(1);
+    const [row] = await this.db.select(STAFF_COLUMNS).from(users).where(eq(users.id, id)).limit(1);
 
     if (!row) throw new NotFoundException('Staff member not found');
 

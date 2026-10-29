@@ -1,4 +1,5 @@
 import { ApiProperty, ApiPropertyOptional, PartialType } from '@nestjs/swagger';
+import { Transform } from 'class-transformer';
 import {
   ArrayMaxSize,
   ArrayMinSize,
@@ -16,6 +17,39 @@ import {
 } from 'class-validator';
 
 import { UserRole } from '@dh-araria/shared';
+
+/**
+ * Numeric fields travel as digit strings so the DTO can hold its own regex
+ * check, but the admin form posts the parsed number. Accept both.
+ */
+const ToNumericString = () =>
+  Transform(({ value }) => (typeof value === 'number' ? String(value) : value));
+
+/**
+ * Accepts every shape a client has used for languages: an array
+ * (`["English","Hindi"]`), a JSON array string, or a comma-separated string.
+ */
+const ToLanguageList = () =>
+  Transform(({ value }) => {
+    const fromList = (list: unknown[]) => list.map((entry) => String(entry).trim()).filter(Boolean);
+
+    if (Array.isArray(value)) return fromList(value);
+    if (typeof value !== 'string') return value;
+
+    const raw = value.trim();
+    if (!raw) return [];
+
+    if (raw.startsWith('[')) {
+      try {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) return fromList(parsed);
+      } catch {
+        // Not JSON after all; fall through to the comma-separated form.
+      }
+    }
+
+    return fromList(raw.split(','));
+  });
 
 export class CreateDoctorDto {
   @ApiProperty({ minLength: 2, maxLength: 120 })
@@ -46,9 +80,10 @@ export class CreateDoctorDto {
   @MaxLength(200)
   qualification!: string;
 
-  @ApiProperty({ minimum: 0 })
+  @ApiProperty({ description: 'Completed years of practice', example: 8 })
+  @ToNumericString()
   @IsString()
-  @Matches(/^\d+$/, { message: 'experience must be a number' })
+  @Matches(/^\d+$/, { message: 'experience must be a whole number of years' })
   experience!: string;
 
   @ApiProperty({ format: 'uuid', description: 'Department ID' })
@@ -61,10 +96,14 @@ export class CreateDoctorDto {
   @MaxLength(2000)
   bio?: string;
 
-  @ApiPropertyOptional({ example: '["English", "Hindi"]' })
+  @ApiPropertyOptional({ type: [String], example: ['English', 'Hindi'] })
   @IsOptional()
-  @IsString()
-  languages?: string;
+  @ToLanguageList()
+  @IsArray()
+  @ArrayMaxSize(10)
+  @IsString({ each: true })
+  @MaxLength(40, { each: true })
+  languages?: string[];
 
   @ApiPropertyOptional({ example: 'HID123456789' })
   @IsOptional()
@@ -72,8 +111,9 @@ export class CreateDoctorDto {
   @MaxLength(50)
   hprId?: string;
 
-  @ApiPropertyOptional({ minimum: 0, maximum: 9999 })
+  @ApiPropertyOptional({ minimum: 0, maximum: 9999, example: 300 })
   @IsOptional()
+  @ToNumericString()
   @Matches(/^\d+(\.\d{1,2})?$/, { message: 'consultationFee must be a number' })
   consultationFee?: string;
 
@@ -86,7 +126,10 @@ export class CreateDoctorDto {
 export class UpdateDoctorDto extends PartialType(CreateDoctorDto) {}
 
 export class AssignDepartmentAccessDto {
-  @ApiProperty({ format: 'uuid', description: 'User ID (staff member to nominate as nodal officer)' })
+  @ApiProperty({
+    format: 'uuid',
+    description: 'User ID (staff member to nominate as nodal officer)',
+  })
   @IsUUID()
   userId!: string;
 
