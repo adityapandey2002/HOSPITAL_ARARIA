@@ -118,6 +118,11 @@ export const validationSchema = Joi.object({
   ERAKTKOSH_API_KEY: Joi.string().allow('').default(''),
   ERAKTKOSH_BLOOD_BANK_ID: Joi.string().allow('').default(''),
 
+  // Notice image text extraction (optional). Points at any OCR/extraction HTTP
+  // service that accepts `{ image, language }`; see docs/adr/0005-notice-attachments-and-extraction.md.
+  NOTICE_TEXT_EXTRACTION_URL: Joi.string().uri().allow('').default(''),
+  NOTICE_TEXT_EXTRACTION_KEY: Joi.string().allow('').default(''),
+
   // Email
   SMTP_HOST: Joi.string().default('smtp.gmail.com'),
   SMTP_PORT: Joi.number().default(587),

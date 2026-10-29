@@ -1,8 +1,21 @@
-import { Controller, Get, Post, Put, Delete, Param, Body, Query, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Param,
+  Post,
+  Put,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 
+import { NoticeExtractionService } from './notice-extraction.service';
 import { NoticesService } from './notices.service';
-import { CreateNoticeDto, UpdateNoticeDto } from './dto/notice.dto';
+import { CreateNoticeDto, ExtractNoticeTextDto, UpdateNoticeDto } from './dto/notice.dto';
 import { PaginationDto } from '../../common/dto/pagination.dto';
 import { JwtAuthGuard } from '../../modules/auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/auth/roles.guard';
@@ -15,7 +28,10 @@ import { NoticeCategory, NoticePriority } from '@dh-araria/shared';
 @ApiTags('Notices')
 @Controller('notices')
 export class NoticesController {
-  constructor(private noticesService: NoticesService) {}
+  constructor(
+    private readonly noticesService: NoticesService,
+    private readonly noticeExtraction: NoticeExtractionService
+  ) {}
 
   @Get()
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -81,6 +97,24 @@ export class NoticesController {
   @ApiResponse({ status: 200, description: 'Notice retrieved successfully' })
   async findById(@Param('id') id: string) {
     return this.noticesService.findById(id);
+  }
+
+  /**
+   * Reads the text out of a scanned notice page.
+   *
+   * ADMIN only: the provider is a paid service, and its output is pasted
+   * straight into a notice draft.
+   */
+  @Post('extract-text')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Extract text from a notice image (Admin)' })
+  @ApiResponse({ status: 200, description: 'Extracted text, plus one entry per line' })
+  @ApiResponse({ status: 503, description: 'No extraction provider configured yet' })
+  async extractText(@Body() dto: ExtractNoticeTextDto) {
+    return this.noticeExtraction.extract(dto.image, dto.language ?? 'auto');
   }
 
   @Post()

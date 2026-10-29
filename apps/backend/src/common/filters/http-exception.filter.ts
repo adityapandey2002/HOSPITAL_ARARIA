@@ -46,7 +46,17 @@ export class HttpExceptionFilter implements ExceptionFilter {
 
     // Never return internal messages, error class names or driver details to a
     // production client. The log above keeps the diagnosable version.
-    if (this.isProduction && status >= 500) {
+    //
+    // Gateway statuses are the exception: they are how the API reports an
+    // upstream integration problem ("text extraction is not connected yet",
+    // "the provider did not respond" — see docs/adr/0005). Those messages are
+    // written for the operator, hold no driver or stack detail, and are useless
+    // to the admin if replaced. 500s are still scrubbed.
+    const isOperatorFacing =
+      status === HttpStatus.BAD_GATEWAY ||
+      status === HttpStatus.SERVICE_UNAVAILABLE ||
+      status === HttpStatus.GATEWAY_TIMEOUT;
+    if (this.isProduction && status >= 500 && !isOperatorFacing) {
       message = 'Internal server error';
       errorCode = 'INTERNAL_ERROR';
       details = undefined;
