@@ -86,6 +86,19 @@ export class UpdateComplaintStatusDto {
   @IsString()
   @MaxLength(5000)
   resolution?: string;
+
+  @ApiPropertyOptional({
+    maxLength: 2_000_000,
+    description:
+      'Optional resolution photo as an https URL or a base64 data URL (data:image/jpeg;base64,…)',
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(2_000_000)
+  @Matches(DISPLAYABLE_IMAGE_URL, {
+    message: 'resolutionImageUrl must be an http(s) URL or a base64-encoded image',
+  })
+  resolutionImageUrl?: string;
 }
 
 /** Complaint list filters plus pagination. */

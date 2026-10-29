@@ -37,6 +37,8 @@ export interface ComplaintHistoryEntry {
   fromStatus: ComplaintStatus | null;
   toStatus: ComplaintStatus;
   resolution: string | null;
+  /** Optional photo attached with this resolution. */
+  resolutionImageUrl: string | null;
   changedBy: string | null;
   changedByName: string;
   changedByRole: string | null;
@@ -162,6 +164,7 @@ export class ComplaintsService {
         cpgramsId: grievances.cpgramsId,
         assignedTo: grievances.assignedTo,
         resolution: grievances.resolution,
+        resolutionImageUrl: grievances.resolutionImageUrl,
         createdAt: grievances.createdAt,
         updatedAt: grievances.updatedAt,
         departmentName: departments.name,
@@ -172,7 +175,11 @@ export class ComplaintsService {
       .limit(1);
 
     if (!row) throw new NotFoundException('Complaint not found');
-    return { ...row, imageUrl: toDisplayableImageUrl(row.imageUrl) };
+    return {
+      ...row,
+      imageUrl: toDisplayableImageUrl(row.imageUrl),
+      resolutionImageUrl: toDisplayableImageUrl(row.resolutionImageUrl),
+    };
   }
 
   // -------------------------------------------------------------------------
@@ -274,6 +281,7 @@ export class ComplaintsService {
           cpgramsId: grievances.cpgramsId,
           assignedTo: grievances.assignedTo,
           resolution: grievances.resolution,
+          resolutionImageUrl: grievances.resolutionImageUrl,
           createdAt: grievances.createdAt,
           updatedAt: grievances.updatedAt,
           departmentName: departments.name,
@@ -297,6 +305,7 @@ export class ComplaintsService {
       data: rows.map((row) => ({
         ...row,
         imageUrl: toDisplayableImageUrl(row.imageUrl),
+        resolutionImageUrl: toDisplayableImageUrl(row.resolutionImageUrl),
         history: histories.get(row.id) ?? [],
       })),
       meta: { page, limit, total, totalPages: Math.ceil(total / limit) },
@@ -318,6 +327,7 @@ export class ComplaintsService {
         fromStatus: complaintStatusHistory.fromStatus,
         toStatus: complaintStatusHistory.toStatus,
         resolution: complaintStatusHistory.resolution,
+        resolutionImageUrl: complaintStatusHistory.resolutionImageUrl,
         changedBy: complaintStatusHistory.changedBy,
         changedByName: complaintStatusHistory.changedByName,
         changedByRole: complaintStatusHistory.changedByRole,
@@ -360,6 +370,7 @@ export class ComplaintsService {
         cpgramsId: grievances.cpgramsId,
         assignedTo: grievances.assignedTo,
         resolution: grievances.resolution,
+        resolutionImageUrl: grievances.resolutionImageUrl,
         createdAt: grievances.createdAt,
         updatedAt: grievances.updatedAt,
         departmentName: departments.name,
@@ -384,6 +395,7 @@ export class ComplaintsService {
     return {
       ...row,
       imageUrl: toDisplayableImageUrl(row.imageUrl),
+      resolutionImageUrl: toDisplayableImageUrl(row.resolutionImageUrl),
       history: await this.getHistory(id),
     };
   }
@@ -398,7 +410,7 @@ export class ComplaintsService {
     userId: string,
     userRole: string,
     actorName: string,
-    resolution?: string
+    details: { resolution?: string; resolutionImageUrl?: string } = {}
   ): Promise<GrievanceRow> {
     if (!isStaffRole(userRole)) {
       throw new ForbiddenException('Not authorized to update complaint status');
@@ -412,6 +424,19 @@ export class ComplaintsService {
       if (!accessible.includes(existing.departmentId ?? '')) {
         throw new ForbiddenException('You do not have access to this department');
       }
+    }
+
+    // The DTO already rejects dead `blob:` references, but the service is the
+    // last line of defence for direct callers. An absent value means "keep the
+    // existing photo", so only a provided string is validated.
+    const resolutionImageUrl = details.resolutionImageUrl
+      ? toDisplayableImageUrl(details.resolutionImageUrl)
+      : undefined;
+
+    if (details.resolutionImageUrl && !resolutionImageUrl) {
+      throw new BadRequestException(
+        'resolutionImageUrl must be an http(s) URL or a base64-encoded image'
+      );
     }
 
     const oldStatus = (existing.complaintStatus ?? ComplaintStatus.SUBMITTED) as ComplaintStatus;
@@ -428,7 +453,9 @@ export class ComplaintsService {
             status === ComplaintStatus.RESOLVED || status === ComplaintStatus.CLOSED
               ? 'RESOLVED'
               : status,
-          resolution,
+          resolution: details.resolution,
+          // `undefined` leaves the previous resolution photo untouched.
+          resolutionImageUrl,
           assignedTo: userId,
           updatedAt: now,
         } as Partial<Insert>)
@@ -440,7 +467,8 @@ export class ComplaintsService {
         complaintId: id,
         fromStatus: oldStatus,
         toStatus: status,
-        resolution: resolution ?? null,
+        resolution: details.resolution ?? null,
+        resolutionImageUrl: resolutionImageUrl ?? null,
         changedBy: userId,
         changedByName: actorName,
         changedByRole: userRole === UserRole.ADMIN ? UserRole.ADMIN : UserRole.STAFF,
@@ -560,6 +588,7 @@ export class ComplaintsService {
         complaintStatus: grievances.complaintStatus,
         imageUrl: grievances.imageUrl,
         resolution: grievances.resolution,
+        resolutionImageUrl: grievances.resolutionImageUrl,
         createdAt: grievances.createdAt,
         updatedAt: grievances.updatedAt,
         departmentName: departments.name,
@@ -590,6 +619,7 @@ export class ComplaintsService {
       'Created At',
       'Updated At',
       'Image URL',
+      'Resolution Image URL',
     ];
 
     const lines = [header.join(',')];
@@ -607,6 +637,7 @@ export class ComplaintsService {
           escapeCsv(row.createdAt?.toISOString() ?? ''),
           escapeCsv(row.updatedAt?.toISOString() ?? ''),
           escapeCsv(toDisplayableImageUrl(row.imageUrl) ?? ''),
+          escapeCsv(toDisplayableImageUrl(row.resolutionImageUrl) ?? ''),
         ].join(',')
       );
     }

@@ -73,18 +73,19 @@ export async function createApp(options: CreateAppOptions = {}): Promise<NestExp
   // the mitigating control for the unfixed body-parser advisory (see
   // docs/SECURITY.md), and it fails fast with a 413 instead of buffering.
   //
-  // The single exception is complaint submission, where an optional photo
-  // travels as a base64 data URL (see docs/adr/0004-complaint-image-storage.md).
-  // Only POST to that path gets the larger ceiling: body-parser marks the
-  // request as read, so the global 100 kB parser skips it, and every other
-  // method and route keeps the tight limit.
-  app.use(
-    '/api/v1/complaints',
-    (req: Request, res: Response, next: NextFunction) => {
-      if (req.method !== 'POST') return next();
-      return json({ limit: '2mb' })(req, res, next);
-    }
-  );
+  // The exception is complaint photo payloads: public submission, plus the
+  // admin photo/status writes that carry a resolution photo. All of them travel
+  // as base64 data URLs (see docs/adr/0004-complaint-image-storage.md). Only
+  // those routes get the larger ceiling: body-parser marks the request as read,
+  // so the global 100 kB parser skips it, and every other method and route
+  // keeps the tight limit.
+  app.use('/api/v1/complaints', (req: Request, res: Response, next: NextFunction) => {
+    const isSubmission = req.method === 'POST' && (req.path === '/' || req.path === '');
+    const isPhotoWrite = req.method === 'PATCH' && /^\/[^/]+\/(?:status|photo)\/?$/.test(req.path);
+
+    if (!isSubmission && !isPhotoWrite) return next();
+    return json({ limit: '2mb' })(req, res, next);
+  });
   app.useBodyParser('json', { limit: '100kb' });
   app.useBodyParser('urlencoded', { limit: '100kb', extended: true });
 

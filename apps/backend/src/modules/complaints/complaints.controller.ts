@@ -161,13 +161,9 @@ export class ComplaintsController {
     @CurrentUser('role') userRole: string,
     @CurrentUser('name') actorName: string
   ) {
-    return this.complaintsService.updateStatus(
-      id,
-      dto.status,
-      userId,
-      userRole,
-      actorName,
-      dto.resolution
-    );
+    return this.complaintsService.updateStatus(id, dto.status, userId, userRole, actorName, {
+      resolution: dto.resolution,
+      resolutionImageUrl: dto.resolutionImageUrl,
+    });
   }
 }

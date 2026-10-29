@@ -314,4 +314,104 @@ describe('ComplaintsService', () => {
     expect(result.data[0].imageUrl).toBe(photo);
     expect(result.data[1].imageUrl).toBeNull();
   });
+
+  it('stores an optional resolution note and photo with the transition', async () => {
+    const dataUrl = 'data:image/jpeg;base64,cmVzb2x2ZWQ=';
+
+    await setup([
+      [{ ...complaint, complaintStatus: ComplaintStatus.IN_PROGRESS }], // findById row
+      [{ departmentId: 'dept-1' }], // findById department scope check
+      [historyEntry], // findById -> getHistory
+      [{ departmentId: 'dept-1' }], // updateStatus department scope check
+      [{ ...complaint, complaintStatus: ComplaintStatus.RESOLVED }], // update returning
+    ]);
+
+    await service.updateStatus(
+      'complaint-1',
+      ComplaintStatus.RESOLVED,
+      'staff-1',
+      UserRole.STAFF,
+      'Asha Kumari',
+      { resolution: 'Medicine issued from the main store.', resolutionImageUrl: dataUrl }
+    );
+
+    expect(builderOf(db, 'update', 0).set).toHaveBeenCalledWith(
+      expect.objectContaining({
+        resolution: 'Medicine issued from the main store.',
+        resolutionImageUrl: dataUrl,
+      })
+    );
+    expect(builderOf(db, 'insert', 0).values).toHaveBeenCalledWith(
+      expect.objectContaining({
+        resolution: 'Medicine issued from the main store.',
+        resolutionImageUrl: dataUrl,
+      })
+    );
+  });
+
+  it('leaves the previous resolution photo alone when no new one is given', async () => {
+    await setup([
+      [{ ...complaint, complaintStatus: ComplaintStatus.IN_PROGRESS }],
+      [{ departmentId: 'dept-1' }],
+      [historyEntry],
+      [{ departmentId: 'dept-1' }],
+      [{ ...complaint, complaintStatus: ComplaintStatus.RESOLVED }],
+    ]);
+
+    await service.updateStatus(
+      'complaint-1',
+      ComplaintStatus.RESOLVED,
+      'staff-1',
+      UserRole.STAFF,
+      'Asha Kumari',
+      { resolution: 'Follow-up note only.' }
+    );
+
+    // Drizzle skips undefined, so the photo already on the row survives.
+    const set = builderOf(db, 'update', 0).set.mock.calls[0][0] as Record<string, unknown>;
+    expect(set.resolutionImageUrl).toBeUndefined();
+    expect(builderOf(db, 'insert', 0).values).toHaveBeenCalledWith(
+      expect.objectContaining({ resolutionImageUrl: null })
+    );
+  });
+
+  it('never stores a blob: resolution photo', async () => {
+    await setup([
+      [{ ...complaint, complaintStatus: ComplaintStatus.IN_PROGRESS }],
+      [{ departmentId: 'dept-1' }],
+      [historyEntry],
+      [{ departmentId: 'dept-1' }],
+    ]);
+
+    await expect(
+      service.updateStatus(
+        'complaint-1',
+        ComplaintStatus.RESOLVED,
+        'staff-1',
+        UserRole.STAFF,
+        'Asha Kumari',
+        {
+          resolution: 'Fixed.',
+          resolutionImageUrl: 'blob:http://localhost:3000/dead',
+        }
+      )
+    ).rejects.toBeInstanceOf(BadRequestException);
+
+    expect(db.update).not.toHaveBeenCalled();
+  });
+
+  it('shows the resolution photo on public tracking and hides a dead blob', async () => {
+    const dataUrl = 'data:image/jpeg;base64,cmVzb2x2ZWQ=';
+
+    await setup([
+      [{ ...complaint, complaintStatus: ComplaintStatus.RESOLVED, resolutionImageUrl: dataUrl }],
+      [{ ...complaint, id: 'complaint-2', resolutionImageUrl: 'blob:http://localhost:3000/dead' }],
+    ]);
+
+    const shown = await service.track('complaint-1');
+    const hidden = await service.track('complaint-2');
+
+    expect(shown.resolutionImageUrl).toBe(dataUrl);
+    expect(hidden.resolutionImageUrl).toBeNull();
+  });
 });
