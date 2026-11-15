@@ -120,7 +120,7 @@ export default async function NoticePage({ params }: NoticePageProps) {
 
             {scannedPages.length > 0 && (
               <section className="mx-auto mt-8 max-w-3xl" aria-label="Scanned notice pages">
-                <h2 className="text-lg font-semibold text-gray-900">Scanned notice</h2>
+                <h2 className="text-lg font-semibold text-on-surface">Scanned notice</h2>
                 <ul className="mt-3 space-y-4">
                   {scannedPages.map((url, index) => (
                     <li key={`scan-${index}`}>
@@ -128,7 +128,7 @@ export default async function NoticePage({ params }: NoticePageProps) {
                       <img
                         src={url}
                         alt={`Scanned page ${index + 1} of ${notice.title}`}
-                        className="w-full rounded-xl border border-gray-200 bg-white"
+                        className="w-full rounded-xl border border-outline-variant bg-card"
                       />
                     </li>
                   ))}

@@ -270,7 +270,7 @@ function ComplaintCard({
             Resolution
           </p>
           {item.resolution && (
-            <p className="mt-0.5 line-clamp-2 whitespace-pre-line break-words text-xs text-gray-700">
+            <p className="mt-0.5 line-clamp-2 whitespace-pre-line break-words text-xs text-on-surface">
               {item.resolution}
             </p>
           )}
@@ -284,7 +284,7 @@ function ComplaintCard({
                   event.currentTarget
                 )
               }
-              className="group relative mt-2 block w-full overflow-hidden rounded-lg border border-success-200 bg-white focus:outline-none focus:ring-2 focus:ring-success-500 focus:ring-offset-1"
+              className="group relative mt-2 block w-full overflow-hidden rounded-lg border border-success-200 bg-card focus:outline-none focus:ring-2 focus:ring-success-500 focus:ring-offset-1"
               aria-label={`View resolution photo for the complaint from ${item.name}`}
             >
               <img
@@ -294,7 +294,7 @@ function ComplaintCard({
                 decoding="async"
                 className="h-24 w-full object-cover transition-transform duration-300 group-hover:scale-105"
               />
-              <span className="pointer-events-none absolute inset-x-0 bottom-0 flex items-center justify-center gap-1 bg-gradient-to-t from-gray-950/75 via-gray-950/30 to-transparent px-2 pb-1.5 pt-5 text-[10px] font-medium text-white">
+              <span className="pointer-events-none absolute inset-x-0 bottom-0 flex items-center justify-center gap-1 bg-gradient-to-t from-black/75 via-black/30 to-transparent px-2 pb-1.5 pt-5 text-label-sm font-medium text-white">
                 <ImageIcon className="h-3 w-3" />
                 View resolution photo
               </span>
@@ -342,7 +342,7 @@ function ComplaintCard({
                             event.currentTarget
                           )
                         }
-                        className="mt-1 block w-full overflow-hidden rounded-md border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-1"
+                        className="mt-1 block w-full overflow-hidden rounded-md border border-outline-variant focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-1"
                         aria-label={`View resolution photo added by ${entry.changedByName}`}
                       >
                         <img
@@ -1131,14 +1131,14 @@ export function AdminComplaintsPanel() {
           />
 
           <div>
-            <p className="mb-1.5 text-sm font-medium text-gray-700">Photo (optional)</p>
+            <p className="mb-1.5 text-sm font-medium text-on-surface">Photo (optional)</p>
 
             {resolvePhoto ? (
               <div className="space-y-2">
                 <img
                   src={resolvePhoto}
                   alt="Resolution photo preview"
-                  className="max-h-56 w-full rounded-xl border border-gray-200 object-contain"
+                  className="max-h-56 w-full rounded-xl border border-outline-variant object-contain"
                 />
                 <div className="flex flex-wrap items-center gap-2">
                   <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-md px-2 py-1 text-sm font-medium text-primary-700 transition-colors hover:bg-primary-50 focus-within:ring-2 focus-within:ring-primary-500 focus-within:ring-offset-1">
@@ -1194,7 +1194,7 @@ export function AdminComplaintsPanel() {
               </label>
             )}
 
-            <p className="mt-1.5 text-xs text-gray-500">
+            <p className="mt-1.5 text-xs text-on-surface-variant">
               JPEG, PNG or WebP up to 5 MB. The photo is compressed before it is saved.
             </p>
           </div>

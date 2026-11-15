@@ -119,6 +119,7 @@ If a pair fails, change the token, not the font size. 18.66 px bold / 24 px regu
 - **Tabs, DataList, Pagination** — active state uses fill + `aria-selected`/`aria-current`; table header `bg-surface-high text-label-sm uppercase`; rows `border-outline-variant`; below `lg` tables become stacked cards; no inline column widths.
 - **Empty and error states** — one icon, a plain-language title, one action. Never a bare "No data".
 - **Media and icons** — `MediaFrame` with fixed `aspect-[16/9]`/`aspect-square`, `next/image` and `sizes`; alt text describes the setting, not the headline. `lucide-react` 16–24 px, `aria-hidden="true"` when decorative, labelled otherwise.
+- **Attached evidence images** — complaint and notice photos are stored as base64 data URLs in Postgres, which `next/image` cannot load, so they render as a plain `<img>` with `loading="lazy"`, `decoding="async"` and a describing alt inside the card or dialog that owns them. Files under `public/` still go through `MediaFrame`.
 
 Compose `packages/ui` primitives; if one is missing, add it there with a test — never inline a one-off variant in a page.
 
