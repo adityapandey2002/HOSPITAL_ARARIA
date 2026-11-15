@@ -29,6 +29,14 @@ export class DepartmentsService {
    * live doctor count, ordered by `sortBy` and paginated.
    */
   async findAll(pagination: PaginationDto) {
+    return this.list(pagination, true);
+  }
+
+  /**
+   * One query for every directory view: `activeOnly` adds the `isActive` filter
+   * to both the page and the count, so they can never disagree.
+   */
+  private async list(pagination: PaginationDto, activeOnly: boolean) {
     const page = pagination.page ?? 1;
     const limit = pagination.limit ?? 50;
     const offset = (page - 1) * limit;
@@ -36,6 +44,7 @@ export class DepartmentsService {
       pagination.sortOrder === 'asc'
         ? asc(SORTABLE[pagination.sortBy ?? 'name'] ?? departments.name)
         : desc(SORTABLE[pagination.sortBy ?? 'name'] ?? departments.name);
+    const where = activeOnly ? eq(departments.isActive, true) : undefined;
 
     const rows = await this.db
       .select({
@@ -51,7 +60,7 @@ export class DepartmentsService {
       })
       .from(departments)
       .leftJoin(doctors, and(eq(doctors.departmentId, departments.id), eq(doctors.isActive, true)))
-      .where(eq(departments.isActive, true))
+      .where(where)
       .groupBy(departments.id)
       .orderBy(orderBy)
       .limit(limit)
@@ -60,7 +69,7 @@ export class DepartmentsService {
     const [totals] = await this.db
       .select({ value: count() })
       .from(departments)
-      .where(eq(departments.isActive, true));
+      .where(where);
 
     const total = totals?.value ?? 0;
 
