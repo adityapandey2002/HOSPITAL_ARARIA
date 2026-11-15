@@ -178,9 +178,10 @@ Every data route implements loading, empty and error; forms implement success an
 | `font-inter` / Inter | `font-heading` / `font-sans` | removed |
 | `.dark`, `dark:` | none | dark mode is out of scope |
 
-The token ratchet (`scripts/check-ui-tokens.mjs`) counts each banned pattern per file; a PR fails
-if a count rises. New files start at zero. Escape hatches need a
-`// ui-token-allow: <reason>` comment and reviewer sign-off.
+The ratchet is a review rule, not a script yet: a reviewer counts the banned patterns in the
+files a PR touches and rejects the PR if a count rises. New files must start at zero. Escape
+hatches need a `// ui-token-allow: <reason>` comment and reviewer sign-off. When the counting
+is automated, this section names the command instead.
 
 ## 9. Review gate
 
