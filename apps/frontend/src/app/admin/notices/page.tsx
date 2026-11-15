@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState, type ChangeEvent } from 'react';
 import { AlertCircle, Check, ImagePlus, Loader2, Plus, ScanText, Trash2, X } from 'lucide-react';
-import { Button, Card, Input, Select, Textarea } from '@dh-araria/ui/components';
+import { Button, Card, ErrorState, Input, Select, Textarea } from '@dh-araria/ui/components';
 import { UserRole } from '@dh-araria/shared';
 import { useAuth } from '@/context/AuthContext';
 import { api, handleApiResponse } from '@/lib/api';
@@ -67,6 +67,7 @@ export default function AdminNoticesPage() {
   const canExtractText = hasRole([UserRole.ADMIN]);
   const [notices, setNotices] = useState<Notice[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [category, setCategory] = useState('GENERAL');
@@ -80,13 +81,15 @@ export default function AdminNoticesPage() {
 
   const load = useCallback(async () => {
     setLoading(true);
+    setLoadError(false);
     try {
       const res = await api.get<any>('/notices');
       const data = handleApiResponse(res);
       const list = Array.isArray(data) ? data : (data?.data ?? []);
       setNotices(list as Notice[]);
     } catch {
-      toast.error('Failed to load notices');
+      // Show the failure: an outage must not read as "no notices yet".
+      setLoadError(true);
     } finally {
       setLoading(false);
     }
@@ -452,7 +455,15 @@ export default function AdminNoticesPage() {
         </form>
       </Card>
 
-      {loading ? (
+      {loadError ? (
+        <ErrorState
+          size="compact"
+          title="The notice list did not load"
+          description="The server did not answer. Nothing was lost — your draft above is untouched."
+          onRetry={() => void load()}
+          retryLabel="Reload notices"
+        />
+      ) : loading ? (
         <p className="text-on-surface-variant">Loading…</p>
       ) : (
         <div className="space-y-3">
