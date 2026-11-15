@@ -9,6 +9,8 @@ import {
   ErrorState,
   Input,
   Select,
+  Skeleton,
+  SkeletonRegion,
   Textarea,
 } from '@dh-araria/ui/components';
 import { UserRole } from '@dh-araria/shared';
@@ -472,7 +474,15 @@ export default function AdminNoticesPage() {
           retryLabel="Reload notices"
         />
       ) : loading ? (
-        <p className="text-on-surface-variant">Loading…</p>
+        <SkeletonRegion label="Loading notices" className="space-y-3">
+          {[0, 1, 2].map((placeholder) => (
+            <Card key={placeholder} className="space-y-2 p-4">
+              <Skeleton variant="text" widthClassName="w-24" />
+              <Skeleton variant="title" widthClassName="w-2/3" />
+              <Skeleton variant="text" lines={2} />
+            </Card>
+          ))}
+        </SkeletonRegion>
       ) : (
         <div className="space-y-3">
           {notices.map((notice) => (
