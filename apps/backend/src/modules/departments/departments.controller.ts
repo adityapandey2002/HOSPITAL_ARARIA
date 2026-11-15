@@ -23,6 +23,16 @@ export class DepartmentsController {
     return this.departmentsService.findAll(pagination);
   }
 
+  @Get('admin')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'List all departments, including inactive (Admin only)' })
+  @ApiResponse({ status: 200, description: 'Departments retrieved successfully' })
+  async findAllForAdmin(@Query() pagination: PaginationDto) {
+    return this.departmentsService.findAllForAdmin(pagination);
+  }
+
   @Get(':id')
   @Public()
   @ApiOperation({ summary: 'Get department by ID' })
