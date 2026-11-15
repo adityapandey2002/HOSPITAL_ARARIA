@@ -3,6 +3,18 @@
 import { useEffect } from 'react';
 
 /**
+ * Set once per document load. Returning to the home page from another route
+ * (Back, or the logo link) must keep the position the visitor left, so only the
+ * first mount of a full page load resets to the hero.
+ */
+let resetThisDocument = false;
+
+function isBackForwardNavigation(): boolean {
+  const [entry] = performance.getEntriesByType('navigation') as PerformanceNavigationTiming[];
+  return entry?.type === 'back_forward';
+}
+
+/**
  * Opens the home page on the hero.
  *
  * Chrome restores the previous scroll offset on reload, and the hero slideshow
@@ -11,12 +23,14 @@ import { useEffect } from 'react';
  * a first paint. Resetting once the first frame is painted and once more after
  * the slideshow has settled keeps the hero in view.
  *
- * A URL with a `#section` hash, or any scroll gesture in the first moments, is
- * left alone: the visitor asked for that position.
+ * The reset is skipped when the visitor asked for a position: a URL with a
+ * `#section` hash, a Back/Forward navigation, or any scroll gesture (including a
+ * scrollbar drag) before the second frame.
  */
 export function HomeScrollReset() {
   useEffect(() => {
-    if (window.location.hash) return;
+    if (resetThisDocument || window.location.hash || isBackForwardNavigation()) return;
+    resetThisDocument = true;
 
     let userMoved = false;
     const markMoved = () => {
@@ -33,6 +47,7 @@ export function HomeScrollReset() {
 
     window.addEventListener('wheel', markMoved, { passive: true, once: true });
     window.addEventListener('touchstart', markMoved, { passive: true, once: true });
+    window.addEventListener('pointerdown', markMoved, { once: true });
     window.addEventListener('keydown', markMoved, { once: true });
 
     return () => {
@@ -40,6 +55,7 @@ export function HomeScrollReset() {
       window.clearTimeout(timer);
       window.removeEventListener('wheel', markMoved);
       window.removeEventListener('touchstart', markMoved);
+      window.removeEventListener('pointerdown', markMoved);
       window.removeEventListener('keydown', markMoved);
     };
   }, []);
