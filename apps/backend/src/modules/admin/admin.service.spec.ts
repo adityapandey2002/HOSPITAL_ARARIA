@@ -6,6 +6,7 @@ import { UserRole } from '@dh-araria/shared';
 
 import { DRIZZLE } from '../../common/drizzle/drizzle.module';
 import { AdminService } from './admin.service';
+import type { CreateDoctorDto } from './dto/admin.dto';
 
 type Rows = unknown[][];
 
@@ -251,6 +252,45 @@ describe('AdminService staff accounts', () => {
       await expect(
         service.updateStaff('missing', { name: 'Nobody' }, 'admin-1')
       ).rejects.toBeInstanceOf(NotFoundException);
+    });
+  });
+
+  describe('createDoctor', () => {
+    it('checks and stores the same lowercased email', async () => {
+      const doctorRow = {
+        id: 'doctor-1',
+        userId: 'user-1',
+        name: 'Dr Rao',
+        email: 'rao@example.com',
+      };
+      await setup([
+        [generalMedicine], // department lookup
+        [], // email lookup: no clash
+        [{ id: 'user-1' }], // insert users -> returning
+        [doctorRow], // insert doctors -> returning
+      ]);
+
+      const created = await service.createDoctor(
+        {
+          name: 'Dr Rao',
+          email: '  Rao@Example.COM ',
+          phone: '9876543210',
+          specialization: 'Medicine',
+          qualification: 'MBBS',
+          experience: '5',
+          departmentId: generalMedicine.id,
+          languages: ['English'],
+        } as CreateDoctorDto,
+        'admin-1'
+      );
+
+      expect(created).toBe(doctorRow);
+      // The pre-check and the insert must use one value, or a mixed-case address
+      // slips past the check and fails on the unique index as a 500.
+      const userInsert = builderOf(db, 'insert', 0);
+      expect(userInsert.values.mock.calls[0][0]).toEqual(
+        expect.objectContaining({ email: 'rao@example.com' })
+      );
     });
   });
 });
