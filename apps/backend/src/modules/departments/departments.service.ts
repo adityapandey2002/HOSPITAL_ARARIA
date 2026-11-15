@@ -33,6 +33,14 @@ export class DepartmentsService {
   }
 
   /**
+   * Admin directory: includes deactivated departments so an operator can find and
+   * restore a ward that was closed, instead of it silently disappearing.
+   */
+  async findAllForAdmin(pagination: PaginationDto) {
+    return this.list(pagination, false);
+  }
+
+  /**
    * One query for every directory view: `activeOnly` adds the `isActive` filter
    * to both the page and the count, so they can never disagree.
    */
