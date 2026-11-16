@@ -943,6 +943,43 @@ Authorization: Bearer <token>
 Roles: ADMIN, STAFF
 ```
 
+#### Read Text From a Scan (Admin)
+```http
+POST /api/v1/notices/extract-text
+Authorization: Bearer <admin-token>
+Roles: ADMIN
+Content-Type: application/json
+
+{
+  "image": "data:image/jpeg;base64,/9j/4AAQSkZJRg...",
+  "language": "auto"
+}
+```
+
+Returns the text found in the scan, plus the same text split into lines for
+per-line "Add" buttons:
+
+```json
+{
+  "success": true,
+  "data": { "text": "…", "lines": ["…"] }
+}
+```
+
+`language` is `auto` (default), `en` or `hi`. `image` must be a base64 `jpeg`,
+`png` or `webp` data URL, or an `https` link, up to 3 MB. This route accepts a
+4 MB JSON body because the scan travels inline.
+
+The backend forwards the request to `NOTICE_TEXT_EXTRACTION_URL` with
+`Authorization: Bearer $NOTICE_TEXT_EXTRACTION_KEY` when that key is set. The
+provider is not contracted yet, so:
+
+- `503` — no provider is configured; the admin form shows "not connected yet".
+- `502` — the provider was unreachable, rejected the image, answered too slowly
+  (20 s) or returned no readable text.
+
+See `docs/adr/0005-notice-attachments-and-extraction.md`.
+
 #### Get Categories (Public)
 ```http
 GET /api/v1/notices/categories
