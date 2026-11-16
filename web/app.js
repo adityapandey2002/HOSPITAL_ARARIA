@@ -518,11 +518,7 @@
           </span>
         </td>`;
     } else {
-      const units =
-        component.units === null || component.units === undefined
-          ? 0
-          : component.units;
-      unitsCell = `<td class="units" role="cell">${formatNumber(units)}</td>`;
+      unitsCell = `<td class="units" role="cell">${formatNumber(component.units ?? 0)}</td>`;
       statusCell = `
         <td class="status" role="cell">
           <span class="status-label">
@@ -562,19 +558,17 @@
 
   function noReportCard(centre) {
     const name = centreName(centre);
-    const units = Number(centre.totalUnits);
-    const hasUnits =
-      centre.totalUnits !== null &&
-      centre.totalUnits !== undefined &&
-      Number.isFinite(units) &&
-      units > 0;
+    const checked =
+      centre.fetchedAt || centre.sourceEntryAt
+        ? `<p class="no-report-checked muted">Checked by us: <time datetime="${esc(centre.fetchedAt || centre.sourceEntryAt)}">${esc(formatDate(centre.fetchedAt || centre.sourceEntryAt))}</time></p>`
+        : "";
 
     return `
       <article class="no-report-card">
         <div class="no-report-top">
           <h3 class="no-report-name">${esc(name)}</h3>
-          <span class="no-report-units" aria-label="${hasUnits ? `${formatNumber(units)} units` : "Units not reported"}">
-            <strong>${hasUnits ? formatNumber(units) : "—"}</strong>
+          <span class="no-report-units" aria-label="Units not reported">
+            <strong>—</strong>
             <span>units</span>
           </span>
         </div>
@@ -586,6 +580,7 @@
               : `<span class="muted">No phone number listed.</span>`
           }
         </p>
+        ${checked}
       </article>
     `;
   }
@@ -1018,8 +1013,8 @@
     if (!Number.isFinite(source)) return "stale";
 
     const hours = Math.max(0, (checked - source) / 3600000);
-    if (hours <= 48) return "fresh";
-    if (hours <= 168) return "aging";
+    if (hours <= 6) return "fresh";
+    if (hours <= 24) return "aging";
     return "stale";
   }
 
