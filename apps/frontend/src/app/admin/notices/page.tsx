@@ -352,7 +352,13 @@ export default function AdminNoticesPage() {
                     className="overflow-hidden rounded-lg border border-outline-variant bg-card"
                   >
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={scan.dataUrl} alt={scan.name} className="h-28 w-full object-cover" />
+                    <img
+                      src={scan.dataUrl}
+                      alt={scan.name}
+                      loading="lazy"
+                      decoding="async"
+                      className="h-28 w-full object-cover"
+                    />
                     <div className="space-y-2 p-2">
                       <p className="truncate text-xs text-on-surface-variant" title={scan.name}>
                         {scan.name}
