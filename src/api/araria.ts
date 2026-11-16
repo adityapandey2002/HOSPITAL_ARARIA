@@ -50,7 +50,7 @@ export interface ArariaAvailability {
     centersListed: number;
     centersReporting: number;
     centersNoReport: number;
-    totalUnits: number;
+    totalUnits: number | null;
     groupsWithStock: number;
   };
   centers: CenterView[];
@@ -228,6 +228,11 @@ export async function getArariaAvailability(
   const asOf = toIso(summary?.as_of ?? null);
   const sourceAsOf = toIso(summary?.source_as_of ?? null);
 
+  const allStockGroups = new Set<string>();
+  for (const center of centerViews) {
+    for (const group of center.groupsWithStock) allStockGroups.add(group);
+  }
+
   return {
     district: { name: CONFIG.districtName, state: CONFIG.stateName },
     asOf,
@@ -238,8 +243,8 @@ export async function getArariaAvailability(
       centersListed: Number(summary?.centers_listed ?? 0),
       centersReporting: Number(summary?.centers_reporting ?? 0),
       centersNoReport: Number(summary?.centers_no_report ?? 0),
-      totalUnits: Number(summary?.total_units ?? 0),
-      groupsWithStock: centerViews.reduce((sum, c) => sum + c.groupsWithStock.length, 0),
+      totalUnits: summary?.total_units == null ? null : Number(summary.total_units),
+      groupsWithStock: allStockGroups.size,
     },
     centers: centerViews,
   };

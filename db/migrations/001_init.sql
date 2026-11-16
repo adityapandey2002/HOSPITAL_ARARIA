@@ -124,8 +124,8 @@ select
   count(*) filter (where c.is_active and s.last_report_status = 'no_report') as centers_no_report,
   max(s.last_fetched_at)                                              as as_of,
   max(s.last_source_entry_at)                                         as source_as_of,
-  coalesce(sum(case when s.last_report_status = 'reporting'
-                    then snap.total_units else 0 end), 0)::int        as total_units
+  sum(case when s.last_report_status = 'reporting'
+          then snap.total_units end)::int                          as total_units
 from ek_centers c
 join ek_center_state s on s.center_id = c.id
 left join ek_stock_snapshots snap on snap.id = s.last_snapshot_id;
