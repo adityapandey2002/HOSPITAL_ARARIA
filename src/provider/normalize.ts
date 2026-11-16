@@ -29,34 +29,51 @@ export interface NormalizedReport {
   warnings: string[];
 }
 
+export interface QtyPair {
+  label: string;
+  units: number;
+}
+
 /**
- * "A+Ve : 15, B+Ve : 16" -> [["A+Ve", 15], ["B+Ve", 16]]
+ * "A+Ve : 15, B+Ve : 16" -> pairs, with anything unparseable collected
+ * separately. A quantity we cannot read is *not* a reported zero: the centre
+ * said something we failed to understand, so the cell must stay
+ * "not reported" and the caller must warn.
  *
  * Splits on the last colon so an unexpected label containing a colon does not
- * break the quantity. Unparseable quantities become 0 rather than NaN.
+ * break the quantity.
  */
-export function parseQtyPairs(raw: string | null | undefined): Array<[string, number]> {
-  if (!raw) return [];
-  const out: Array<[string, number]> = [];
+export function parseQtyPairsDetailed(raw: string | null | undefined): {
+  pairs: QtyPair[];
+  rejected: string[];
+} {
+  const pairs: QtyPair[] = [];
+  const rejected: string[] = [];
+  if (!raw) return { pairs, rejected };
 
   for (const part of raw.split(",")) {
     const trimmed = part.trim();
     if (!trimmed) continue;
 
     const at = trimmed.lastIndexOf(":");
-    if (at === -1) {
-      const label = trimmed.trim();
-      if (label) out.push([label, 0]);
+    const label = at === -1 ? trimmed : trimmed.slice(0, at).trim();
+    const text = at === -1 ? "" : trimmed.slice(at + 1).trim();
+    const value = Number.parseInt(text, 10);
+
+    if (at === -1 || !label || !/^\d+$/.test(text) || !Number.isFinite(value)) {
+      rejected.push(trimmed);
       continue;
     }
 
-    const label = trimmed.slice(0, at).trim();
-    const value = Number.parseInt(trimmed.slice(at + 1).trim(), 10);
-    if (!label) continue;
-    out.push([label, Number.isFinite(value) && value > 0 ? value : 0]);
+    pairs.push({ label, units: value });
   }
 
-  return out;
+  return { pairs, rejected };
+}
+
+/** Tuple form kept for readability at call sites and tests. */
+export function parseQtyPairs(raw: string | null | undefined): Array<[string, number]> {
+  return parseQtyPairsDetailed(raw).pairs.map((pair) => [pair.label, pair.units]);
 }
 
 /**
@@ -94,10 +111,14 @@ export function normalizeReport(record: RawAvailabilityRecord): NormalizedReport
     }
 
     // Explicitly available groups win over the nil list.
-    for (const [rawGroup, units] of parseQtyPairs(entry.available_WithQty)) {
-      const groupCode = resolveGroupCode(rawGroup);
+    const available = parseQtyPairsDetailed(entry.available_WithQty);
+    for (const rejected of available.rejected) {
+      warnings.push(`Unreadable quantity "${rejected}" in ${rawName}`);
+    }
+    for (const { label, units } of available.pairs) {
+      const groupCode = resolveGroupCode(label);
       if (!groupCode) {
-        warnings.push(`Unknown blood group "${rawGroup}" in ${rawName}`);
+        warnings.push(`Unknown blood group "${label}" in ${rawName}`);
         continue;
       }
       const key = `${component.code}|${groupCode}`;
@@ -112,10 +133,14 @@ export function normalizeReport(record: RawAvailabilityRecord): NormalizedReport
       });
     }
 
-    for (const [rawGroup] of parseQtyPairs(entry.not_available_WithQty)) {
-      const groupCode = resolveGroupCode(rawGroup);
+    const notAvailable = parseQtyPairsDetailed(entry.not_available_WithQty);
+    for (const rejected of notAvailable.rejected) {
+      warnings.push(`Unreadable quantity "${rejected}" in ${rawName}`);
+    }
+    for (const { label } of notAvailable.pairs) {
+      const groupCode = resolveGroupCode(label);
       if (!groupCode) {
-        warnings.push(`Unknown blood group "${rawGroup}" in ${rawName}`);
+        warnings.push(`Unknown blood group "${label}" in ${rawName}`);
         continue;
       }
       const key = `${component.code}|${groupCode}`;
