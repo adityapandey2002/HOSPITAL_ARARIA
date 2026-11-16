@@ -35,10 +35,12 @@ const CATEGORY_LABELS: Record<string, string> = {
   EMERGENCY: 'Emergency Alert',
 };
 
+// Badge fills from the measured pairs in docs/DESIGN_SYSTEM.md §4. LOW is
+// deliberately neutral; severity is also printed as text, never colour alone.
 const PRIORITY_COLORS: Record<string, string> = {
-  LOW: 'bg-gray-100 text-gray-800',
-  MEDIUM: 'bg-blue-100 text-blue-800',
-  HIGH: 'bg-orange-100 text-orange-800',
+  LOW: 'bg-surface-container text-on-surface',
+  MEDIUM: 'bg-primary-50 text-primary-700',
+  HIGH: 'bg-warning-50 text-warning-800',
   CRITICAL: 'bg-danger-100 text-danger-800',
 };
 
@@ -92,7 +94,7 @@ export default async function NoticePage({ params }: NoticePageProps) {
               <span
                 className={cn(
                   'inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-medium uppercase',
-                  PRIORITY_COLORS[notice.priority] ?? 'bg-gray-100 text-gray-800'
+                  PRIORITY_COLORS[notice.priority] ?? 'bg-surface-container text-on-surface'
                 )}
               >
                 {notice.priority}
