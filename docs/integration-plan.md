@@ -56,12 +56,12 @@ consumer wants it.
 - `src/sync/*` — transactional sync, dedupe, retention
 - `src/api/araria.ts` — read model
 - `src/cli/*` — migrate, sync, retention, demo server
-- `test/*` — 21 passing tests
+- `test/*` - 24 passing tests
 - `web/*` — responsive reference page
 
 ## Verification
 
-- `npm test` — 21 tests
+- `npm test` - 24 tests
 - `npm run typecheck` — clean
 - Araria fixtures captured from the live portal in `test/fixtures/`
 
