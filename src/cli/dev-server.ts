@@ -48,12 +48,18 @@ function sendJson(res: http.ServerResponse, status: number, body: unknown): void
   res.end(JSON.stringify(body));
 }
 
-async function readBody(req: http.IncomingMessage): Promise<string> {
-  const chunks: Buffer[] = [];
-  for await (const chunk of req) chunks.push(chunk as Buffer);
-  return Buffer.concat(chunks).toString("utf8");
+async function requireAdmin(req: http.IncomingMessage, res: http.ServerResponse): Promise<boolean> {
+  if (!TOKEN) {
+    sendJson(res, 503, { error: "admin route disabled: ADMIN_TOKEN is not configured" });
+    return false;
+  }
+  const authorization = req.headers.authorization ?? "";
+  if (authorization !== `Bearer ${TOKEN}`) {
+    sendJson(res, 401, { error: "unauthorized" });
+    return false;
+  }
+  return true;
 }
-
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url ?? "/", `http://${req.headers.host ?? "localhost"}`);
 
@@ -70,13 +76,7 @@ const server = http.createServer(async (req, res) => {
     }
 
     if (url.pathname === "/api/blood/sync" && req.method === "POST") {
-      if (TOKEN) {
-        const authorization = req.headers.authorization ?? "";
-        if (authorization !== `Bearer ${TOKEN}`) {
-          sendJson(res, 401, { error: "unauthorized" });
-          return;
-        }
-      }
+      if (!(await requireAdmin(req, res))) return;
       const result = await runSync({
         db: db as unknown as Queryable,
         source,
@@ -88,14 +88,10 @@ const server = http.createServer(async (req, res) => {
     }
 
     if (url.pathname === "/api/blood/retention" && req.method === "POST") {
-      if (TOKEN) {
-        const authorization = req.headers.authorization ?? "";
-        if (authorization !== `Bearer ${TOKEN}`) {
-          sendJson(res, 401, { error: "unauthorized" });
-          return;
-        }
-      }
-      sendJson(res, 200, { removed: await pruneHistory(db as unknown as Queryable, { days: 30 }) });
+      if (!(await requireAdmin(req, res))) return;
+      sendJson(res, 200, {
+        removed: await pruneHistory(db as unknown as Queryable, { days: CONFIG.retentionDays }),
+      });
       return;
     }
 
@@ -132,6 +128,3 @@ const server = http.createServer(async (req, res) => {
 server.listen(PORT, () => {
   console.log(`Demo: http://localhost:${PORT}`);
 });
-
-// Keep the body reader referenced for future admin routes.
-void readBody;
