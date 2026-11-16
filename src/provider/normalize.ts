@@ -200,4 +200,4 @@ export function hashReport(
 }
 
 /** Every component is present in the API response, even when not reported. */
-export const ALL_COMPONENT_CODES = BLOOD_COMPONENTS.map((c) => c.code);
+
