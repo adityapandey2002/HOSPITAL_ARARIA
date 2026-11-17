@@ -1,0 +1,2193 @@
+{
+  "district": {
+    "name": "Araria",
+    "state": "Bihar"
+  },
+  "asOf": "2026-10-30T14:20:51.833Z",
+  "sourceAsOf": "2026-10-30T04:55:21.000Z",
+  "freshness": "fresh",
+  "refreshIntervalMinutes": 240,
+  "counts": {
+    "centersListed": 3,
+    "centersReporting": 2,
+    "centersNoReport": 1,
+    "totalUnits": 75,
+    "groupsWithStock": 8
+  },
+  "centers": [
+    {
+      "id": "284908",
+      "name": "Ms Lions Blood Centre Forbesganj Araria",
+      "category": "Charitable/Vol",
+      "address": "Lee Academy Road, Near Panchmukhi Hanuman Mandir Forbesganj,, Forbesganj, Araria, Bihar",
+      "phone": "9031838109",
+      "dataMode": "snapshot",
+      "sourceEntryAt": "2026-10-30T03:12:20.000Z",
+      "fetchedAt": "2026-10-30T14:20:51.833Z",
+      "reportStatus": "reporting",
+      "totalUnits": 51,
+      "groupsWithStock": [
+        "A+",
+        "B+",
+        "O+",
+        "AB+"
+      ],
+      "groups": [
+        {
+          "code": "A+",
+          "label": "A+",
+          "totalUnits": 13,
+          "hasStock": true,
+          "components": [
+            {
+              "code": "whole_blood",
+              "name": "Whole Blood",
+              "shortName": "WB",
+              "units": 13,
+              "status": "in_stock"
+            },
+            {
+              "code": "packed_red_blood_cells",
+              "name": "Packed Red Blood Cells",
+              "shortName": "PRBC",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "fresh_frozen_plasma",
+              "name": "Fresh Frozen Plasma",
+              "shortName": "FFP",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "random_donor_platelets",
+              "name": "Random Donor Platelets",
+              "shortName": "RPLA",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "single_donor_platelet",
+              "name": "Single Donor Platelet",
+              "shortName": "PLA",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "platelet_concentrate",
+              "name": "Platelet Concentrate",
+              "shortName": "PC",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "platelet_rich_plasma",
+              "name": "Platelet Rich Plasma",
+              "shortName": "PRP",
+              "units": null,
+              "status": "not_reported"
+            },
+            {
+              "code": "cryoprecipitate",
+              "name": "Cryoprecipitate",
+              "shortName": "CRYO",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "cryo_poor_plasma",
+              "name": "Cryo Poor Plasma",
+              "shortName": "CPP",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "plasma",
+              "name": "Plasma",
+              "shortName": "PLS",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "single_donor_plasma",
+              "name": "Single Donor Plasma",
+              "shortName": "SDP",
+              "units": null,
+              "status": "not_reported"
+            },
+            {
+              "code": "irradiated_rbc",
+              "name": "Irradiated RBC",
+              "shortName": "IRBC",
+              "units": null,
+              "status": "not_reported"
+            },
+            {
+              "code": "leukoreduced_rbc",
+              "name": "Leukoreduced RBC",
+              "shortName": "LRBC",
+              "units": null,
+              "status": "not_reported"
+            },
+            {
+              "code": "sagm_packed_red_blood_cells",
+              "name": "SAGM Packed Red Blood Cells",
+              "shortName": "SPRBC",
+              "units": null,
+              "status": "not_reported"
+            }
+          ]
+        },
+        {
+          "code": "A-",
+          "label": "A−",
+          "totalUnits": 0,
+          "hasStock": false,
+          "components": [
+            {
+              "code": "whole_blood",
+              "name": "Whole Blood",
+              "shortName": "WB",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "packed_red_blood_cells",
+              "name": "Packed Red Blood Cells",
+              "shortName": "PRBC",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "fresh_frozen_plasma",
+              "name": "Fresh Frozen Plasma",
+              "shortName": "FFP",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "random_donor_platelets",
+              "name": "Random Donor Platelets",
+              "shortName": "RPLA",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "single_donor_platelet",
+              "name": "Single Donor Platelet",
+              "shortName": "PLA",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "platelet_concentrate",
+              "name": "Platelet Concentrate",
+              "shortName": "PC",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "platelet_rich_plasma",
+              "name": "Platelet Rich Plasma",
+              "shortName": "PRP",
+              "units": null,
+              "status": "not_reported"
+            },
+            {
+              "code": "cryoprecipitate",
+              "name": "Cryoprecipitate",
+              "shortName": "CRYO",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "cryo_poor_plasma",
+              "name": "Cryo Poor Plasma",
+              "shortName": "CPP",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "plasma",
+              "name": "Plasma",
+              "shortName": "PLS",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "single_donor_plasma",
+              "name": "Single Donor Plasma",
+              "shortName": "SDP",
+              "units": null,
+              "status": "not_reported"
+            },
+            {
+              "code": "irradiated_rbc",
+              "name": "Irradiated RBC",
+              "shortName": "IRBC",
+              "units": null,
+              "status": "not_reported"
+            },
+            {
+              "code": "leukoreduced_rbc",
+              "name": "Leukoreduced RBC",
+              "shortName": "LRBC",
+              "units": null,
+              "status": "not_reported"
+            },
+            {
+              "code": "sagm_packed_red_blood_cells",
+              "name": "SAGM Packed Red Blood Cells",
+              "shortName": "SPRBC",
+              "units": null,
+              "status": "not_reported"
+            }
+          ]
+        },
+        {
+          "code": "B+",
+          "label": "B+",
+          "totalUnits": 14,
+          "hasStock": true,
+          "components": [
+            {
+              "code": "whole_blood",
+              "name": "Whole Blood",
+              "shortName": "WB",
+              "units": 14,
+              "status": "in_stock"
+            },
+            {
+              "code": "packed_red_blood_cells",
+              "name": "Packed Red Blood Cells",
+              "shortName": "PRBC",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "fresh_frozen_plasma",
+              "name": "Fresh Frozen Plasma",
+              "shortName": "FFP",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "random_donor_platelets",
+              "name": "Random Donor Platelets",
+              "shortName": "RPLA",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "single_donor_platelet",
+              "name": "Single Donor Platelet",
+              "shortName": "PLA",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "platelet_concentrate",
+              "name": "Platelet Concentrate",
+              "shortName": "PC",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "platelet_rich_plasma",
+              "name": "Platelet Rich Plasma",
+              "shortName": "PRP",
+              "units": null,
+              "status": "not_reported"
+            },
+            {
+              "code": "cryoprecipitate",
+              "name": "Cryoprecipitate",
+              "shortName": "CRYO",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "cryo_poor_plasma",
+              "name": "Cryo Poor Plasma",
+              "shortName": "CPP",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "plasma",
+              "name": "Plasma",
+              "shortName": "PLS",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "single_donor_plasma",
+              "name": "Single Donor Plasma",
+              "shortName": "SDP",
+              "units": null,
+              "status": "not_reported"
+            },
+            {
+              "code": "irradiated_rbc",
+              "name": "Irradiated RBC",
+              "shortName": "IRBC",
+              "units": null,
+              "status": "not_reported"
+            },
+            {
+              "code": "leukoreduced_rbc",
+              "name": "Leukoreduced RBC",
+              "shortName": "LRBC",
+              "units": null,
+              "status": "not_reported"
+            },
+            {
+              "code": "sagm_packed_red_blood_cells",
+              "name": "SAGM Packed Red Blood Cells",
+              "shortName": "SPRBC",
+              "units": null,
+              "status": "not_reported"
+            }
+          ]
+        },
+        {
+          "code": "B-",
+          "label": "B−",
+          "totalUnits": 0,
+          "hasStock": false,
+          "components": [
+            {
+              "code": "whole_blood",
+              "name": "Whole Blood",
+              "shortName": "WB",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "packed_red_blood_cells",
+              "name": "Packed Red Blood Cells",
+              "shortName": "PRBC",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "fresh_frozen_plasma",
+              "name": "Fresh Frozen Plasma",
+              "shortName": "FFP",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "random_donor_platelets",
+              "name": "Random Donor Platelets",
+              "shortName": "RPLA",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "single_donor_platelet",
+              "name": "Single Donor Platelet",
+              "shortName": "PLA",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "platelet_concentrate",
+              "name": "Platelet Concentrate",
+              "shortName": "PC",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "platelet_rich_plasma",
+              "name": "Platelet Rich Plasma",
+              "shortName": "PRP",
+              "units": null,
+              "status": "not_reported"
+            },
+            {
+              "code": "cryoprecipitate",
+              "name": "Cryoprecipitate",
+              "shortName": "CRYO",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "cryo_poor_plasma",
+              "name": "Cryo Poor Plasma",
+              "shortName": "CPP",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "plasma",
+              "name": "Plasma",
+              "shortName": "PLS",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "single_donor_plasma",
+              "name": "Single Donor Plasma",
+              "shortName": "SDP",
+              "units": null,
+              "status": "not_reported"
+            },
+            {
+              "code": "irradiated_rbc",
+              "name": "Irradiated RBC",
+              "shortName": "IRBC",
+              "units": null,
+              "status": "not_reported"
+            },
+            {
+              "code": "leukoreduced_rbc",
+              "name": "Leukoreduced RBC",
+              "shortName": "LRBC",
+              "units": null,
+              "status": "not_reported"
+            },
+            {
+              "code": "sagm_packed_red_blood_cells",
+              "name": "SAGM Packed Red Blood Cells",
+              "shortName": "SPRBC",
+              "units": null,
+              "status": "not_reported"
+            }
+          ]
+        },
+        {
+          "code": "O+",
+          "label": "O+",
+          "totalUnits": 18,
+          "hasStock": true,
+          "components": [
+            {
+              "code": "whole_blood",
+              "name": "Whole Blood",
+              "shortName": "WB",
+              "units": 18,
+              "status": "in_stock"
+            },
+            {
+              "code": "packed_red_blood_cells",
+              "name": "Packed Red Blood Cells",
+              "shortName": "PRBC",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "fresh_frozen_plasma",
+              "name": "Fresh Frozen Plasma",
+              "shortName": "FFP",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "random_donor_platelets",
+              "name": "Random Donor Platelets",
+              "shortName": "RPLA",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "single_donor_platelet",
+              "name": "Single Donor Platelet",
+              "shortName": "PLA",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "platelet_concentrate",
+              "name": "Platelet Concentrate",
+              "shortName": "PC",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "platelet_rich_plasma",
+              "name": "Platelet Rich Plasma",
+              "shortName": "PRP",
+              "units": null,
+              "status": "not_reported"
+            },
+            {
+              "code": "cryoprecipitate",
+              "name": "Cryoprecipitate",
+              "shortName": "CRYO",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "cryo_poor_plasma",
+              "name": "Cryo Poor Plasma",
+              "shortName": "CPP",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "plasma",
+              "name": "Plasma",
+              "shortName": "PLS",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "single_donor_plasma",
+              "name": "Single Donor Plasma",
+              "shortName": "SDP",
+              "units": null,
+              "status": "not_reported"
+            },
+            {
+              "code": "irradiated_rbc",
+              "name": "Irradiated RBC",
+              "shortName": "IRBC",
+              "units": null,
+              "status": "not_reported"
+            },
+            {
+              "code": "leukoreduced_rbc",
+              "name": "Leukoreduced RBC",
+              "shortName": "LRBC",
+              "units": null,
+              "status": "not_reported"
+            },
+            {
+              "code": "sagm_packed_red_blood_cells",
+              "name": "SAGM Packed Red Blood Cells",
+              "shortName": "SPRBC",
+              "units": null,
+              "status": "not_reported"
+            }
+          ]
+        },
+        {
+          "code": "O-",
+          "label": "O−",
+          "totalUnits": 0,
+          "hasStock": false,
+          "components": [
+            {
+              "code": "whole_blood",
+              "name": "Whole Blood",
+              "shortName": "WB",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "packed_red_blood_cells",
+              "name": "Packed Red Blood Cells",
+              "shortName": "PRBC",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "fresh_frozen_plasma",
+              "name": "Fresh Frozen Plasma",
+              "shortName": "FFP",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "random_donor_platelets",
+              "name": "Random Donor Platelets",
+              "shortName": "RPLA",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "single_donor_platelet",
+              "name": "Single Donor Platelet",
+              "shortName": "PLA",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "platelet_concentrate",
+              "name": "Platelet Concentrate",
+              "shortName": "PC",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "platelet_rich_plasma",
+              "name": "Platelet Rich Plasma",
+              "shortName": "PRP",
+              "units": null,
+              "status": "not_reported"
+            },
+            {
+              "code": "cryoprecipitate",
+              "name": "Cryoprecipitate",
+              "shortName": "CRYO",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "cryo_poor_plasma",
+              "name": "Cryo Poor Plasma",
+              "shortName": "CPP",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "plasma",
+              "name": "Plasma",
+              "shortName": "PLS",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "single_donor_plasma",
+              "name": "Single Donor Plasma",
+              "shortName": "SDP",
+              "units": null,
+              "status": "not_reported"
+            },
+            {
+              "code": "irradiated_rbc",
+              "name": "Irradiated RBC",
+              "shortName": "IRBC",
+              "units": null,
+              "status": "not_reported"
+            },
+            {
+              "code": "leukoreduced_rbc",
+              "name": "Leukoreduced RBC",
+              "shortName": "LRBC",
+              "units": null,
+              "status": "not_reported"
+            },
+            {
+              "code": "sagm_packed_red_blood_cells",
+              "name": "SAGM Packed Red Blood Cells",
+              "shortName": "SPRBC",
+              "units": null,
+              "status": "not_reported"
+            }
+          ]
+        },
+        {
+          "code": "AB+",
+          "label": "AB+",
+          "totalUnits": 6,
+          "hasStock": true,
+          "components": [
+            {
+              "code": "whole_blood",
+              "name": "Whole Blood",
+              "shortName": "WB",
+              "units": 6,
+              "status": "in_stock"
+            },
+            {
+              "code": "packed_red_blood_cells",
+              "name": "Packed Red Blood Cells",
+              "shortName": "PRBC",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "fresh_frozen_plasma",
+              "name": "Fresh Frozen Plasma",
+              "shortName": "FFP",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "random_donor_platelets",
+              "name": "Random Donor Platelets",
+              "shortName": "RPLA",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "single_donor_platelet",
+              "name": "Single Donor Platelet",
+              "shortName": "PLA",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "platelet_concentrate",
+              "name": "Platelet Concentrate",
+              "shortName": "PC",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "platelet_rich_plasma",
+              "name": "Platelet Rich Plasma",
+              "shortName": "PRP",
+              "units": null,
+              "status": "not_reported"
+            },
+            {
+              "code": "cryoprecipitate",
+              "name": "Cryoprecipitate",
+              "shortName": "CRYO",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "cryo_poor_plasma",
+              "name": "Cryo Poor Plasma",
+              "shortName": "CPP",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "plasma",
+              "name": "Plasma",
+              "shortName": "PLS",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "single_donor_plasma",
+              "name": "Single Donor Plasma",
+              "shortName": "SDP",
+              "units": null,
+              "status": "not_reported"
+            },
+            {
+              "code": "irradiated_rbc",
+              "name": "Irradiated RBC",
+              "shortName": "IRBC",
+              "units": null,
+              "status": "not_reported"
+            },
+            {
+              "code": "leukoreduced_rbc",
+              "name": "Leukoreduced RBC",
+              "shortName": "LRBC",
+              "units": null,
+              "status": "not_reported"
+            },
+            {
+              "code": "sagm_packed_red_blood_cells",
+              "name": "SAGM Packed Red Blood Cells",
+              "shortName": "SPRBC",
+              "units": null,
+              "status": "not_reported"
+            }
+          ]
+        },
+        {
+          "code": "AB-",
+          "label": "AB−",
+          "totalUnits": 0,
+          "hasStock": false,
+          "components": [
+            {
+              "code": "whole_blood",
+              "name": "Whole Blood",
+              "shortName": "WB",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "packed_red_blood_cells",
+              "name": "Packed Red Blood Cells",
+              "shortName": "PRBC",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "fresh_frozen_plasma",
+              "name": "Fresh Frozen Plasma",
+              "shortName": "FFP",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "random_donor_platelets",
+              "name": "Random Donor Platelets",
+              "shortName": "RPLA",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "single_donor_platelet",
+              "name": "Single Donor Platelet",
+              "shortName": "PLA",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "platelet_concentrate",
+              "name": "Platelet Concentrate",
+              "shortName": "PC",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "platelet_rich_plasma",
+              "name": "Platelet Rich Plasma",
+              "shortName": "PRP",
+              "units": null,
+              "status": "not_reported"
+            },
+            {
+              "code": "cryoprecipitate",
+              "name": "Cryoprecipitate",
+              "shortName": "CRYO",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "cryo_poor_plasma",
+              "name": "Cryo Poor Plasma",
+              "shortName": "CPP",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "plasma",
+              "name": "Plasma",
+              "shortName": "PLS",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "single_donor_plasma",
+              "name": "Single Donor Plasma",
+              "shortName": "SDP",
+              "units": null,
+              "status": "not_reported"
+            },
+            {
+              "code": "irradiated_rbc",
+              "name": "Irradiated RBC",
+              "shortName": "IRBC",
+              "units": null,
+              "status": "not_reported"
+            },
+            {
+              "code": "leukoreduced_rbc",
+              "name": "Leukoreduced RBC",
+              "shortName": "LRBC",
+              "units": null,
+              "status": "not_reported"
+            },
+            {
+              "code": "sagm_packed_red_blood_cells",
+              "name": "SAGM Packed Red Blood Cells",
+              "shortName": "SPRBC",
+              "units": null,
+              "status": "not_reported"
+            }
+          ]
+        },
+        {
+          "code": "Oh+",
+          "label": "Oh+",
+          "totalUnits": 0,
+          "hasStock": false,
+          "components": [
+            {
+              "code": "whole_blood",
+              "name": "Whole Blood",
+              "shortName": "WB",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "packed_red_blood_cells",
+              "name": "Packed Red Blood Cells",
+              "shortName": "PRBC",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "fresh_frozen_plasma",
+              "name": "Fresh Frozen Plasma",
+              "shortName": "FFP",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "random_donor_platelets",
+              "name": "Random Donor Platelets",
+              "shortName": "RPLA",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "single_donor_platelet",
+              "name": "Single Donor Platelet",
+              "shortName": "PLA",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "platelet_concentrate",
+              "name": "Platelet Concentrate",
+              "shortName": "PC",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "platelet_rich_plasma",
+              "name": "Platelet Rich Plasma",
+              "shortName": "PRP",
+              "units": null,
+              "status": "not_reported"
+            },
+            {
+              "code": "cryoprecipitate",
+              "name": "Cryoprecipitate",
+              "shortName": "CRYO",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "cryo_poor_plasma",
+              "name": "Cryo Poor Plasma",
+              "shortName": "CPP",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "plasma",
+              "name": "Plasma",
+              "shortName": "PLS",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "single_donor_plasma",
+              "name": "Single Donor Plasma",
+              "shortName": "SDP",
+              "units": null,
+              "status": "not_reported"
+            },
+            {
+              "code": "irradiated_rbc",
+              "name": "Irradiated RBC",
+              "shortName": "IRBC",
+              "units": null,
+              "status": "not_reported"
+            },
+            {
+              "code": "leukoreduced_rbc",
+              "name": "Leukoreduced RBC",
+              "shortName": "LRBC",
+              "units": null,
+              "status": "not_reported"
+            },
+            {
+              "code": "sagm_packed_red_blood_cells",
+              "name": "SAGM Packed Red Blood Cells",
+              "shortName": "SPRBC",
+              "units": null,
+              "status": "not_reported"
+            }
+          ]
+        },
+        {
+          "code": "Oh-",
+          "label": "Oh−",
+          "totalUnits": 0,
+          "hasStock": false,
+          "components": [
+            {
+              "code": "whole_blood",
+              "name": "Whole Blood",
+              "shortName": "WB",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "packed_red_blood_cells",
+              "name": "Packed Red Blood Cells",
+              "shortName": "PRBC",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "fresh_frozen_plasma",
+              "name": "Fresh Frozen Plasma",
+              "shortName": "FFP",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "random_donor_platelets",
+              "name": "Random Donor Platelets",
+              "shortName": "RPLA",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "single_donor_platelet",
+              "name": "Single Donor Platelet",
+              "shortName": "PLA",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "platelet_concentrate",
+              "name": "Platelet Concentrate",
+              "shortName": "PC",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "platelet_rich_plasma",
+              "name": "Platelet Rich Plasma",
+              "shortName": "PRP",
+              "units": null,
+              "status": "not_reported"
+            },
+            {
+              "code": "cryoprecipitate",
+              "name": "Cryoprecipitate",
+              "shortName": "CRYO",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "cryo_poor_plasma",
+              "name": "Cryo Poor Plasma",
+              "shortName": "CPP",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "plasma",
+              "name": "Plasma",
+              "shortName": "PLS",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "single_donor_plasma",
+              "name": "Single Donor Plasma",
+              "shortName": "SDP",
+              "units": null,
+              "status": "not_reported"
+            },
+            {
+              "code": "irradiated_rbc",
+              "name": "Irradiated RBC",
+              "shortName": "IRBC",
+              "units": null,
+              "status": "not_reported"
+            },
+            {
+              "code": "leukoreduced_rbc",
+              "name": "Leukoreduced RBC",
+              "shortName": "LRBC",
+              "units": null,
+              "status": "not_reported"
+            },
+            {
+              "code": "sagm_packed_red_blood_cells",
+              "name": "SAGM Packed Red Blood Cells",
+              "shortName": "SPRBC",
+              "units": null,
+              "status": "not_reported"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "10140",
+      "name": "Sadar Hospital Araria",
+      "category": "Govt.",
+      "address": "gachi tola sadar hospital campus sadar hospital araria, Araria, Araria, Bihar",
+      "phone": "9470209932",
+      "dataMode": "snapshot",
+      "sourceEntryAt": "2026-10-30T04:55:21.000Z",
+      "fetchedAt": "2026-10-30T14:20:51.833Z",
+      "reportStatus": "reporting",
+      "totalUnits": 24,
+      "groupsWithStock": [
+        "A+",
+        "B+",
+        "O+",
+        "AB+"
+      ],
+      "groups": [
+        {
+          "code": "A+",
+          "label": "A+",
+          "totalUnits": 2,
+          "hasStock": true,
+          "components": [
+            {
+              "code": "whole_blood",
+              "name": "Whole Blood",
+              "shortName": "WB",
+              "units": 2,
+              "status": "in_stock"
+            },
+            {
+              "code": "packed_red_blood_cells",
+              "name": "Packed Red Blood Cells",
+              "shortName": "PRBC",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "fresh_frozen_plasma",
+              "name": "Fresh Frozen Plasma",
+              "shortName": "FFP",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "random_donor_platelets",
+              "name": "Random Donor Platelets",
+              "shortName": "RPLA",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "single_donor_platelet",
+              "name": "Single Donor Platelet",
+              "shortName": "PLA",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "platelet_concentrate",
+              "name": "Platelet Concentrate",
+              "shortName": "PC",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "platelet_rich_plasma",
+              "name": "Platelet Rich Plasma",
+              "shortName": "PRP",
+              "units": null,
+              "status": "not_reported"
+            },
+            {
+              "code": "cryoprecipitate",
+              "name": "Cryoprecipitate",
+              "shortName": "CRYO",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "cryo_poor_plasma",
+              "name": "Cryo Poor Plasma",
+              "shortName": "CPP",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "plasma",
+              "name": "Plasma",
+              "shortName": "PLS",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "single_donor_plasma",
+              "name": "Single Donor Plasma",
+              "shortName": "SDP",
+              "units": null,
+              "status": "not_reported"
+            },
+            {
+              "code": "irradiated_rbc",
+              "name": "Irradiated RBC",
+              "shortName": "IRBC",
+              "units": null,
+              "status": "not_reported"
+            },
+            {
+              "code": "leukoreduced_rbc",
+              "name": "Leukoreduced RBC",
+              "shortName": "LRBC",
+              "units": null,
+              "status": "not_reported"
+            },
+            {
+              "code": "sagm_packed_red_blood_cells",
+              "name": "SAGM Packed Red Blood Cells",
+              "shortName": "SPRBC",
+              "units": null,
+              "status": "not_reported"
+            }
+          ]
+        },
+        {
+          "code": "A-",
+          "label": "A−",
+          "totalUnits": 0,
+          "hasStock": false,
+          "components": [
+            {
+              "code": "whole_blood",
+              "name": "Whole Blood",
+              "shortName": "WB",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "packed_red_blood_cells",
+              "name": "Packed Red Blood Cells",
+              "shortName": "PRBC",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "fresh_frozen_plasma",
+              "name": "Fresh Frozen Plasma",
+              "shortName": "FFP",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "random_donor_platelets",
+              "name": "Random Donor Platelets",
+              "shortName": "RPLA",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "single_donor_platelet",
+              "name": "Single Donor Platelet",
+              "shortName": "PLA",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "platelet_concentrate",
+              "name": "Platelet Concentrate",
+              "shortName": "PC",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "platelet_rich_plasma",
+              "name": "Platelet Rich Plasma",
+              "shortName": "PRP",
+              "units": null,
+              "status": "not_reported"
+            },
+            {
+              "code": "cryoprecipitate",
+              "name": "Cryoprecipitate",
+              "shortName": "CRYO",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "cryo_poor_plasma",
+              "name": "Cryo Poor Plasma",
+              "shortName": "CPP",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "plasma",
+              "name": "Plasma",
+              "shortName": "PLS",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "single_donor_plasma",
+              "name": "Single Donor Plasma",
+              "shortName": "SDP",
+              "units": null,
+              "status": "not_reported"
+            },
+            {
+              "code": "irradiated_rbc",
+              "name": "Irradiated RBC",
+              "shortName": "IRBC",
+              "units": null,
+              "status": "not_reported"
+            },
+            {
+              "code": "leukoreduced_rbc",
+              "name": "Leukoreduced RBC",
+              "shortName": "LRBC",
+              "units": null,
+              "status": "not_reported"
+            },
+            {
+              "code": "sagm_packed_red_blood_cells",
+              "name": "SAGM Packed Red Blood Cells",
+              "shortName": "SPRBC",
+              "units": null,
+              "status": "not_reported"
+            }
+          ]
+        },
+        {
+          "code": "B+",
+          "label": "B+",
+          "totalUnits": 7,
+          "hasStock": true,
+          "components": [
+            {
+              "code": "whole_blood",
+              "name": "Whole Blood",
+              "shortName": "WB",
+              "units": 7,
+              "status": "in_stock"
+            },
+            {
+              "code": "packed_red_blood_cells",
+              "name": "Packed Red Blood Cells",
+              "shortName": "PRBC",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "fresh_frozen_plasma",
+              "name": "Fresh Frozen Plasma",
+              "shortName": "FFP",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "random_donor_platelets",
+              "name": "Random Donor Platelets",
+              "shortName": "RPLA",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "single_donor_platelet",
+              "name": "Single Donor Platelet",
+              "shortName": "PLA",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "platelet_concentrate",
+              "name": "Platelet Concentrate",
+              "shortName": "PC",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "platelet_rich_plasma",
+              "name": "Platelet Rich Plasma",
+              "shortName": "PRP",
+              "units": null,
+              "status": "not_reported"
+            },
+            {
+              "code": "cryoprecipitate",
+              "name": "Cryoprecipitate",
+              "shortName": "CRYO",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "cryo_poor_plasma",
+              "name": "Cryo Poor Plasma",
+              "shortName": "CPP",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "plasma",
+              "name": "Plasma",
+              "shortName": "PLS",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "single_donor_plasma",
+              "name": "Single Donor Plasma",
+              "shortName": "SDP",
+              "units": null,
+              "status": "not_reported"
+            },
+            {
+              "code": "irradiated_rbc",
+              "name": "Irradiated RBC",
+              "shortName": "IRBC",
+              "units": null,
+              "status": "not_reported"
+            },
+            {
+              "code": "leukoreduced_rbc",
+              "name": "Leukoreduced RBC",
+              "shortName": "LRBC",
+              "units": null,
+              "status": "not_reported"
+            },
+            {
+              "code": "sagm_packed_red_blood_cells",
+              "name": "SAGM Packed Red Blood Cells",
+              "shortName": "SPRBC",
+              "units": null,
+              "status": "not_reported"
+            }
+          ]
+        },
+        {
+          "code": "B-",
+          "label": "B−",
+          "totalUnits": 0,
+          "hasStock": false,
+          "components": [
+            {
+              "code": "whole_blood",
+              "name": "Whole Blood",
+              "shortName": "WB",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "packed_red_blood_cells",
+              "name": "Packed Red Blood Cells",
+              "shortName": "PRBC",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "fresh_frozen_plasma",
+              "name": "Fresh Frozen Plasma",
+              "shortName": "FFP",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "random_donor_platelets",
+              "name": "Random Donor Platelets",
+              "shortName": "RPLA",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "single_donor_platelet",
+              "name": "Single Donor Platelet",
+              "shortName": "PLA",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "platelet_concentrate",
+              "name": "Platelet Concentrate",
+              "shortName": "PC",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "platelet_rich_plasma",
+              "name": "Platelet Rich Plasma",
+              "shortName": "PRP",
+              "units": null,
+              "status": "not_reported"
+            },
+            {
+              "code": "cryoprecipitate",
+              "name": "Cryoprecipitate",
+              "shortName": "CRYO",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "cryo_poor_plasma",
+              "name": "Cryo Poor Plasma",
+              "shortName": "CPP",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "plasma",
+              "name": "Plasma",
+              "shortName": "PLS",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "single_donor_plasma",
+              "name": "Single Donor Plasma",
+              "shortName": "SDP",
+              "units": null,
+              "status": "not_reported"
+            },
+            {
+              "code": "irradiated_rbc",
+              "name": "Irradiated RBC",
+              "shortName": "IRBC",
+              "units": null,
+              "status": "not_reported"
+            },
+            {
+              "code": "leukoreduced_rbc",
+              "name": "Leukoreduced RBC",
+              "shortName": "LRBC",
+              "units": null,
+              "status": "not_reported"
+            },
+            {
+              "code": "sagm_packed_red_blood_cells",
+              "name": "SAGM Packed Red Blood Cells",
+              "shortName": "SPRBC",
+              "units": null,
+              "status": "not_reported"
+            }
+          ]
+        },
+        {
+          "code": "O+",
+          "label": "O+",
+          "totalUnits": 14,
+          "hasStock": true,
+          "components": [
+            {
+              "code": "whole_blood",
+              "name": "Whole Blood",
+              "shortName": "WB",
+              "units": 14,
+              "status": "in_stock"
+            },
+            {
+              "code": "packed_red_blood_cells",
+              "name": "Packed Red Blood Cells",
+              "shortName": "PRBC",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "fresh_frozen_plasma",
+              "name": "Fresh Frozen Plasma",
+              "shortName": "FFP",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "random_donor_platelets",
+              "name": "Random Donor Platelets",
+              "shortName": "RPLA",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "single_donor_platelet",
+              "name": "Single Donor Platelet",
+              "shortName": "PLA",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "platelet_concentrate",
+              "name": "Platelet Concentrate",
+              "shortName": "PC",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "platelet_rich_plasma",
+              "name": "Platelet Rich Plasma",
+              "shortName": "PRP",
+              "units": null,
+              "status": "not_reported"
+            },
+            {
+              "code": "cryoprecipitate",
+              "name": "Cryoprecipitate",
+              "shortName": "CRYO",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "cryo_poor_plasma",
+              "name": "Cryo Poor Plasma",
+              "shortName": "CPP",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "plasma",
+              "name": "Plasma",
+              "shortName": "PLS",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "single_donor_plasma",
+              "name": "Single Donor Plasma",
+              "shortName": "SDP",
+              "units": null,
+              "status": "not_reported"
+            },
+            {
+              "code": "irradiated_rbc",
+              "name": "Irradiated RBC",
+              "shortName": "IRBC",
+              "units": null,
+              "status": "not_reported"
+            },
+            {
+              "code": "leukoreduced_rbc",
+              "name": "Leukoreduced RBC",
+              "shortName": "LRBC",
+              "units": null,
+              "status": "not_reported"
+            },
+            {
+              "code": "sagm_packed_red_blood_cells",
+              "name": "SAGM Packed Red Blood Cells",
+              "shortName": "SPRBC",
+              "units": null,
+              "status": "not_reported"
+            }
+          ]
+        },
+        {
+          "code": "O-",
+          "label": "O−",
+          "totalUnits": 0,
+          "hasStock": false,
+          "components": [
+            {
+              "code": "whole_blood",
+              "name": "Whole Blood",
+              "shortName": "WB",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "packed_red_blood_cells",
+              "name": "Packed Red Blood Cells",
+              "shortName": "PRBC",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "fresh_frozen_plasma",
+              "name": "Fresh Frozen Plasma",
+              "shortName": "FFP",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "random_donor_platelets",
+              "name": "Random Donor Platelets",
+              "shortName": "RPLA",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "single_donor_platelet",
+              "name": "Single Donor Platelet",
+              "shortName": "PLA",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "platelet_concentrate",
+              "name": "Platelet Concentrate",
+              "shortName": "PC",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "platelet_rich_plasma",
+              "name": "Platelet Rich Plasma",
+              "shortName": "PRP",
+              "units": null,
+              "status": "not_reported"
+            },
+            {
+              "code": "cryoprecipitate",
+              "name": "Cryoprecipitate",
+              "shortName": "CRYO",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "cryo_poor_plasma",
+              "name": "Cryo Poor Plasma",
+              "shortName": "CPP",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "plasma",
+              "name": "Plasma",
+              "shortName": "PLS",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "single_donor_plasma",
+              "name": "Single Donor Plasma",
+              "shortName": "SDP",
+              "units": null,
+              "status": "not_reported"
+            },
+            {
+              "code": "irradiated_rbc",
+              "name": "Irradiated RBC",
+              "shortName": "IRBC",
+              "units": null,
+              "status": "not_reported"
+            },
+            {
+              "code": "leukoreduced_rbc",
+              "name": "Leukoreduced RBC",
+              "shortName": "LRBC",
+              "units": null,
+              "status": "not_reported"
+            },
+            {
+              "code": "sagm_packed_red_blood_cells",
+              "name": "SAGM Packed Red Blood Cells",
+              "shortName": "SPRBC",
+              "units": null,
+              "status": "not_reported"
+            }
+          ]
+        },
+        {
+          "code": "AB+",
+          "label": "AB+",
+          "totalUnits": 1,
+          "hasStock": true,
+          "components": [
+            {
+              "code": "whole_blood",
+              "name": "Whole Blood",
+              "shortName": "WB",
+              "units": 1,
+              "status": "in_stock"
+            },
+            {
+              "code": "packed_red_blood_cells",
+              "name": "Packed Red Blood Cells",
+              "shortName": "PRBC",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "fresh_frozen_plasma",
+              "name": "Fresh Frozen Plasma",
+              "shortName": "FFP",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "random_donor_platelets",
+              "name": "Random Donor Platelets",
+              "shortName": "RPLA",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "single_donor_platelet",
+              "name": "Single Donor Platelet",
+              "shortName": "PLA",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "platelet_concentrate",
+              "name": "Platelet Concentrate",
+              "shortName": "PC",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "platelet_rich_plasma",
+              "name": "Platelet Rich Plasma",
+              "shortName": "PRP",
+              "units": null,
+              "status": "not_reported"
+            },
+            {
+              "code": "cryoprecipitate",
+              "name": "Cryoprecipitate",
+              "shortName": "CRYO",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "cryo_poor_plasma",
+              "name": "Cryo Poor Plasma",
+              "shortName": "CPP",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "plasma",
+              "name": "Plasma",
+              "shortName": "PLS",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "single_donor_plasma",
+              "name": "Single Donor Plasma",
+              "shortName": "SDP",
+              "units": null,
+              "status": "not_reported"
+            },
+            {
+              "code": "irradiated_rbc",
+              "name": "Irradiated RBC",
+              "shortName": "IRBC",
+              "units": null,
+              "status": "not_reported"
+            },
+            {
+              "code": "leukoreduced_rbc",
+              "name": "Leukoreduced RBC",
+              "shortName": "LRBC",
+              "units": null,
+              "status": "not_reported"
+            },
+            {
+              "code": "sagm_packed_red_blood_cells",
+              "name": "SAGM Packed Red Blood Cells",
+              "shortName": "SPRBC",
+              "units": null,
+              "status": "not_reported"
+            }
+          ]
+        },
+        {
+          "code": "AB-",
+          "label": "AB−",
+          "totalUnits": 0,
+          "hasStock": false,
+          "components": [
+            {
+              "code": "whole_blood",
+              "name": "Whole Blood",
+              "shortName": "WB",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "packed_red_blood_cells",
+              "name": "Packed Red Blood Cells",
+              "shortName": "PRBC",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "fresh_frozen_plasma",
+              "name": "Fresh Frozen Plasma",
+              "shortName": "FFP",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "random_donor_platelets",
+              "name": "Random Donor Platelets",
+              "shortName": "RPLA",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "single_donor_platelet",
+              "name": "Single Donor Platelet",
+              "shortName": "PLA",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "platelet_concentrate",
+              "name": "Platelet Concentrate",
+              "shortName": "PC",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "platelet_rich_plasma",
+              "name": "Platelet Rich Plasma",
+              "shortName": "PRP",
+              "units": null,
+              "status": "not_reported"
+            },
+            {
+              "code": "cryoprecipitate",
+              "name": "Cryoprecipitate",
+              "shortName": "CRYO",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "cryo_poor_plasma",
+              "name": "Cryo Poor Plasma",
+              "shortName": "CPP",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "plasma",
+              "name": "Plasma",
+              "shortName": "PLS",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "single_donor_plasma",
+              "name": "Single Donor Plasma",
+              "shortName": "SDP",
+              "units": null,
+              "status": "not_reported"
+            },
+            {
+              "code": "irradiated_rbc",
+              "name": "Irradiated RBC",
+              "shortName": "IRBC",
+              "units": null,
+              "status": "not_reported"
+            },
+            {
+              "code": "leukoreduced_rbc",
+              "name": "Leukoreduced RBC",
+              "shortName": "LRBC",
+              "units": null,
+              "status": "not_reported"
+            },
+            {
+              "code": "sagm_packed_red_blood_cells",
+              "name": "SAGM Packed Red Blood Cells",
+              "shortName": "SPRBC",
+              "units": null,
+              "status": "not_reported"
+            }
+          ]
+        },
+        {
+          "code": "Oh+",
+          "label": "Oh+",
+          "totalUnits": 0,
+          "hasStock": false,
+          "components": [
+            {
+              "code": "whole_blood",
+              "name": "Whole Blood",
+              "shortName": "WB",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "packed_red_blood_cells",
+              "name": "Packed Red Blood Cells",
+              "shortName": "PRBC",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "fresh_frozen_plasma",
+              "name": "Fresh Frozen Plasma",
+              "shortName": "FFP",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "random_donor_platelets",
+              "name": "Random Donor Platelets",
+              "shortName": "RPLA",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "single_donor_platelet",
+              "name": "Single Donor Platelet",
+              "shortName": "PLA",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "platelet_concentrate",
+              "name": "Platelet Concentrate",
+              "shortName": "PC",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "platelet_rich_plasma",
+              "name": "Platelet Rich Plasma",
+              "shortName": "PRP",
+              "units": null,
+              "status": "not_reported"
+            },
+            {
+              "code": "cryoprecipitate",
+              "name": "Cryoprecipitate",
+              "shortName": "CRYO",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "cryo_poor_plasma",
+              "name": "Cryo Poor Plasma",
+              "shortName": "CPP",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "plasma",
+              "name": "Plasma",
+              "shortName": "PLS",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "single_donor_plasma",
+              "name": "Single Donor Plasma",
+              "shortName": "SDP",
+              "units": null,
+              "status": "not_reported"
+            },
+            {
+              "code": "irradiated_rbc",
+              "name": "Irradiated RBC",
+              "shortName": "IRBC",
+              "units": null,
+              "status": "not_reported"
+            },
+            {
+              "code": "leukoreduced_rbc",
+              "name": "Leukoreduced RBC",
+              "shortName": "LRBC",
+              "units": null,
+              "status": "not_reported"
+            },
+            {
+              "code": "sagm_packed_red_blood_cells",
+              "name": "SAGM Packed Red Blood Cells",
+              "shortName": "SPRBC",
+              "units": null,
+              "status": "not_reported"
+            }
+          ]
+        },
+        {
+          "code": "Oh-",
+          "label": "Oh−",
+          "totalUnits": 0,
+          "hasStock": false,
+          "components": [
+            {
+              "code": "whole_blood",
+              "name": "Whole Blood",
+              "shortName": "WB",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "packed_red_blood_cells",
+              "name": "Packed Red Blood Cells",
+              "shortName": "PRBC",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "fresh_frozen_plasma",
+              "name": "Fresh Frozen Plasma",
+              "shortName": "FFP",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "random_donor_platelets",
+              "name": "Random Donor Platelets",
+              "shortName": "RPLA",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "single_donor_platelet",
+              "name": "Single Donor Platelet",
+              "shortName": "PLA",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "platelet_concentrate",
+              "name": "Platelet Concentrate",
+              "shortName": "PC",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "platelet_rich_plasma",
+              "name": "Platelet Rich Plasma",
+              "shortName": "PRP",
+              "units": null,
+              "status": "not_reported"
+            },
+            {
+              "code": "cryoprecipitate",
+              "name": "Cryoprecipitate",
+              "shortName": "CRYO",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "cryo_poor_plasma",
+              "name": "Cryo Poor Plasma",
+              "shortName": "CPP",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "plasma",
+              "name": "Plasma",
+              "shortName": "PLS",
+              "units": 0,
+              "status": "nil"
+            },
+            {
+              "code": "single_donor_plasma",
+              "name": "Single Donor Plasma",
+              "shortName": "SDP",
+              "units": null,
+              "status": "not_reported"
+            },
+            {
+              "code": "irradiated_rbc",
+              "name": "Irradiated RBC",
+              "shortName": "IRBC",
+              "units": null,
+              "status": "not_reported"
+            },
+            {
+              "code": "leukoreduced_rbc",
+              "name": "Leukoreduced RBC",
+              "shortName": "LRBC",
+              "units": null,
+              "status": "not_reported"
+            },
+            {
+              "code": "sagm_packed_red_blood_cells",
+              "name": "SAGM Packed Red Blood Cells",
+              "shortName": "SPRBC",
+              "units": null,
+              "status": "not_reported"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "284905",
+      "name": "Ms Lions Blood Centre",
+      "category": null,
+      "address": null,
+      "phone": null,
+      "dataMode": null,
+      "sourceEntryAt": null,
+      "fetchedAt": "2026-10-30T14:20:51.833Z",
+      "reportStatus": "no_report",
+      "totalUnits": null,
+      "groupsWithStock": [],
+      "groups": []
+    }
+  ]
+}
