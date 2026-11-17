@@ -2,6 +2,7 @@ import type { Queryable } from "../db/types";
 import { normalizeReport } from "../provider/normalize";
 import type { BloodSource } from "../provider/eraktkosh";
 import type { RawAvailabilityRecord, RawCenter } from "../provider/schema";
+import { ARARIA_CENTRES } from "../domain/centers";
 
 export type SyncTrigger = "schedule" | "manual" | "backfill";
 
@@ -100,11 +101,24 @@ export async function runSync(options: SyncOptions): Promise<SyncResult> {
     throw error;
   }
 
-  const byCode = new Map(availability.map((record) => [record.hospitalCode, record]));
   centersSeen = banks.length;
+
+  const byCode = new Map(availability.map((record) => [record.hospitalCode, record]));
 
   // A centre can appear in the availability feed without being listed by
   // /bloodbanks. Union both sources so it is never dropped.
+  // The district registry is authoritative: a registered centre that the
+  // provider omits is still seeded, so the public page keeps listing it.
+  for (const registered of ARARIA_CENTRES) {
+    if (!banks.some((bank) => bank.hospitalCode === registered.code)) {
+      banks.push({
+        hospitalCode: registered.code,
+        hospitalName: registered.name,
+        mobileNo: null,
+      });
+    }
+  }
+
   for (const record of availability) {
     if (!banks.some((bank) => bank.hospitalCode === record.hospitalCode)) {
       banks.push({
@@ -115,7 +129,19 @@ export async function runSync(options: SyncOptions): Promise<SyncResult> {
     }
   }
 
+  centersSeen = banks.length;
+
   await db.query("begin");
+
+  const lock = await db.query<{ locked: boolean }>(
+    `select pg_try_advisory_xact_lock(hashtext('ek_araria_sync')) as locked`
+  );
+  if (!lock.rows[0]?.locked) {
+    await db.query("rollback");
+    const message = "another sync is already running";
+    await finish("failed", message);
+    throw new Error(message);
+  }
 
   let suspiciousDrop = false;
 
@@ -189,11 +215,21 @@ export async function runSync(options: SyncOptions): Promise<SyncResult> {
     }
 
     // A centre that reported before and is silent now is only demoted when the
-    // drop is plausible. Losing most of the district at once is not.
+    // drop is plausible. Losing most of the district at once is not. A single
+    // suspicious run never blanks the page; if the same centres stay silent in
+    // the following run, the outage is confirmed and the stale reports are
+    // finally replaced.
+    const previousRun = await db.query<{ error: string | null }>(
+      `select error from ek_sync_runs where id < $1 and finished_at is not null order by finished_at desc limit 1`,
+      [runId]
+    );
+    const previousSuspicious = (previousRun.rows[0]?.error ?? "").includes("SUSPICIOUS_DROP");
+
     const lostReporting = pendingNoReport.filter((centerId) => previouslyReporting.has(centerId));
     suspiciousDrop =
       previouslyReporting.size >= MASS_DROP_MIN_CENTRES &&
-      lostReporting.length * 2 > previouslyReporting.size;
+      lostReporting.length * 2 > previouslyReporting.size &&
+      !previousSuspicious;
 
     if (suspiciousDrop) {
       const message =
@@ -222,7 +258,6 @@ export async function runSync(options: SyncOptions): Promise<SyncResult> {
     throw error;
   }
 
-  if (suspiciousDrop && !errors.length) errors.push("SUSPICIOUS_DROP");
   return finish(errors.length ? "partial" : "succeeded", errors.length ? errors.join("; ") : null);
 }
 
