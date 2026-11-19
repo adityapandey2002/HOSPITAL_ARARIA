@@ -239,7 +239,10 @@ surface urgent information.
 1. **Hero** — hospital identity, "Government of Bihar" eyebrow, one-line service
    promise, primary CTA "Book Appointment", secondary CTA "Emergency Services",
    emergency phone. Trust indicators (24/7 emergency, doctor count, department
-   count) must come from configuration or the API, not invented copy.
+   count) must come from configuration or the API, not invented copy. The hero
+   media is a managed slideshow from `/slideshow`: auto-advance every five
+   seconds, dot controls for manual selection, caption overlay, alt text from
+   the slide record, and a branded frame when there are no active images.
 2. **Core services** — six cards: Appointments, Find a Doctor, Blood Bank,
    Grievances, Notices, Feedback. Each card is one link with an icon, title, and
    one-line description.
@@ -260,7 +263,7 @@ section shows an inline error with retry and does not blank the page.
 Skeletons match the final card dimensions to avoid layout shift.
 
 **Data:** `/departments`, `/doctors`, `/blood-bank/summary`,
-`/notices/published`. Do not hard-code department or doctor names.
+`/notices/published`, `/slideshow`. Do not hard-code department or doctor names.
 
 **Metadata:** `Hospital` or `MedicalOrganization` structured data, canonical URL,
 OG image, and a description that names the hospital and district.
