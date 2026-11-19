@@ -188,18 +188,21 @@ with the same data.
 | Route | Page | Auth | Indexable | Status | Primary API |
 |---|---|---|---|---|---|
 | `/feedback/inbox` | Feedback inbox and access grants | STAFF, ADMIN | No | Live | `/feedback`, `/feedback/stats`, `/feedback/access`, `/feedback/scope` |
-| `/admin` | Admin dashboard or redirect | STAFF, ADMIN | No | Planned — `admin/layout.tsx` exists but there is no index page | Aggregates |
+| `/admin` | Admin entry point | STAFF, ADMIN | No | Live redirect to `/admin/complaints` | None |
 | `/admin/complaints` | Complaint triage | STAFF, ADMIN | No | Live | `/complaints`, `/complaints/stats`, `/complaints/export` |
 | `/admin/staff` | Staff accounts and department access | ADMIN | No | Live | `GET/POST /admin/staff`, `PATCH /admin/staff/:id`, `/departments` |
 | `/admin/doctors` | Doctor management | ADMIN | No | Partial — add and delete work; edit is missing | `/admin/doctors` |
 | `/admin/nodal-officers` | Legacy redirect to `/admin/staff` | ADMIN | No | Redirect — the grant-only screen was replaced by the staff-centric screen | None |
-| `/admin/appointments` | Appointment desk | STAFF, ADMIN, DOCTOR | No | Planned | `/appointments`, `/appointments/doctor/:id` |
-| `/admin/notices` | Notice publishing | STAFF, ADMIN | No | Planned | `/notices` CRUD |
-| `/admin/grievances` | Grievance triage | STAFF, ADMIN | No | Planned | `/grievances` CRUD |
+| `/admin/appointments` | Appointment desk | STAFF, ADMIN | No | Live (minimal) — list, status filter, inline status change; day/doctor views are still planned | `/appointments`, `PUT /appointments/:id/status` |
+| `/admin/notices` | Notice publishing | STAFF, ADMIN | No | Live (minimal) — create draft, publish/unpublish, delete; editing is still planned | `/notices` CRUD |
+| `/admin/grievances` | Grievance triage | STAFF, ADMIN | No | Live (minimal) — list, status filter, inline status change; assignment and detail views are still planned | `/grievances`, `PUT /grievances/:id/status` |
+| `/admin/users` | Users and roles | ADMIN | No | Live (minimal) — list, role change, activate/deactivate; filters and deletion are still planned | `/users` |
+| `/admin/slideshow` | Homepage slideshow images | ADMIN | No | Live | `/slideshow` CRUD |
+| `/admin/quality-events` | NQAS/KAYAKALP/MUSQAN events and progress | ADMIN | No | Live | `/quality-events`, `/quality-events/:id/progress` |
+| `/admin/quality-events/[id]` | Per-department task checklist for one event | ADMIN | No | Live | `/quality-events/:id/tasks` |
 | `/admin/blood-bank` | Blood stock management | STAFF, ADMIN | No | Planned | `/blood-bank/stock` |
 | `/admin/contact-messages` | Contact message inbox | STAFF, ADMIN | No | Planned | `/contact` list and stats |
 | `/admin/departments` | Department management | ADMIN | No | Planned | `/departments` CRUD |
-| `/admin/users` | Users and roles | ADMIN | No | Planned | `/users` |
 | `/admin/audit-log` | Audit trail | ADMIN | No | Planned | `/audit-logs` |
 | `/doctor` or `/staff/appointments` | Clinic day list for doctors | DOCTOR, STAFF | No | Planned | `/appointments/doctor/:id`, `PUT /appointments/:id/status` |
 | `app/not-found.tsx` | 404 page | Public | No | Planned | None |
