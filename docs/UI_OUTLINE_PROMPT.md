@@ -416,16 +416,17 @@ and receives focus on change; Back/Next are real buttons; no keyboard trap.
 
 ### 4.7 My appointments (`/account/appointments`)
 
-**Status:** Planned. The API exists (`GET /appointments/my`,
-`DELETE /appointments/:id`); there is no page.
+**Status:** Live (minimal). The page lists the signed-in patient's appointments
+and supports cancellation. Upcoming/Past/Cancelled tabs, fee display, and
+"book again" are still planned.
 
 **Layout:**
 
-- Tabs: Upcoming, Past, Cancelled.
+- Tabs: Upcoming, Past, Cancelled (planned).
 - Appointment cards: token number, doctor, department, date, time, type,
   status, fee, reason, actions.
 - Actions: view details, cancel (confirmation with consequence text), book
-  again, get directions.
+  again, get directions. Cancellation is live; the rest are planned.
 - Empty state per tab with "Book an appointment" CTA.
 - Auth gate for signed-out users, with redirect back.
 - Pagination when needed.
@@ -793,23 +794,26 @@ need loading-free rendering, metadata, and a print stylesheet.
 
 ### 5.5 Account area (`/account`, `/account/*`)
 
-**Status:** Planned. The backend endpoints exist.
+**Status:** Partial. `/account` redirects to `/account/appointments`, and the
+appointments list is live. Overview, grievances, profile, and security are
+planned; the backend endpoints exist.
 
 **Shell:** signed-in only; sidebar or tabs for Overview, Appointments,
 Grievances, Profile, Security. `noindex`. Redirect to login with a return path;
-show a permission-denied page for the wrong role.
+show a permission-denied page for the wrong role. The current layout is a plain
+signed-in wrapper with no account navigation yet.
 
-- **Overview:** next appointment, open grievances count, recent feedback,
-  profile completeness, quick actions.
-- **Appointments:** as section 4.7.
-- **Grievances:** list with reference, category, subject, status, submitted
-  date, last update, resolution; detail view; link to file a new grievance.
-  Read-only unless the backend supports comments/attachments.
-- **Profile:** name, phone, email (read-only unless the backend supports email
-  change), save, success/error.
-- **Security:** change password (current, new, confirm), show/hide, strength,
-  success clears the form, error explains which rule failed. Optionally show
-  active sessions when the backend supports it.
+- **Overview:** planned. Next appointment, open grievances count, recent
+  feedback, profile completeness, quick actions.
+- **Appointments:** live; see section 4.7.
+- **Grievances:** planned. List with reference, category, subject, status,
+  submitted date, last update, resolution; detail view; link to file a new
+  grievance. Read-only unless the backend supports comments/attachments.
+- **Profile:** planned. Name, phone, email (read-only unless the backend
+  supports email change), save, success/error.
+- **Security:** planned. Change password (current, new, confirm), show/hide,
+  strength, success clears the form, error explains which rule failed.
+  Optionally show active sessions when the backend supports it.
 
 ### 5.6 Staff and admin shell
 
