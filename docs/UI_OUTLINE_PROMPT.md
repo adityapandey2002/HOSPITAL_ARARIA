@@ -172,9 +172,9 @@ Every page includes:
 | `/login` | Sign in | Public | No | Live | `POST /auth/login` |
 | `/register` | Create account | Public | No | Live | `POST /auth/register` |
 | `/forgot-password` | Request reset link | Public | No | Partial — API returns success but sends no email yet | `POST /auth/forgot-password` |
-| `/reset-password` | Set a new password from a token | Public | No | Planned | `POST /auth/reset-password` |
-| `/account` | Account overview | PATIENT | No | Planned | `/appointments/my`, `/grievances/my`, `/users/profile` |
-| `/account/appointments` | My appointments | PATIENT | No | Planned | `/appointments/my`, `DELETE /appointments/:id` |
+| `/reset-password` | Set a new password from a token | Public | No | Live — token is read from the query string; missing or invalid tokens are rejected | `POST /auth/reset-password` |
+| `/account` | Account entry point | PATIENT | No | Live redirect to `/account/appointments` | `/appointments/my` |
+| `/account/appointments` | My appointments | PATIENT | No | Live | `/appointments/my`, `DELETE /appointments/:id` |
 | `/account/grievances` | My grievances | PATIENT | No | Planned | `/grievances/my` |
 | `/account/profile` | Edit name and phone | PATIENT | No | Planned | `GET/PUT /users/profile` |
 | `/account/security` | Change password | PATIENT | No | Planned | `POST /auth/change-password` |
