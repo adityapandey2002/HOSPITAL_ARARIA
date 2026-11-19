@@ -205,7 +205,7 @@ with the same data.
 | `/admin/departments` | Department management | ADMIN | No | Planned | `/departments` CRUD |
 | `/admin/audit-log` | Audit trail | ADMIN | No | Planned | `/audit-logs` |
 | `/doctor` or `/staff/appointments` | Clinic day list for doctors | DOCTOR, STAFF | No | Planned | `/appointments/doctor/:id`, `PUT /appointments/:id/status` |
-| `app/not-found.tsx` | 404 page | Public | No | Planned | None |
+| `app/not-found.tsx` | 404 page | Public | No | Live | None |
 | `app/error.tsx` | Route error boundary | Public | No | Live | `POST /client-errors` |
 | `app/global-error.tsx` | Fatal error boundary | Public | No | Live | `POST /client-errors` |
 | `app/**/loading.tsx` | Route-level loading states | Public | No | Planned — components currently own their skeletons | None |
