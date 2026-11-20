@@ -6,6 +6,7 @@ import { cn } from '@dh-araria/shared/utils';
 
 const ITEMS = [
   { href: '/account', label: 'Appointments' },
+  { href: '/account/grievances', label: 'My grievances' },
   { href: '/account/profile', label: 'Profile' },
 ];
 
