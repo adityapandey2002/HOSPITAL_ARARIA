@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { Button, Card, Select } from '@dh-araria/ui/components';
+import { Button, Card, Input, Select } from '@dh-araria/ui/components';
 import { api, handleApiResponse } from '@/lib/api';
 import { toast } from 'sonner';
 
@@ -17,18 +17,31 @@ interface Appointment {
   status: string;
 }
 
+interface Doctor {
+  id: string;
+  name: string;
+}
+
 const STATUSES = ['PENDING','CONFIRMED','COMPLETED','NO_SHOW','CANCELLED'];
 
 export default function AdminAppointmentsPage() {
   const [items, setItems] = useState<Appointment[]>([]);
+  const [doctors, setDoctors] = useState<Doctor[]>([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState('');
+  const [doctorFilter, setDoctorFilter] = useState('');
+  const [dateFilter, setDateFilter] = useState('');
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
       const params: Record<string, unknown> = { limit: 50 };
       if (statusFilter) params.status = statusFilter;
+      if (doctorFilter) params.doctorId = doctorFilter;
+      if (dateFilter) {
+        params.dateFrom = dateFilter;
+        params.dateTo = dateFilter;
+      }
       const res = await api.get<any>('/appointments', params);
       const data = handleApiResponse(res);
       const list = Array.isArray(data) ? data : data?.data ?? [];
@@ -38,9 +51,16 @@ export default function AdminAppointmentsPage() {
     } finally {
       setLoading(false);
     }
-  }, [statusFilter]);
+  }, [statusFilter, doctorFilter, dateFilter]);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    void load();
+    Promise.resolve(api.get<Doctor[]>('/doctors', { limit: 500 }))
+      .then((res) => setDoctors((handleApiResponse(res) ?? []) as Doctor[]))
+      .catch(() => {
+        /* Filter stays optional; the list still loads. */
+      });
+  }, [load]);
 
   const updateStatus = async (id: string, status: string) => {
     try {
@@ -58,6 +78,9 @@ export default function AdminAppointmentsPage() {
         <h1 className="text-2xl font-bold text-on-surface">Appointments</h1>
         <Select label="Status" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}
           options={[{ value: '', label: 'All' }, ...STATUSES.map((s) => ({ value: s, label: s }))]} />
+        <Select label="Doctor" value={doctorFilter} onChange={(e) => setDoctorFilter(e.target.value)}
+          options={[{ value: '', label: 'All doctors' }, ...doctors.map((d) => ({ value: d.id, label: d.name }))]} />
+        <Input type="date" label="" value={dateFilter} onChange={(e) => setDateFilter(e.target.value)} className="w-32" />
       </div>
       {loading ? <p className="text-on-surface-variant">Loading…</p> : (
         <div className="space-y-3">
