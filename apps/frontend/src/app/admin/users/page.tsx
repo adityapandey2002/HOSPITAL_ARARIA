@@ -73,6 +73,17 @@ export default function AdminUsersPage() {
     }
   };
 
+  const remove = async (u: User) => {
+    if (!window.confirm(`Delete ${u.name}? This cannot be undone.`)) return;
+    try {
+      await api.delete(`/users/${u.id}`);
+      toast.success('User deleted');
+      await load();
+    } catch {
+      toast.error('Failed to delete');
+    }
+  };
+
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold text-on-surface">Users</h1>
@@ -120,6 +131,9 @@ export default function AdminUsersPage() {
                     options={ROLES.map((r) => ({ value: r, label: r }))} />
                   <Button size="sm" variant="outline" onClick={() => toggleActive(u)}>
                     {u.isActive ? 'Deactivate' : 'Activate'}
+                  </Button>
+                  <Button size="sm" variant="outline" className="text-danger-600 hover:bg-danger-50" onClick={() => remove(u)}>
+                    Delete
                   </Button>
                 </div>
               </div>
