@@ -1,0 +1,32 @@
+{
+  "name": "blood-availability-araria",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "e-RaktKosh blood availability for Araria district: sync worker, Postgres schema, API and responsive web UI",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "migrate": "tsx src/cli/migrate.ts",
+    "sync": "tsx src/cli/sync.ts",
+    "retention": "tsx src/cli/retention.ts",
+    "dev": "tsx src/cli/dev-server.ts",
+    "web:sample": "node scripts/embed-sample.mjs"
+  },
+  "dependencies": {
+    "pg": "^8.13.1",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "^0.2.17",
+    "@types/node": "^22.10.5",
+    "@types/pg": "^8.11.10",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.3",
+    "vitest": "^2.1.8"
+  }
+}
