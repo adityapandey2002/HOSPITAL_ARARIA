@@ -203,6 +203,13 @@ export const ADMIN_NAV: Array<NavLink & { roles: UserRole[] }> = [
     roles: [UserRole.ADMIN],
   },
   {
+    href: '/admin/blood-bank',
+    label: 'Blood bank',
+    description: 'Stock management and request queue',
+    icon: Droplet,
+    roles: [UserRole.ADMIN],
+  },
+  {
     href: '/admin/audit-log',
     label: 'Audit trail',
     description: 'CERT-In event history',
