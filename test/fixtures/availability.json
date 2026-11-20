@@ -1,0 +1,112 @@
+[
+  {
+    "bldgrpcode1": null,
+    "compId": null,
+    "componentName": null,
+    "count": null,
+    "hospitalname": "Sadar Hospital Araria",
+    "hospitaladd": "gachi tola sadar hospital campus sadar hospital araria, Araria, Araria, Bihar",
+    "hospitalcontact": "Phone: 9470209932 ,Fax: 1234567890, Email: bloodcentre2022@gmail.com",
+    "hospitalCode": "10140",
+    "moderateStock": "0",
+    "hospitalType": "Govt.",
+    "entrydate": "2026-10-30 10:25:21",
+    "offline": "1",
+    "type": "Blood Bank",
+    "available_WithQty": null,
+    "components": {
+      "Plasma": {
+        "not_available_WithQty": "A+Ve : 0, A-Ve : 0, B+Ve : 0, B-Ve : 0, O+Ve : 0, O-Ve : 0, AB+Ve : 0, AB-Ve : 0, Oh+VE : 0, Oh-VE : 0",
+        "available_WithQty": ""
+      },
+      "Packed Red Blood Cells": {
+        "not_available_WithQty": "A+Ve : 0, A-Ve : 0, B+Ve : 0, B-Ve : 0, O+Ve : 0, O-Ve : 0, AB+Ve : 0, AB-Ve : 0, Oh+VE : 0, Oh-VE : 0",
+        "available_WithQty": ""
+      },
+      "Single Donor Platelet": {
+        "not_available_WithQty": "A+Ve : 0, A-Ve : 0, B+Ve : 0, B-Ve : 0, O+Ve : 0, O-Ve : 0, AB+Ve : 0, AB-Ve : 0, Oh+VE : 0, Oh-VE : 0",
+        "available_WithQty": ""
+      },
+      "Random Donor Platelets": {
+        "not_available_WithQty": "A+Ve : 0, A-Ve : 0, B+Ve : 0, B-Ve : 0, O+Ve : 0, O-Ve : 0, AB+Ve : 0, AB-Ve : 0, Oh+VE : 0, Oh-VE : 0",
+        "available_WithQty": ""
+      },
+      "Fresh Frozen Plasma": {
+        "not_available_WithQty": "B-Ve : 0, AB+Ve : 0, AB-Ve : 0, Oh+VE : 0, Oh-VE : 0, A+Ve : 0, A-Ve : 0, B+Ve : 0, O+Ve : 0, O-Ve : 0",
+        "available_WithQty": ""
+      },
+      "Platelet Concentrate": {
+        "not_available_WithQty": "A+Ve : 0, A-Ve : 0, B+Ve : 0, B-Ve : 0, O+Ve : 0, O-Ve : 0, AB+Ve : 0, AB-Ve : 0, Oh+VE : 0, Oh-VE : 0",
+        "available_WithQty": ""
+      },
+      "Cryoprecipitate": {
+        "not_available_WithQty": "A+Ve : 0, A-Ve : 0, B+Ve : 0, B-Ve : 0, O+Ve : 0, O-Ve : 0, AB+Ve : 0, AB-Ve : 0, Oh+VE : 0, Oh-VE : 0",
+        "available_WithQty": ""
+      },
+      "Cryo Poor Plasma": {
+        "not_available_WithQty": "A+Ve : 0, A-Ve : 0, B+Ve : 0, B-Ve : 0, O+Ve : 0, O-Ve : 0, AB+Ve : 0, AB-Ve : 0, Oh+VE : 0, Oh-VE : 0",
+        "available_WithQty": ""
+      },
+      "Whole Blood": {
+        "not_available_WithQty": "A-Ve : 0, B-Ve : 0, O-Ve : 0, AB-Ve : 0, Oh+VE : 0, Oh-VE : 0",
+        "available_WithQty": "A+Ve : 2, B+Ve : 7, O+Ve : 14, AB+Ve : 1"
+      }
+    },
+    "not_available_WithQty": null
+  },
+  {
+    "bldgrpcode1": null,
+    "compId": null,
+    "componentName": null,
+    "count": null,
+    "hospitalname": "Ms Lions Blood Centre Forbesganj Araria",
+    "hospitaladd": "Lee Academy Road, Near Panchmukhi Hanuman Mandir Forbesganj,, Forbesganj, Araria, Bihar",
+    "hospitalcontact": "Phone: 9031838109 ,Fax: 1234567890, Email: fbglionsbloodcentre@gmail.com",
+    "hospitalCode": "284908",
+    "moderateStock": "0",
+    "hospitalType": "Charitable/Vol",
+    "entrydate": "2026-10-30 08:42:20",
+    "offline": "1",
+    "type": "Blood Bank",
+    "available_WithQty": null,
+    "components": {
+      "Plasma": {
+        "not_available_WithQty": "A+Ve : 0, A-Ve : 0, B+Ve : 0, B-Ve : 0, O+Ve : 0, O-Ve : 0, AB+Ve : 0, AB-Ve : 0, Oh+VE : 0, Oh-VE : 0",
+        "available_WithQty": ""
+      },
+      "Single Donor Platelet": {
+        "not_available_WithQty": "A+Ve : 0, A-Ve : 0, B+Ve : 0, B-Ve : 0, O+Ve : 0, O-Ve : 0, AB+Ve : 0, AB-Ve : 0, Oh+VE : 0, Oh-VE : 0",
+        "available_WithQty": ""
+      },
+      "Packed Red Blood Cells": {
+        "not_available_WithQty": "A+Ve : 0, A-Ve : 0, B+Ve : 0, B-Ve : 0, O+Ve : 0, O-Ve : 0, AB+Ve : 0, AB-Ve : 0, Oh+VE : 0, Oh-VE : 0",
+        "available_WithQty": ""
+      },
+      "Random Donor Platelets": {
+        "not_available_WithQty": "A+Ve : 0, A-Ve : 0, B+Ve : 0, B-Ve : 0, O+Ve : 0, O-Ve : 0, AB+Ve : 0, AB-Ve : 0, Oh+VE : 0, Oh-VE : 0",
+        "available_WithQty": ""
+      },
+      "Platelet Concentrate": {
+        "not_available_WithQty": "A+Ve : 0, A-Ve : 0, B+Ve : 0, B-Ve : 0, O+Ve : 0, O-Ve : 0, AB+Ve : 0, AB-Ve : 0, Oh+VE : 0, Oh-VE : 0",
+        "available_WithQty": ""
+      },
+      "Fresh Frozen Plasma": {
+        "not_available_WithQty": "A+Ve : 0, A-Ve : 0, B+Ve : 0, B-Ve : 0, O+Ve : 0, O-Ve : 0, AB+Ve : 0, AB-Ve : 0, Oh+VE : 0, Oh-VE : 0",
+        "available_WithQty": ""
+      },
+      "Cryoprecipitate": {
+        "not_available_WithQty": "A+Ve : 0, A-Ve : 0, B+Ve : 0, B-Ve : 0, O+Ve : 0, O-Ve : 0, AB+Ve : 0, AB-Ve : 0, Oh+VE : 0, Oh-VE : 0",
+        "available_WithQty": ""
+      },
+      "Cryo Poor Plasma": {
+        "not_available_WithQty": "A+Ve : 0, A-Ve : 0, B+Ve : 0, B-Ve : 0, O+Ve : 0, O-Ve : 0, AB+Ve : 0, AB-Ve : 0, Oh+VE : 0, Oh-VE : 0",
+        "available_WithQty": ""
+      },
+      "Whole Blood": {
+        "not_available_WithQty": "A-Ve : 0, B-Ve : 0, O-Ve : 0, AB-Ve : 0, Oh+VE : 0, Oh-VE : 0",
+        "available_WithQty": "A+Ve : 13, B+Ve : 14, O+Ve : 18, AB+Ve : 6"
+      }
+    },
+    "not_available_WithQty": null
+  }
+]
