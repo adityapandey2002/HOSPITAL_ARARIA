@@ -1,7 +1,8 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { Button, Card, Select } from '@dh-araria/ui/components';
+import { Button, Card, Input, Select } from '@dh-araria/ui/components';
+import { Search } from 'lucide-react';
 import { api, handleApiResponse } from '@/lib/api';
 import { toast } from 'sonner';
 
@@ -18,22 +19,39 @@ const ROLES = ['PATIENT','DOCTOR','STAFF','ADMIN'];
 export default function AdminUsersPage() {
   const [items, setItems] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
+  const [roleFilter, setRoleFilter] = useState('');
+  const [activeFilter, setActiveFilter] = useState('');
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await api.get<any>('/users');
+      const params: Record<string, unknown> = {
+        page: 1,
+        limit: 200,
+        sortBy: 'createdAt',
+        sortOrder: 'desc',
+      };
+      if (search.trim()) params.search = search.trim();
+      if (roleFilter) params.role = roleFilter;
+      if (activeFilter) params.isActive = activeFilter === 'active';
+
+      const res = await api.get<any>('/users', params);
       const data = handleApiResponse(res);
-      const list = Array.isArray(data) ? data : data?.data ?? [];
+      const payload = data ?? {};
+      const list = Array.isArray(payload) ? payload : payload?.data ?? [];
       setItems(list as User[]);
     } catch {
       toast.error('Failed to load users');
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [search, roleFilter, activeFilter]);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    const timer = setTimeout(() => void load(), 220);
+    return () => clearTimeout(timer);
+  }, [load]);
 
   const updateRole = async (id: string, role: string) => {
     try {
@@ -58,6 +76,35 @@ export default function AdminUsersPage() {
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold text-on-surface">Users</h1>
+      <Card className="p-4">
+        <div className="flex flex-wrap gap-3">
+          <div className="relative min-w-[220px] flex-1">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+            <Input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search by name, email or phone…"
+              className="pl-10"
+            />
+          </div>
+          <Select
+            label="Role"
+            value={roleFilter}
+            onChange={(e) => setRoleFilter(e.target.value)}
+            options={[{ value: '', label: 'All roles' }, ...ROLES.map((r) => ({ value: r, label: r }))]}
+          />
+          <Select
+            label="Status"
+            value={activeFilter}
+            onChange={(e) => setActiveFilter(e.target.value)}
+            options={[
+              { value: '', label: 'All statuses' },
+              { value: 'active', label: 'Active' },
+              { value: 'inactive', label: 'Inactive' },
+            ]}
+          />
+        </div>
+      </Card>
       {loading ? <p className="text-on-surface-variant">Loading…</p> : (
         <div className="space-y-3">
           {items.map((u) => (
