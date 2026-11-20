@@ -5,6 +5,7 @@ import Link from 'next/link';
 import {
   AlertCircle,
   CheckCircle,
+  Pencil,
   Plus,
   Trash2,
   User,
@@ -20,6 +21,8 @@ import { toast } from 'sonner';
 interface Doctor {
   id: string;
   name: string;
+  email: string;
+  phone: string;
   specialization: string;
   qualification: string;
   experience: number;
@@ -47,7 +50,7 @@ export default function AdminDoctorsPage() {
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [openForm, setOpenForm] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -131,13 +134,47 @@ export default function AdminDoctorsPage() {
     return Object.keys(errors).length === 0;
   };
 
+  const openEdit = (doctor: Doctor) => {
+    setEditingId(doctor.id);
+    setFormData({
+      name: doctor.name,
+      email: doctor.email,
+      phone: doctor.phone,
+      specialization: doctor.specialization,
+      qualification: doctor.qualification,
+      experience: String(doctor.experience ?? ''),
+      departmentId: doctor.departmentId ?? '',
+      bio: doctor.bio ?? '',
+      hprId: '',
+      consultationFee: doctor.consultationFee ? String(doctor.consultationFee) : '',
+      languages: doctor.languages?.join(', ') ?? 'English, Hindi',
+    });
+  };
+
+  const openNew = () => {
+    setEditingId(null);
+    setFormData({
+      name: '',
+      email: '',
+      phone: '',
+      specialization: '',
+      qualification: '',
+      experience: '',
+      departmentId: '',
+      bio: '',
+      hprId: '',
+      consultationFee: '',
+      languages: 'English, Hindi',
+    });
+  };
+
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!validateForm()) return;
 
     setSubmitting(true);
     try {
-      const response = await api.post<Doctor>('/admin/doctors', {
+      const payload = {
         ...formData,
         experience: Number(formData.experience),
         consultationFee: formData.consultationFee
@@ -147,10 +184,16 @@ export default function AdminDoctorsPage() {
           .split(',')
           .map((l) => l.trim())
           .filter(Boolean),
-      });
-      handleApiResponse(response);
-      toast.success('Doctor added successfully');
-      setOpenForm(false);
+      };
+      if (editingId) {
+        await api.patch(`/admin/doctors/${editingId}`, payload);
+        toast.success('Doctor updated');
+      } else {
+        const response = await api.post('/admin/doctors', payload);
+        handleApiResponse(response);
+        toast.success('Doctor added');
+      }
+      setEditingId(null);
       setFormData({
         name: '',
         email: '',
@@ -167,7 +210,7 @@ export default function AdminDoctorsPage() {
       setFormErrors({});
       void loadDoctors();
     } catch (error: any) {
-      toast.error('Failed to add doctor', {
+      toast.error(editingId ? 'Failed to update doctor' : 'Failed to add doctor', {
         description: error?.message || 'Please try again.',
       });
     } finally {
@@ -201,7 +244,7 @@ export default function AdminDoctorsPage() {
           </p>
         </div>
         <Button
-          onClick={() => setOpenForm(true)}
+          onClick={openNew}
           className="flex items-center gap-2"
         >
           <Plus className="h-4 w-4" />
@@ -285,19 +328,30 @@ export default function AdminDoctorsPage() {
                         {doctor.rating} / 5
                       </td>
                       <td className="px-4 py-3">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleDelete(doctor.id)}
-                          disabled={deletingId === doctor.id}
-                          className="text-danger-600 hover:bg-danger-50"
-                        >
-                          {deletingId === doctor.id ? (
-                            <RefreshCw className="h-3 w-3 animate-spin" />
-                          ) : (
-                            <Trash2 className="h-3 w-3" />
-                          )}
-                        </Button>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => openEdit(doctor)}
+                            className="text-gray-600 hover:bg-gray-50"
+                          >
+                            <Pencil className="h-3.5 w-3.5" />
+                            Edit
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleDelete(doctor.id)}
+                            disabled={deletingId === doctor.id}
+                            className="text-danger-600 hover:bg-danger-50"
+                          >
+                            {deletingId === doctor.id ? (
+                              <RefreshCw className="h-3 w-3 animate-spin" />
+                            ) : (
+                              <Trash2 className="h-3 w-3" />
+                            )}
+                          </Button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -308,17 +362,17 @@ export default function AdminDoctorsPage() {
         </div>
       </div>
 
-      {/* Add Doctor Modal */}
-      {openForm && (
+      {/* Add or edit doctor modal */}
+      {editingId !== null && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setOpenForm(false)} />
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setEditingId(null)} />
           <div className="relative w-full max-w-lg mx-4 bg-white rounded-2xl shadow-2xl p-6 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-xl font-bold text-gray-900">Add Doctor</h3>
+              <h3 className="text-xl font-bold text-gray-900">{editingId ? 'Edit Doctor' : 'Add Doctor'}</h3>
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => setOpenForm(false)}
+                onClick={() => setEditingId(null)}
               >
                 <User className="h-3 w-3" />
                 Cancel
@@ -449,12 +503,12 @@ export default function AdminDoctorsPage() {
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => setOpenForm(false)}
+                  onClick={() => setEditingId(null)}
                 >
                   Cancel
                 </Button>
                 <Button type="submit" loading={submitting}>
-                  Add Doctor
+                  {editingId ? 'Update Doctor' : 'Add Doctor'}
                 </Button>
               </div>
             </form>
