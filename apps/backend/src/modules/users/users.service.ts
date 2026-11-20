@@ -1,12 +1,14 @@
-import { ConflictException, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { ConflictException, ForbiddenException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
-import { and, asc, count, desc, eq, ne } from 'drizzle-orm';
+import { and, asc, count, desc, eq, ilike, ne, or } from 'drizzle-orm';
 import type { AnyPgColumn } from 'drizzle-orm/pg-core';
 
 import { PaginationDto } from '../../common/dto/pagination.dto';
 import { DRIZZLE, type DrizzleDb } from '../../common/drizzle/drizzle.module';
 import { newId } from '../../common/drizzle/id';
 import { users } from '../../common/drizzle/schema';
+
+import { ListUsersQueryDto } from './dto/user.dto';
 
 type UserRoleValue = NonNullable<(typeof users.$inferInsert)['role']>;
 
@@ -64,16 +66,27 @@ export interface UpdateUserInput {
 export class UsersService {
   constructor(@Inject(DRIZZLE) private readonly db: DrizzleDb) {}
 
-  async findAll(pagination: PaginationDto) {
+  async findAll(pagination: ListUsersQueryDto) {
     const page = pagination.page ?? 1;
     const limit = pagination.limit ?? 10;
     const offset = (page - 1) * limit;
     const column = SORTABLE[pagination.sortBy ?? 'createdAt'] ?? users.createdAt;
     const orderBy = pagination.sortOrder === 'asc' ? asc(column) : desc(column);
 
+    const conditions = [];
+    if (pagination.role) conditions.push(eq(users.role, pagination.role));
+    if (typeof pagination.isActive === 'boolean') conditions.push(eq(users.isActive, pagination.isActive));
+    if (pagination.search) {
+      const term = `%${pagination.search.toLowerCase()}%`;
+      conditions.push(
+        or(ilike(users.name, term), ilike(users.email, term), ilike(users.phone, term))
+      );
+    }
+    const where = conditions.length > 0 ? and(...conditions) : undefined;
+
     const [rows, totals] = await Promise.all([
-      this.db.select(PUBLIC_COLUMNS).from(users).orderBy(orderBy).limit(limit).offset(offset),
-      this.db.select({ value: count() }).from(users),
+      this.db.select(PUBLIC_COLUMNS).from(users).where(where).orderBy(orderBy).limit(limit).offset(offset),
+      this.db.select({ value: count() }).from(users).where(where),
     ]);
 
     const total = totals[0]?.value ?? 0;
@@ -148,8 +161,18 @@ export class UsersService {
     return created;
   }
 
-  async update(id: string, data: UpdateUserInput) {
-    await this.findById(id);
+  async update(id: string, data: UpdateUserInput, actorId?: string) {
+    const target = await this.findByIdOrNull(id);
+    if (!target) throw new NotFoundException('User not found');
+
+    if (actorId && target.id === actorId) {
+      if (data.role && data.role !== target.role) {
+        throw new ForbiddenException('You cannot change your own role');
+      }
+      if (typeof data.isActive === 'boolean' && data.isActive !== target.isActive) {
+        throw new ForbiddenException('You cannot deactivate or activate yourself');
+      }
+    }
 
     if (data.phone) {
       const [clash] = await this.db
@@ -177,8 +200,12 @@ export class UsersService {
       .where(eq(users.id, id));
   }
 
-  async delete(id: string) {
-    await this.findById(id);
+  async delete(id: string, actorId?: string) {
+    const target = await this.findByIdOrNull(id);
+    if (!target) throw new NotFoundException('User not found');
+    if (actorId && target.id === actorId) {
+      throw new ForbiddenException('You cannot delete yourself');
+    }
     const [deleted] = await this.db.delete(users).where(eq(users.id, id)).returning(PUBLIC_COLUMNS);
     return deleted;
   }
