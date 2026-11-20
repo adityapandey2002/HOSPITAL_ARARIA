@@ -1,13 +1,18 @@
-import { useMemo } from 'react';
 import type { Metadata } from 'next';
 
-import { ACCOUNT_NAV } from '@/components/account/AccountNav';
 import { CITIZEN_MENU, FOOTER_GROUPS, PUBLIC_NAV } from '@/config/navigation';
 
 export const metadata: Metadata = {
   title: 'Sitemap | District Hospital Araria',
   description: 'Sitemap of District Hospital Araria website.',
 };
+
+/** Account sub-pages mirror the tab bar on `/account`. */
+const ACCOUNT_NAV: Array<{ href: string; label: string }> = [
+  { href: '/account', label: 'Appointments' },
+  { href: '/account/grievances', label: 'My favourites' },
+  { href: '/account/profile', label: 'Profile' },
+];
 
 function collectPages(): Array<{ name: string; url: string }> {
   const pages = new Map<string, string>();
@@ -27,7 +32,7 @@ function collectPages(): Array<{ name: string; url: string }> {
 }
 
 export default function SitemapPage() {
-  const pages = useMemo(collectPages, []);
+  const pages = collectPages();
 
   return (
     <>
