@@ -1,33 +1,33 @@
+import { useMemo } from 'react';
 import type { Metadata } from 'next';
+
+import { ACCOUNT_NAV } from '@/components/account/AccountNav';
+import { CITIZEN_MENU, FOOTER_GROUPS, PUBLIC_NAV } from '@/config/navigation';
 
 export const metadata: Metadata = {
   title: 'Sitemap | District Hospital Araria',
   description: 'Sitemap of District Hospital Araria website.',
 };
 
+function collectPages(): Array<{ name: string; url: string }> {
+  const pages = new Map<string, string>();
+  const add = (url: string, name: string) => {
+    if (!pages.has(url)) pages.set(url, name);
+  };
+
+  PUBLIC_NAV.forEach((link) => add(link.href, link.label));
+  CITIZEN_MENU.links.forEach((link) => add(link.href, link.label));
+  FOOTER_GROUPS.forEach((group) => group.links.forEach((link) => add(link.href, link.label)));
+  ACCOUNT_NAV.forEach((link) => add(link.href, link.label));
+  add('/sitemap', 'Sitemap');
+
+  return [...pages.entries()]
+    .map(([url, name]) => ({ name, url }))
+    .sort((a, b) => a.url.localeCompare(b.url));
+}
+
 export default function SitemapPage() {
-  const pages = [
-    { name: 'Home', url: '/' },
-    { name: 'Services', url: '/services' },
-    { name: 'Doctors', url: '/doctors' },
-    { name: 'Appointments', url: '/appointments' },
-    { name: 'Blood Bank', url: '/blood-bank' },
-    { name: 'Grievances', url: '/grievances' },
-    { name: 'Feedback', url: '/feedback' },
-    { name: 'Complaint', url: '/complaint' },
-    { name: 'Track Complaint', url: '/complaints/track' },
-    { name: 'Notices', url: '/notices' },
-    { name: 'Contact', url: '/contact' },
-    { name: 'Login / Register', url: '/login' },
-    { name: 'Patient Rights', url: '/patient-rights' },
-    { name: 'Insurance & Schemes', url: '/insurance' },
-    { name: 'FAQs', url: '/faqs' },
-    { name: 'Download Forms', url: '/forms' },
-    { name: 'Health Tips', url: '/health-tips' },
-    { name: 'Privacy Policy', url: '/privacy' },
-    { name: 'Terms of Service', url: '/terms' },
-    { name: 'Accessibility', url: '/accessibility' },
-  ];
+  const pages = useMemo(collectPages, []);
 
   return (
     <>

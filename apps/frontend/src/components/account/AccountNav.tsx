@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@dh-araria/shared/utils';
 
-const ITEMS = [
+export const ACCOUNT_NAV: Array<{ href: string; label: string }> = [
   { href: '/account', label: 'Appointments' },
   { href: '/account/grievances', label: 'My grievances' },
   { href: '/account/profile', label: 'Profile' },
@@ -18,7 +18,7 @@ export function AccountNav() {
       aria-label="Account"
       className="mx-auto flex min-w-0 flex-wrap gap-1.5 border-b border-outline-variant px-6 py-2"
     >
-      {ITEMS.map((item) => {
+      {ACCOUNT_NAV.map((item) => {
         const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
         return (
           <Link
