@@ -10,6 +10,7 @@ import {
   UseGuards,
   ForbiddenException,
 } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 
 import { GrievancesService } from './grievances.service';
@@ -77,6 +78,15 @@ export class GrievancesController {
   @ApiResponse({ status: 200, description: 'Statuses retrieved successfully' })
   async getStatuses() {
     return this.grievancesService.getStatuses();
+  }
+
+  @Get('track/:id')
+  @Public()
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
+  @ApiOperation({ summary: 'Check the public status of a grievance by ID' })
+  @ApiResponse({ status: 200, description: 'Public grievance status' })
+  trackGrievance(@Param('id') id: string) {
+    return this.grievancesService.track(id);
   }
 
   @Get(':id')
