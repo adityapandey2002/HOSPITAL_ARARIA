@@ -1,10 +1,11 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState, type ChangeEvent } from 'react';
-import { AlertCircle, Check, ImagePlus, Loader2, Plus, ScanText, Trash2, X } from 'lucide-react';
+import { Pencil, ScanText, X, AlertCircle, Check, ImagePlus, Loader2, Plus, Trash2 } from 'lucide-react';
 import {
   Button,
   Card,
+  Dialog,
   EmptyState,
   ErrorState,
   Input,
@@ -256,13 +257,58 @@ export default function AdminNoticesPage() {
     }
   };
 
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [draft, setDraft] = useState({
+    title: '',
+    content: '',
+    category: 'GENERAL',
+    priority: 'MEDIUM',
+  });
+  const [savingEdit, setSavingEdit] = useState(false);
+
+  const openEdit = (notice: Notice) => {
+    setEditingId(notice.id);
+    setDraft({
+      title: notice.title,
+      content: notice.content,
+      category: notice.category,
+      priority: notice.priority,
+    });
+  };
+
+  const saveEdit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!editingId) return;
+    if (!draft.title.trim() || !draft.content.trim()) {
+      toast.error('Title and content are required');
+      return;
+    }
+    setSavingEdit(true);
+    try {
+      await api.put(`/notices/${editingId}`, {
+        title: draft.title.trim(),
+        content: draft.content.trim(),
+        category: draft.category,
+        priority: draft.priority,
+      });
+      toast.success('Notice updated');
+      setEditingId(null);
+      await load();
+    } catch (error: any) {
+      toast.error('Failed to update notice', { description: error?.message });
+    } finally {
+      setSavingEdit(false);
+    }
+  };
+
   const extractingScanId = extraction?.status === 'running' ? extraction.scanId : null;
   const extractionScan = extraction ? scans.find((scan) => scan.id === extraction.scanId) : null;
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-on-surface">Notices</h1>
+    <>
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-2xl font-bold text-on-surface">Notices</h1>
         <p className="mt-1 text-sm text-on-surface-variant">
           Draft a notice, attach the scanned order, and pull its text in with the “Read text”
           button.
@@ -505,6 +551,10 @@ export default function AdminNoticesPage() {
                   <p className="line-clamp-2 text-sm text-on-surface-variant">{notice.content}</p>
                 </div>
                 <div className="flex gap-2">
+                  <Button size="sm" variant="outline" onClick={() => openEdit(notice)}>
+                    <Pencil className="h-3.5 w-3.5" />
+                    Edit
+                  </Button>
                   <Button size="sm" variant="outline" onClick={() => togglePublish(notice)}>
                     {notice.isPublished ? 'Unpublish' : 'Publish'}
                   </Button>
@@ -524,6 +574,56 @@ export default function AdminNoticesPage() {
           )}
         </div>
       )}
-    </div>
+      </div>
+
+      <Dialog
+      open={editingId !== null}
+      onOpenChange={(open) => {
+        if (!open) setEditingId(null);
+      }}
+      title="Edit notice"
+      description="Title, body text, category and priority. Scans can only be attached when creating a notice."
+    >
+      <form className="space-y-4" onSubmit={(event) => void saveEdit(event)}>
+        <div className="space-y-2">
+          <Input
+            label="Title"
+            value={draft.title}
+            onChange={(e) => setDraft((current) => ({ ...current, title: e.target.value }))}
+            required
+          />
+          <Textarea
+            label="Content"
+            value={draft.content}
+            onChange={(e) => setDraft((current) => ({ ...current, content: e.target.value }))}
+            rows={6}
+            required
+          />
+        </div>
+        <div className="grid gap-4 md:grid-cols-2">
+          <Select
+            label="Category"
+            value={draft.category}
+            onChange={(e) => setDraft((current) => ({ ...current, category: e.target.value }))}
+            options={CATEGORY_OPTIONS}
+          />
+          <Select
+            label="Priority"
+            value={draft.priority}
+            onChange={(e) => setDraft((current) => ({ ...current, priority: e.target.value }))}
+            options={PRIORITY_OPTIONS}
+          />
+        </div>
+        <div className="flex gap-2">
+          <Button type="submit" loading={savingEdit}>
+            Save changes
+          </Button>
+          <Button type="button" variant="outline" onClick={() => setEditingId(null)}>
+            Cancel
+          </Button>
+        </div>
+      </form>
+      </Dialog>
+    </>
   );
 }
