@@ -83,6 +83,26 @@ export class GrievancesService {
     return { data: rows, meta: { page, limit, total, totalPages: Math.ceil(total / limit) } };
   }
 
+  /** Public, redacted status for a grievance; 404 when it does not exist. */
+  async track(id: string) {
+    const [row] = await this.db
+      .select({
+        id: grievances.id,
+        category: grievances.category,
+        subject: grievances.subject,
+        status: grievances.status,
+        resolution: grievances.resolution,
+        createdAt: grievances.createdAt,
+        updatedAt: grievances.updatedAt,
+      })
+      .from(grievances)
+      .where(eq(grievances.id, id))
+      .limit(1);
+
+    if (!row) throw new NotFoundException('Grievance not found');
+    return row;
+  }
+
   async findById(id: string) {
     const author = alias(users, 'author');
     const assignee = alias(users, 'assignee');
