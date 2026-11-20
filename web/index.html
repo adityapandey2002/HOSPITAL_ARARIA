@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en-IN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <meta name="theme-color" content="#8c1d1d">
+  <title>Blood availability in Araria, Bihar · e-RaktKosh</title>
+  <meta name="description" content="Current blood availability reported by blood centres in Araria, Bihar, with stock by blood group and component.">
+  <link rel="stylesheet" href="./styles.css">
+  <script src="./app.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to main content</a>
+
+  <div class="page">
+    <header class="page-header">
+      <div class="header-top">
+        <p class="eyebrow">e-RaktKosh · Blood availability</p>
+        <div class="header-actions">
+          <div class="freshness-slot" id="freshness-slot"></div>
+          <button class="button button--refresh" id="refresh-btn" type="button" disabled>
+            <svg class="button__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+              <path d="M20.5 11.5a8.5 8.5 0 1 1-2.2-5.7"></path>
+              <path d="M20.5 4.5v6h-6"></path>
+            </svg>
+            <span>Refresh</span>
+          </button>
+        </div>
+      </div>
+      <h1 id="district-title">Araria, Bihar</h1>
+      <p class="header-meta" id="header-meta">
+        <span class="meta-item"><span class="meta-label">Checked by us:</span> <span class="muted">loading…</span></span>
+      </p>
+    </header>
+
+    <p class="refresh-note" id="refresh-note" role="status" aria-live="polite"></p>
+
+    <main id="main" tabindex="-1">
+      <div id="app" aria-busy="true">
+        <div class="skeleton-stats" aria-hidden="true">
+          <div class="skeleton skeleton--stat"></div>
+          <div class="skeleton skeleton--stat"></div>
+          <div class="skeleton skeleton--stat"></div>
+          <div class="skeleton skeleton--stat"></div>
+        </div>
+        <div class="skeleton-card" aria-hidden="true">
+          <div class="skeleton skeleton--title"></div>
+          <div class="skeleton skeleton--line"></div>
+          <div class="skeleton skeleton--line skeleton--short"></div>
+          <div class="skeleton skeleton--tabs"></div>
+          <div class="skeleton skeleton--table"></div>
+        </div>
+        <div class="skeleton-card" aria-hidden="true">
+          <div class="skeleton skeleton--title"></div>
+          <div class="skeleton skeleton--line skeleton--short"></div>
+          <div class="skeleton skeleton--table"></div>
+        </div>
+        <p class="sr-only" role="status">Loading blood availability…</p>
+      </div>
+      <noscript>
+        <div class="state-panel">
+          <h2>JavaScript is required</h2>
+          <p>This page loads stock updates in your browser. Please enable JavaScript and reload, or call the centres listed by e-RaktKosh directly.</p>
+        </div>
+      </noscript>
+    </main>
+
+    <footer class="page-footer">
+      <div class="footer-main">
+        <p class="footer-source">
+          <strong>Source:</strong>
+          <a href="https://eraktkosh.in" target="_blank" rel="noopener noreferrer">e-RaktKosh</a>,
+          Ministry of Health &amp; Family Welfare, Government of India.
+        </p>
+        <p class="footer-sync" id="footer-sync">Last synced <span class="muted">—</span></p>
+      </div>
+    </footer>
+  </div>
+</body>
+</html>
