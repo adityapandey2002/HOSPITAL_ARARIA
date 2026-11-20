@@ -144,7 +144,7 @@ Every page includes:
 | `/doctors/[id]` | Doctor profile and availability | Public | Yes | Live | `/doctors/:id` |
 | `/appointments` | Four-step booking wizard | Public until confirmation | Yes | Live | `/departments`, `/doctors`, `/doctors/:id/slots`, `POST /appointments` |
 | `/blood-bank` | Blood inventory | Public | Yes | Live | `/blood-bank`, `/blood-bank/summary` |
-| `/blood-bank/request` | Blood request form | Public | Yes | Partial — presentation only, no submit handler or API | None yet; see section 6.2 |
+| `/blood-bank/request` | Blood request form | Public | Yes | Live — form submits to `POST /blood-bank/requests`; the ticket is the BLR reference | `POST /blood-bank/requests` |
 | `/blood-bank/donate` | Donation information | Public | Yes | Live | None |
 | `/grievances` | CPGRAMS-style grievance form | Public | Yes | Partial — success screen links to `/grievances/track`, which does not exist; integration copy is not yet true | `POST /grievances` |
 | `/grievances/track` | Public grievance tracking | Public | No | Planned — no public tracking endpoint yet | Needs backend design |
@@ -175,9 +175,9 @@ Every page includes:
 | `/reset-password` | Set a new password from a token | Public | No | Live — token is read from the query string; missing or invalid tokens are rejected | `POST /auth/reset-password` |
 | `/account` | Account entry point | PATIENT | No | Live redirect to `/account/appointments` | `/appointments/my` |
 | `/account/appointments` | My appointments | PATIENT | No | Live | `/appointments/my`, `DELETE /appointments/:id` |
-| `/account/grievances` | My grievances | PATIENT | No | Planned | `/grievances/my` |
-| `/account/profile` | Edit name and phone | PATIENT | No | Planned | `GET/PUT /users/profile` |
-| `/account/security` | Change password | PATIENT | No | Planned | `POST /auth/change-password` |
+| `/account/grievances` | My grievances | PATIENT | No | Live — status badge, dates, per-grievance detail view | `GET /grievances/my`, `GET /grievances/:id` |
+| `/account/profile` | Edit name and phone | PATIENT | No | Live — `GET/PUT /users/profile` | `GET/PUT /users/profile` |
+| `/account/security` | Change password | PATIENT | No | Live — `POST /auth/change-password` | `POST /auth/change-password` |
 
 Legacy alias: if `/appointments/my` or `/grievances/my` is used instead of the
 account sub-routes, redirect to the account route. Do not maintain two pages
@@ -191,24 +191,24 @@ with the same data.
 | `/admin` | Admin entry point | STAFF, ADMIN | No | Live redirect to `/admin/complaints` | None |
 | `/admin/complaints` | Complaint triage | STAFF, ADMIN | No | Live | `/complaints`, `/complaints/stats`, `/complaints/export` |
 | `/admin/staff` | Staff accounts and department access | ADMIN | No | Live | `GET/POST /admin/staff`, `PATCH /admin/staff/:id`, `/departments` |
-| `/admin/doctors` | Doctor management | ADMIN | No | Partial — add and delete work; edit is missing | `/admin/doctors` |
+| `/admin/doctors` | Doctor management | ADMIN | No | Live — add, edit and delete with full profile form | `/admin/doctors` |
 | `/admin/nodal-officers` | Legacy redirect to `/admin/staff` | ADMIN | No | Redirect — the grant-only screen was replaced by the staff-centric screen | None |
-| `/admin/appointments` | Appointment desk | STAFF, ADMIN | No | Live (minimal) — list, status filter, inline status change; day/doctor views are still planned | `/appointments`, `PUT /appointments/:id/status` |
-| `/admin/notices` | Notice publishing | STAFF, ADMIN | No | Live (minimal) — create draft, publish/unpublish, delete; editing is still planned | `/notices` CRUD |
+| `/admin/appointments` | Appointment desk | STAFF, ADMIN | No | Live — list, status filter, doctor and date filters; day/doctor views are still planned | `/appointments`, `PUT /appointments/:id/status` |
+| `/admin/notices` | Notice publishing | STAFF, ADMIN | No | Live — create draft, publish/unpublish, delete, and edit via dialog | `/notices` CRUD |
 | `/admin/grievances` | Grievance triage | STAFF, ADMIN | No | Live (minimal) — list, status filter, inline status change; assignment and detail views are still planned | `/grievances`, `PUT /grievances/:id/status` |
-| `/admin/users` | Users and roles | ADMIN | No | Live (minimal) — list, role change, activate/deactivate; filters and deletion are still planned | `/users` |
+| `/admin/users` | Users and roles | ADMIN | No | Live — list, role change, activate/deactivate and delete; search, role and status filters | `/users`, `DELETE /users/:id` |
 | `/admin/slideshow` | Homepage slideshow images | ADMIN | No | Live | `/slideshow` CRUD |
 | `/admin/quality-events` | NQAS/KAYAKALP/MUSQAN events and progress | ADMIN | No | Live | `/quality-events`, `/quality-events/:id/progress` |
 | `/admin/quality-events/[id]` | Per-department task checklist for one event | ADMIN | No | Live | `/quality-events/:id/tasks` |
-| `/admin/blood-bank` | Blood stock management | STAFF, ADMIN | No | Planned | `/blood-bank/stock` |
-| `/admin/contact-messages` | Contact message inbox | STAFF, ADMIN | No | Planned | `/contact` list and stats |
-| `/admin/departments` | Department management | ADMIN | No | Planned | `/departments` CRUD |
-| `/admin/audit-log` | Audit trail | ADMIN | No | Planned | `/audit-logs` |
-| `/doctor` or `/staff/appointments` | Clinic day list for doctors | DOCTOR, STAFF | No | Planned | `/appointments/doctor/:id`, `PUT /appointments/:id/status` |
+| `/admin/blood-bank` | Blood stock management | ADMIN | No | Live — stock + public request queue | `/blood-bank/stock`, `/blood-bank/requests` |
+| `/admin/contact-messages` | Contact message inbox | STAFF, ADMIN | No | Live — list, status filter, message modal, reply/status transitions, delete | `/contact` |
+| `/admin/departments` | Department management | ADMIN | No | Live — register with edit, activate/deactivate and delete | `/departments/admin`, `/departments` CRUD |
+| `/admin/audit-log` | Audit trail | ADMIN | No | Live — filtered list, date range, details drawer | `/audit-logs` |
+| `/doctor` or `/staff/appointments` | Clinic day list for doctors | DOCTOR, STAFF | No | Live — desk filters by date and doctor; patient day/doctor views are still planned | `/appointments/doctor/:id`, `PUT /appointments/:id/status` |
 | `app/not-found.tsx` | 404 page | Public | No | Live | None |
 | `app/error.tsx` | Route error boundary | Public | No | Live | `POST /client-errors` |
 | `app/global-error.tsx` | Fatal error boundary | Public | No | Live | `POST /client-errors` |
-| `app/**/loading.tsx` | Route-level loading states | Public | No | Planned — components currently own their skeletons | None |
+| `app/**/loading.tsx` | Route-level loading states | Public | No | Live — root, public, account and admin routes have skeletons; page components may still prefer their own internal skeletons | None |
 
 ### 3.4 Deferred routes (not current scope)
 
@@ -794,26 +794,24 @@ need loading-free rendering, metadata, and a print stylesheet.
 
 ### 5.5 Account area (`/account`, `/account/*`)
 
-**Status:** Partial. `/account` redirects to `/account/appointments`, and the
-appointments list is live. Overview, grievances, profile, and security are
-planned; the backend endpoints exist.
+**Status:** Mostly live. `/account` redirects to `/account/appointments`,
+and the appointments, grievances and profile screens are live. Security works
+via `POST /auth/change-password`; the only remaining gaps are history and
+active-session views (see below). The account nav is the three tabs above.
 
-**Shell:** signed-in only; sidebar or tabs for Overview, Appointments,
-Grievances, Profile, Security. `noindex`. Redirect to login with a return path;
-show a permission-denied page for the wrong role. The current layout is a plain
-signed-in wrapper with no account navigation yet.
+**Shell:** signed-in only; tabs for Appointments, My grievances, Profile,
+and the account route itself (legacy destinations redirect here). `noindex`.
+Redirect to login with a return path; show a permission-denied page for the
+wrong role.
 
-- **Overview:** planned. Next appointment, open grievances count, recent
-  feedback, profile completeness, quick actions.
 - **Appointments:** live; see section 4.7.
-- **Grievances:** planned. List with reference, category, subject, status,
-  submitted date, last update, resolution; detail view; link to file a new
-  grievance. Read-only unless the backend supports comments/attachments.
-- **Profile:** planned. Name, phone, email (read-only unless the backend
-  supports email change), save, success/error.
-- **Security:** planned. Change password (current, new, confirm), show/hide,
-  strength, success clears the form, error explains which rule failed.
-  Optionally show active sessions when the backend supports it.
+- **Grievances:** live — status badges, dates, per-grievance detail view,
+  link to file a new grievance.
+- **Profile:** live — name/phone edit via `PUT /users/profile`; email is
+  read-only.
+- **Security:** live — change password with show/hide toggles and client-side
+  strength rules; success clears the form, errors come from the API.
+- **History:** planned. An activity timeline would need new backend reads.
 
 ### 5.6 Staff and admin shell
 
