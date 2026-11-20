@@ -1,7 +1,17 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsBoolean, IsEnum, IsOptional, IsString, Length, Matches } from 'class-validator';
+import {
+  IsBoolean,
+  IsEnum,
+  IsOptional,
+  IsString,
+  Length,
+  Matches,
+  MaxLength,
+} from 'class-validator';
 
 import { UserRole } from '@dh-araria/shared';
+
+import { PaginationDto } from '../../../common/dto/pagination.dto';
 
 const PHONE_PATTERN = /^[0-9+\-()\s]{7,20}$/;
 
@@ -29,4 +39,22 @@ export class AdminUpdateUserDto extends UpdateProfileDto {
   @IsOptional()
   @IsBoolean()
   isActive?: boolean;
+}
+
+export class ListUsersQueryDto extends PaginationDto {
+  @ApiPropertyOptional({ enum: UserRole })
+  @IsOptional()
+  @IsEnum(UserRole)
+  role?: UserRole;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsBoolean()
+  isActive?: boolean;
+
+  @ApiPropertyOptional({ description: 'Matches name, email or phone (case-insensitive)' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(60)
+  search?: string;
 }

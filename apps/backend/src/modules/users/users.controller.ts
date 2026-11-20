@@ -2,7 +2,7 @@ import { Controller, Get, Put, Delete, Param, Body, Query, UseGuards } from '@ne
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 
 import { UsersService } from './users.service';
-import { AdminUpdateUserDto, UpdateProfileDto } from './dto/user.dto';
+import { AdminUpdateUserDto, ListUsersQueryDto, UpdateProfileDto } from './dto/user.dto';
 import { PaginationDto } from '../../common/dto/pagination.dto';
 import { JwtAuthGuard } from '../../modules/auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/auth/roles.guard';
@@ -23,9 +23,11 @@ export class UsersController {
   @ApiResponse({ status: 200, description: 'Users retrieved successfully' })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
-  @ApiQuery({ name: 'sortBy', required: false, type: String })
   @ApiQuery({ name: 'sortOrder', required: false, enum: ['asc', 'desc'] })
-  async findAll(@Query() pagination: PaginationDto) {
+  @ApiQuery({ name: 'role', required: false, enum: UserRole })
+  @ApiQuery({ name: 'isActive', required: false, type: Boolean })
+  @ApiQuery({ name: 'search', required: false, description: 'Matches name, email or phone' })
+  async findAll(@Query() pagination: ListUsersQueryDto) {
     return this.usersService.findAll(pagination);
   }
 
@@ -57,8 +59,8 @@ export class UsersController {
   @ApiOperation({ summary: 'Update user (Admin only)' })
   @ApiResponse({ status: 200, description: 'User updated successfully' })
   @ApiResponse({ status: 404, description: 'User not found' })
-  async update(@Param('id') id: string, @Body() dto: AdminUpdateUserDto) {
-    return this.usersService.update(id, dto);
+  async update(@Param('id') id: string, @Body() dto: AdminUpdateUserDto, @CurrentUser('id') actorId: string) {
+    return this.usersService.update(id, dto, actorId);
   }
 
   @Delete(':id')
@@ -66,7 +68,7 @@ export class UsersController {
   @ApiOperation({ summary: 'Delete user (Admin only)' })
   @ApiResponse({ status: 200, description: 'User deleted successfully' })
   @ApiResponse({ status: 404, description: 'User not found' })
-  async delete(@Param('id') id: string) {
-    return this.usersService.delete(id);
+  async delete(@Param('id') id: string, @CurrentUser('id') actorId: string) {
+    return this.usersService.delete(id, actorId);
   }
 }
