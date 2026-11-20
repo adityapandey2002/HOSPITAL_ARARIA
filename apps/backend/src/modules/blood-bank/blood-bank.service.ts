@@ -1,11 +1,21 @@
 import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { and, asc, count, desc, eq, gt } from 'drizzle-orm';
 import type { AnyPgColumn } from 'drizzle-orm/pg-core';
+import { randomUUID } from 'node:crypto';
+import { BloodGroup, BloodComponentType, BloodRequestStatus } from '@dh-araria/shared';
 
 import { PaginationDto } from '../../common/dto/pagination.dto';
 import { DRIZZLE, type DrizzleDb } from '../../common/drizzle/drizzle.module';
 import { newId } from '../../common/drizzle/id';
-import { bloodStock, type BloodStockRow } from '../../common/drizzle/schema';
+import {
+  bloodStock,
+  bloodRequests,
+  type BloodRequestRow,
+  type NewBloodRequestRow,
+  type BloodStockRow,
+} from '../../common/drizzle/schema';
+
+import { SubmitBloodRequestDto, UpdateBloodRequestStatusDto } from './dto/blood-request.dto';
 
 export const BLOOD_GROUPS = [
   'A_POSITIVE',
@@ -160,5 +170,86 @@ export class BloodBankService {
 
     if (!row) throw new NotFoundException('Blood stock record not found');
     return row;
+  }
+
+  async createRequest(dto: SubmitBloodRequestDto, createdBy?: string): Promise<BloodRequestRow> {
+    const [created] = await this.db
+      .insert(bloodRequests)
+      .values({
+        id: newId(),
+        reference: this.mintReference(),
+        patientName: dto.patientName,
+        requesterName: dto.requesterName,
+        phone: dto.phone,
+        email: dto.email,
+        bloodGroup: dto.bloodGroup,
+        componentType: dto.componentType,
+        units: dto.units,
+        neededBy: new Date(dto.neededBy),
+        hospital: dto.hospital,
+        reason: dto.reason,
+        createdBy,
+      } satisfies NewBloodRequestRow)
+      .returning();
+    return created;
+  }
+
+  async listRequests(pagination: PaginationDto, filters: { status?: BloodRequestStatus } = {}) {
+    const page = pagination.page ?? 1;
+    const limit = pagination.limit ?? 25;
+    const column =
+      (pagination.sortBy
+        ? {
+            status: bloodRequests.status,
+            units: bloodRequests.units,
+            neededBy: bloodRequests.neededBy,
+            createdAt: bloodRequests.createdAt,
+            reference: bloodRequests.reference,
+          }[pagination.sortBy]
+        : undefined) ?? bloodRequests.createdAt;
+    const orderBy = pagination.sortOrder === 'asc' ? asc(column) : desc(column);
+    const where = filters.status ? eq(bloodRequests.status, filters.status) : undefined;
+
+    const [rows, totals] = await Promise.all([
+      this.db
+        .select()
+        .from(bloodRequests)
+        .where(where)
+        .orderBy(orderBy)
+        .limit(limit)
+        .offset((page - 1) * limit),
+      this.db.select({ value: count() }).from(bloodRequests).where(where),
+    ]);
+    const total = totals[0]?.value ?? 0;
+    return { data: rows, meta: { page, limit, total, totalPages: Math.ceil(total / limit) } };
+  }
+
+  async updateRequestStatus(
+    id: string,
+    status: BloodRequestStatus,
+    notes?: string
+  ): Promise<BloodRequestRow> {
+    await this.findRequest(id);
+    const [updated] = await this.db
+      .update(bloodRequests)
+      .set({ status, notes, updatedAt: new Date() })
+      .where(eq(bloodRequests.id, id))
+      .returning();
+    return updated;
+  }
+
+  private async findRequest(id: string): Promise<BloodRequestRow> {
+    const [row] = await this.db
+      .select()
+      .from(bloodRequests)
+      .where(eq(bloodRequests.id, id))
+      .limit(1);
+    if (!row) throw new NotFoundException('Blood request not found');
+    return row;
+  }
+
+  /** Unique human-readable ticket number, `BLR-` + 8 random hex characters. */
+  private mintReference(): string {
+    return `BLR-${randomUUID().toUpperCase().slice(0, 8)}`;
   }
 }
