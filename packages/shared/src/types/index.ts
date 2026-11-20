@@ -318,6 +318,15 @@ export enum FeedbackStatus {
   RESOLVED = 'RESOLVED',
 }
 
+/** Lifecycle of a public blood-request ticket from the portal. */
+export enum BloodRequestStatus {
+  PENDING = 'PENDING',
+  APPROVED = 'APPROVED',
+  FULFILLED = 'FULFILLED',
+  REJECTED = 'REJECTED',
+  CANCELLED = 'CANCELLED',
+}
+
 /** A department head / nodal officer's grant to read one department. */
 export interface FeedbackAccessGrant {
   id: string;

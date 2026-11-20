@@ -70,6 +70,14 @@ export const bloodComponentTypeEnum = pgEnum('BloodComponentType', [
   'CRYOPRECIPITATE',
 ]);
 
+export const bloodRequestStatusEnum = pgEnum('BloodRequestStatus', [
+  'PENDING',
+  'APPROVED',
+  'FULFILLED',
+  'REJECTED',
+  'CANCELLED',
+]);
+
 export const grievanceCategoryEnum = pgEnum('GrievanceCategory', [
   'MEDICAL_NEGLIGENCE',
   'STAFF_BEHAVIOR',
@@ -298,6 +306,40 @@ export const bloodStock = pgTable(
   })
 );
 
+export const bloodRequests = pgTable(
+  'blood_requests',
+  {
+    id: text('id').primaryKey(),
+    /**
+     * Human-readable reference shown on the ticket the citizen receives,
+     * e.g. `BR-3F9A2B1C`. Unique so the public portal can look a request up.
+     */
+    reference: text('reference').notNull().unique(),
+    patientName: text('patientName').notNull(),
+    /** Name the requester asks to be addressed by, distinct from the account name. */
+    requesterName: text('requesterName').notNull(),
+    phone: text('phone').notNull(),
+    email: text('email'),
+    bloodGroup: bloodGroupEnum('bloodGroup').notNull(),
+    componentType: bloodComponentTypeEnum('componentType').notNull(),
+    units: integer('units').notNull(),
+    /** When the hospital can realistically serve the request. */
+    neededBy: timestamp('neededBy', { mode: 'date' }).notNull(),
+    hospital: text('hospital'),
+    reason: text('reason'),
+    status: bloodRequestStatusEnum('status').notNull().default('PENDING'),
+    /** Internal notes added while the request moves through the queue. */
+    notes: text('notes'),
+    createdBy: text('createdBy').references(() => users.id, { onDelete: 'set null' }),
+    createdAt: timestamp('createdAt', { mode: 'date' }).notNull().defaultNow(),
+    updatedAt: timestamp('updatedAt', { mode: 'date' }).notNull().defaultNow(),
+  },
+  (t) => ({
+    statusIdx: index('blood_requests_status_idx').on(t.status),
+    createdAtIdx: index('blood_requests_createdAt_idx').on(t.createdAt),
+  })
+);
+
 export const grievances = pgTable(
   'grievances',
   {
@@ -499,6 +541,8 @@ export type AppointmentRow = typeof appointments.$inferSelect;
 export type NewAppointmentRow = typeof appointments.$inferInsert;
 export type BloodStockRow = typeof bloodStock.$inferSelect;
 export type NewBloodStockRow = typeof bloodStock.$inferInsert;
+export type BloodRequestRow = typeof bloodRequests.$inferSelect;
+export type NewBloodRequestRow = typeof bloodRequests.$inferInsert;
 export type GrievanceRow = typeof grievances.$inferSelect;
 export type NewGrievanceRow = typeof grievances.$inferInsert;
 export type NoticeRow = typeof notices.$inferSelect;
