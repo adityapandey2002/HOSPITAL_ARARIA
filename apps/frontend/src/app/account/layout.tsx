@@ -6,6 +6,13 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false, nocache: true },
 };
 
+import { AccountNav } from '@/components/account/AccountNav';
+
 export default function AccountLayout({ children }: { children: ReactNode }) {
-  return <>{children}</>;
+  return (
+    <>
+      <AccountNav />
+      {children}
+    </>
+  );
 }
