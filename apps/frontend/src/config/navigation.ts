@@ -11,6 +11,7 @@ import {
   HeartHandshake,
   HelpCircle,
   Images,
+  Inbox,
   Hospital,
   Info,
   LayoutDashboard,
@@ -127,6 +128,13 @@ export const ADMIN_NAV: Array<NavLink & { roles: UserRole[] }> = [
     label: 'Feedback inbox',
     description: 'Patient ratings and comments',
     icon: HeartHandshake,
+    roles: [UserRole.ADMIN, UserRole.STAFF],
+  },
+  {
+    href: '/admin/contact-messages',
+    label: 'Contact inbox',
+    description: 'Messages from the public contact form',
+    icon: Inbox,
     roles: [UserRole.ADMIN, UserRole.STAFF],
   },
   {
