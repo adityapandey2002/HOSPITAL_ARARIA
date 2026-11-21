@@ -200,6 +200,13 @@ export const ADMIN_NAV: Array<NavLink & { roles: UserRole[] }> = [
     icon: Users,
     roles: [UserRole.ADMIN],
   },
+  {
+    href: '/admin/audit-log',
+    label: 'Audit trail',
+    description: 'CERT-In event history',
+    icon: ScrollText,
+    roles: [UserRole.ADMIN],
+  },
 ];
 
 /** Mobile bottom bar: the four tasks citizens actually repeat. */
