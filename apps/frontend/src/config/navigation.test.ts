@@ -3,8 +3,9 @@ import { UserRole } from '@dh-araria/shared';
 import { ADMIN_NAV, adminBottomNavForRole, adminNavForRole } from './navigation';
 
 describe('admin navigation', () => {
-  it('keeps every destination in the sidebar model', () => {
-    expect(ADMIN_NAV).toHaveLength(11);
+  it('has one entry per destination', () => {
+    const hrefs = ADMIN_NAV.map((item) => item.href);
+    expect(new Set(hrefs).size).toBe(hrefs.length);
   });
 
   it('trims the mobile bar to the five desk tasks, in order', () => {

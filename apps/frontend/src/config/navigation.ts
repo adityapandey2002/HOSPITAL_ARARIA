@@ -238,16 +238,17 @@ export function adminNavForRole(role: UserRole | undefined): Array<NavLink & { r
 /**
  * Destinations the admin mobile bar shows, in bar order.
  *
- * The sidebar and the drawer carry all eleven entries; a phone bar only has
- * room for five, so it keeps the ones the desk uses through the day. Anything
- * not listed here stays reachable from the drawer.
+ * The sidebar and the drawer carry every entry; a phone bar only has room for
+ * five, so it keeps the ones the desk uses through the day. Anything not listed
+ * here stays reachable from the drawer. Labels come from `ADMIN_NAV`; only the
+ * shortened ones are overridden here.
  */
-const ADMIN_BOTTOM_BAR: Array<{ href: string; label: string }> = [
-  { href: '/admin/complaints', label: 'Complaints' },
+const ADMIN_BOTTOM_BAR: Array<{ href: string; label?: string }> = [
+  { href: '/admin/complaints' },
   { href: '/feedback/inbox', label: 'Feedback' },
-  { href: '/admin/appointments', label: 'Appointments' },
-  { href: '/admin/notices', label: 'Notices' },
-  { href: '/admin/doctors', label: 'Doctors' },
+  { href: '/admin/appointments' },
+  { href: '/admin/notices' },
+  { href: '/admin/doctors' },
 ];
 
 /**
@@ -259,7 +260,7 @@ export function adminBottomNavForRole(role: UserRole | undefined): NavLink[] {
   const items = adminNavForRole(role);
   return ADMIN_BOTTOM_BAR.flatMap((entry) => {
     const item = items.find((candidate) => candidate.href === entry.href);
-    return item ? [{ ...item, label: entry.label }] : [];
+    return item ? [{ ...item, label: entry.label ?? item.label }] : [];
   });
 }
 
