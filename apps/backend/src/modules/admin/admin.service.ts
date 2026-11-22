@@ -105,6 +105,11 @@ export class AdminService {
   }
 
   async createDoctor(dto: CreateDoctorDto, createdBy: string): Promise<DoctorRow> {
+    // Normalise once, before the duplicate check. Checking the raw value while
+    // inserting the lowercased one would let `Dr@Example.com` past the check and
+    // fail on the unique index with a 500 instead of a clear 409.
+    const email = dto.email.trim().toLowerCase();
+
     // Verify department exists
     const [department] = await this.db
       .select({ id: departments.id, name: departments.name })
@@ -120,7 +125,7 @@ export class AdminService {
     const [existingUser] = await this.db
       .select({ id: users.id })
       .from(users)
-      .where(eq(users.email, dto.email))
+      .where(eq(users.email, email))
       .limit(1);
 
     if (existingUser) {
@@ -155,7 +160,7 @@ export class AdminService {
         .insert(users)
         .values({
           id: newId(),
-          email: dto.email.trim().toLowerCase(),
+          email,
           password: '$2b$12$placeholder', // will be set via password reset
           name: values.name,
           phone: dto.phone.trim(),
@@ -402,7 +407,8 @@ export class AdminService {
    * user row back rather than leaving a login that can see nothing.
    */
   async createStaff(dto: CreateStaffDto, grantedBy: string): Promise<StaffMemberDto> {
-    const email = dto.email.trim();
+    // Same normalisation as createDoctor: one value checked, one value stored.
+    const email = dto.email.trim().toLowerCase();
     const phone = dto.phone?.trim() || null;
 
     const [emailClash] = await this.db
