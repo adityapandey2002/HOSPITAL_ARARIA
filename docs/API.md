@@ -352,6 +352,17 @@ GET /api/v1/departments
 GET /api/v1/departments/:id
 ```
 
+#### List All Departments (Admin)
+```http
+GET /api/v1/departments/admin
+Authorization: Bearer <admin-token>
+```
+
+Same payload as the public list, but it also returns deactivated departments
+(`"isActive": false`) so an operator can find and restore a closed ward. Needs
+`ADMIN`; anyone else gets `403`. Because `admin` is a path segment, it is served
+before `GET /departments/:id` and is never treated as a department id.
+
 ---
 
 ### 📅 Appointments
