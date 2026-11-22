@@ -36,11 +36,13 @@ export default function ComplaintTrackPage() {
   const [complaint, setComplaint] = useState<any | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [photoExpanded, setPhotoExpanded] = useState(false);
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     setComplaint(null);
+    setPhotoExpanded(false);
     setLoading(true);
 
     try {
@@ -157,23 +159,26 @@ export default function ComplaintTrackPage() {
                       </p>
                     )}
                     {isDisplayableImageUrl(complaint.resolutionImageUrl) && (
-                      <a
-                        href={complaint.resolutionImageUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="mt-3 block overflow-hidden rounded-lg border border-success-200 bg-white focus:outline-none focus:ring-2 focus:ring-success-600 focus:ring-offset-2"
+                      <button
+                        type="button"
+                        onClick={() => setPhotoExpanded((open) => !open)}
+                        aria-expanded={photoExpanded}
+                        className="mt-3 block w-full overflow-hidden rounded-lg border border-success-200 bg-card text-left focus:outline-none focus:ring-2 focus:ring-success-600 focus:ring-offset-2"
                       >
                         <img
                           src={complaint.resolutionImageUrl}
                           alt="Photo showing how the complaint was resolved"
                           loading="lazy"
                           decoding="async"
-                          className="max-h-80 w-full object-contain"
+                          className={cn(
+                            'w-full object-contain',
+                            photoExpanded ? 'max-h-none' : 'max-h-80'
+                          )}
                         />
                         <span className="block border-t border-success-200 px-3 py-2 text-center text-xs font-medium text-success-800">
-                          Open full photo
+                          {photoExpanded ? 'Show less' : 'View full photo'}
                         </span>
-                      </a>
+                      </button>
                     )}
                   </div>
                 )}
