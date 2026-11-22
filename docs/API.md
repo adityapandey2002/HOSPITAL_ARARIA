@@ -909,9 +909,15 @@ Content-Type: application/json
   "expiresAt": "2024-10-15T23:59:59.000Z",
   "isPublished": true,
   "language": "en",
-  "attachmentUrl": "https://..."
+  "attachmentUrl": "https://...",
+  "imageUrls": ["data:image/jpeg;base64,/9j/4AAQSkZJRg..."]
 }
 ```
+
+`imageUrls` holds up to 3 scanned pages as base64 image data URLs (max 1 MB
+each; the route accepts a 4 MB JSON body). They are stored on the row but left
+out of the list payloads, because a page of notices would otherwise carry
+megabytes; `GET /api/v1/notices/:id` is the only response that returns them.
 
 **Categories:** `GENERAL`, `RECRUITMENT`, `TENDER`, `PUBLIC_HEALTH`, `SCHEDULE_CHANGE`, `EMERGENCY`
 
