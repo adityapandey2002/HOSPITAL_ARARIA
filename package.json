@@ -13,6 +13,7 @@
     "test:watch": "vitest",
     "migrate": "tsx src/cli/migrate.ts",
     "sync": "tsx src/cli/sync.ts",
+    "schedule": "tsx src/cli/schedule.ts",
     "retention": "tsx src/cli/retention.ts",
     "dev": "tsx src/cli/dev-server.ts",
     "web:sample": "node scripts/embed-sample.mjs"
