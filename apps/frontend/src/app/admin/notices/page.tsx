@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useRef, useState, type ChangeEvent } from 'react';
 import { AlertCircle, Check, ImagePlus, Loader2, Plus, ScanText, Trash2, X } from 'lucide-react';
 import { Button, Card, Input, Select, Textarea } from '@dh-araria/ui/components';
+import { UserRole } from '@dh-araria/shared';
+import { useAuth } from '@/context/AuthContext';
 import { api, handleApiResponse } from '@/lib/api';
 import { compressImageToDataUrl, validateImageFile } from '@/lib/complaint-image';
 import { toast } from 'sonner';
@@ -61,6 +63,8 @@ const LANGUAGE_OPTIONS: Array<{ value: ExtractionLanguage; label: string }> = [
 ];
 
 export default function AdminNoticesPage() {
+  const { hasRole } = useAuth();
+  const canExtractText = hasRole([UserRole.ADMIN]);
   const [notices, setNotices] = useState<Notice[]>([]);
   const [loading, setLoading] = useState(true);
   const [title, setTitle] = useState('');
@@ -284,16 +288,20 @@ export default function AdminNoticesPage() {
               <div>
                 <h2 className="text-sm font-semibold text-on-surface">Scanned pages</h2>
                 <p className="text-xs text-on-surface-variant">
-                  Attach up to {MAX_SCANS} images. Only admins can read text out of them.
+                  {canExtractText
+                    ? `Attach up to ${MAX_SCANS} images, then read the text out of one.`
+                    : `Attach up to ${MAX_SCANS} images. An admin can read text out of them.`}
                 </p>
               </div>
-              <Select
-                label="Scan language"
-                value={language}
-                onChange={(e) => setLanguage(e.target.value as ExtractionLanguage)}
-                options={LANGUAGE_OPTIONS}
-                className="w-full sm:w-48"
-              />
+              {canExtractText && (
+                <Select
+                  label="Scan language"
+                  value={language}
+                  onChange={(e) => setLanguage(e.target.value as ExtractionLanguage)}
+                  options={LANGUAGE_OPTIONS}
+                  className="w-full sm:w-48"
+                />
+              )}
             </div>
 
             <div className="mt-4 flex flex-wrap items-center gap-3">
@@ -337,17 +345,19 @@ export default function AdminNoticesPage() {
                         {scan.name}
                       </p>
                       <div className="flex items-center gap-1">
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant="outline"
-                          onClick={() => void extractScan(scan)}
-                          loading={extractingScanId === scan.id}
-                          disabled={preparingScan}
-                        >
-                          <ScanText className="h-4 w-4" />
-                          Read text
-                        </Button>
+                        {canExtractText && (
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            onClick={() => void extractScan(scan)}
+                            loading={extractingScanId === scan.id}
+                            disabled={preparingScan}
+                          >
+                            <ScanText className="h-4 w-4" />
+                            Read text
+                          </Button>
+                        )}
                         <Button
                           type="button"
                           size="sm"
