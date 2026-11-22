@@ -396,14 +396,17 @@ export default function AdminNoticesPage() {
             {extraction && (
               <div className="mt-4 rounded-lg border border-outline-variant bg-card p-3">
                 {extraction.status === 'running' && (
-                  <p className="flex items-center gap-2 text-sm text-on-surface-variant">
+                  <p
+                    role="status"
+                    className="flex items-center gap-2 text-sm text-on-surface-variant"
+                  >
                     <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
                     Reading {extractionScan?.name ?? 'the scan'}…
                   </p>
                 )}
 
                 {extraction.status === 'failed' && (
-                  <div className="flex items-start gap-2 text-sm text-danger-700">
+                  <div role="alert" className="flex items-start gap-2 text-sm text-danger-700">
                     <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
                     <p>{extraction.message}</p>
                   </div>
