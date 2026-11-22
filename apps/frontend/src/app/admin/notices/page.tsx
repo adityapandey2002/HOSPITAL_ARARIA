@@ -2,7 +2,15 @@
 
 import { useCallback, useEffect, useRef, useState, type ChangeEvent } from 'react';
 import { AlertCircle, Check, ImagePlus, Loader2, Plus, ScanText, Trash2, X } from 'lucide-react';
-import { Button, Card, ErrorState, Input, Select, Textarea } from '@dh-araria/ui/components';
+import {
+  Button,
+  Card,
+  EmptyState,
+  ErrorState,
+  Input,
+  Select,
+  Textarea,
+} from '@dh-araria/ui/components';
 import { UserRole } from '@dh-araria/shared';
 import { useAuth } from '@/context/AuthContext';
 import { api, handleApiResponse } from '@/lib/api';
@@ -488,7 +496,13 @@ export default function AdminNoticesPage() {
               </div>
             </Card>
           ))}
-          {notices.length === 0 && <p className="text-on-surface-variant">No notices.</p>}
+          {notices.length === 0 && (
+            <EmptyState
+              size="compact"
+              title="No notices yet"
+              description="A notice you create above waits here as a draft until you publish it."
+            />
+          )}
         </div>
       )}
     </div>
