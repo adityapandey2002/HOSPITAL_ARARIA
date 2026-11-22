@@ -197,4 +197,19 @@ describe('NoticesService', () => {
       await expect(service.getPriorities()).resolves.toEqual(['LOW', 'MEDIUM', 'HIGH', 'CRITICAL']);
     });
   });
+
+  describe('board payload', () => {
+    it('leaves the scanned pages out of list rows', async () => {
+      const db = createDb([[], []]);
+      service = (await build(db)).get(NoticesService);
+
+      await service.findPublished({ page: 1, limit: 10 });
+
+      // Up to three scans per notice at ~1 MB each would turn a ten-row board
+      // into a multi-megabyte response; only GET /notices/:id returns them.
+      const columns = db.select.mock.calls[0][0] as Record<string, unknown>;
+      expect(columns).not.toHaveProperty('imageUrls');
+      expect(columns).toHaveProperty('attachmentUrl');
+    });
+  });
 });
