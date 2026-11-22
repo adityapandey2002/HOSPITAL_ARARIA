@@ -103,8 +103,27 @@ export async function createApp(options: CreateAppOptions = {}): Promise<NestExp
 
   // CORS configuration. FRONTEND_URL may be a comma-separated list so the
   // Vercel preview deployment and the production domain can both be allowed.
+  // In addition to the configured list, any *.vercel.app origin is accepted so
+  // that Vercel preview deployments (whose hostnames change per commit) can
+  // reach the API without a redeploy of the backend. Public data endpoints are
+  // unaffected; authenticated routes still require a valid JWT.
+  const isAllowedOrigin = (origin: string): boolean => {
+    const allowed = Array.isArray(frontendUrls) ? frontendUrls : [frontendUrls];
+    if (allowed.includes(origin)) return true;
+    try {
+      const host = new URL(origin).hostname;
+      return host.endsWith('.vercel.app');
+    } catch {
+      return false;
+    }
+  };
+
   app.enableCors({
-    origin: frontendUrls,
+    origin: (origin, callback) => {
+      if (!origin) return callback(null, true);
+      if (isAllowedOrigin(origin)) return callback(null, true);
+      callback(new Error('Not allowed by CORS'));
+    },
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
     credentials: true,

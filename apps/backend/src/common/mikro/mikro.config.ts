@@ -54,6 +54,12 @@ export function createMikroOrmConfig(
     user: database.user,
     password: database.password,
     dbName: database.database,
+    // Boot must not depend on the database: MikroORM.init() connects eagerly
+    // by default, and on a function environment where the DB is briefly
+    // unreachable at cold start the whole API dies (Nest abortOnError).
+    // Lazy connect: the pool opens on the first ORM call, and each route
+    // reports its own failure if the DB is still down.
+    connect: false,
     // MikroORM v6 has no top-level `ssl`; pg/knex TLS settings are forwarded
     // verbatim through `driverOptions`.
     driverOptions: ssl ? { ssl } : {},
