@@ -12,6 +12,7 @@ import { DoctorsModule } from './modules/doctors/doctors.module';
 import { DepartmentsModule } from './modules/departments/departments.module';
 import { AppointmentsModule } from './modules/appointments/appointments.module';
 import { BloodBankModule } from './modules/blood-bank/blood-bank.module';
+import { EraktkoshModule } from './modules/eraktkosh/eraktkosh.module';
 import { GrievancesModule } from './modules/grievances/grievances.module';
 import { NoticesModule } from './modules/notices/notices.module';
 import { SlideshowModule } from './modules/slideshow/slideshow.module';
@@ -67,6 +68,7 @@ import { validationSchema } from './config/validation';
     DepartmentsModule,
     AppointmentsModule,
     BloodBankModule,
+    EraktkoshModule,
     GrievancesModule,
     NoticesModule,
     SlideshowModule,
