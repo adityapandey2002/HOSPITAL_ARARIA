@@ -86,7 +86,7 @@ export function BloodBankInventory() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedGroup, setSelectedGroup] = useState<string>(ALL);
   const [selectedComponent, setSelectedComponent] = useState<string>(ALL);
-  const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
+  const [lastRefresh, setLastRefresh] = useState<Date | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -179,7 +179,7 @@ export function BloodBankInventory() {
               <span>Refresh</span>
             </button>
             <span className="hidden text-sm text-gray-500 sm:block">
-              Last updated: {lastRefresh.toLocaleTimeString()}
+              Last updated: {lastRefresh ? lastRefresh.toLocaleTimeString() : '—'}
             </span>
           </div>
         </div>
