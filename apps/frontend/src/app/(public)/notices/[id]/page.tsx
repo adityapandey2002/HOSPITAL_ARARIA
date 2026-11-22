@@ -114,9 +114,9 @@ export default async function NoticePage({ params }: NoticePageProps) {
           </div>
         </section>
 
-        <div className="bg-white py-12">
+        <div className="bg-surface py-12">
           <div className="container mx-auto px-4">
-            <article className="prose prose-lg mx-auto max-w-3xl text-gray-700">
+            <article className="prose prose-lg mx-auto max-w-3xl text-on-surface-variant">
               <div className="whitespace-pre-line">{notice.content}</div>
             </article>
 
@@ -139,7 +139,7 @@ export default async function NoticePage({ params }: NoticePageProps) {
             )}
 
             {notice.attachmentUrl && (
-              <div className="mt-8 rounded-xl border border-gray-200 bg-gray-50 p-4">
+              <div className="mt-8 rounded-xl border border-outline-variant bg-surface-low p-4">
                 <a
                   href={notice.attachmentUrl}
                   className="flex items-center gap-2 font-medium text-primary-600 hover:text-primary-700"
