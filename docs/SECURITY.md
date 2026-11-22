@@ -308,7 +308,7 @@ longer matches a finding so it can be deleted rather than left to rot.
 | `axios` | SSRF/proxy-credential advisories with no fixed 1.x release | The browser client only calls `NEXT_PUBLIC_API_URL`, a build-time constant; it never accepts a user-supplied URL or proxy | 2027-01-31 |
 | `form-data` | Multipart parsing advisory, no fixed 4.x release | Reached only through `axios` and `supertest`; public forms submit JSON, and no multipart body is built from user-controlled field names | 2027-01-31 |
 | `zod` | Oversized-collection memory DoS, fix unpublished | Frontend form validation only, with bounded string fields; the backend re-validates every request with class-validator DTOs and Joi | 2027-01-31 |
-| `body-parser` | DoS via trailing bytes after a compressed body; fix (2.4.0) unpublished | Both parsers are mounted explicitly in `src/bootstrap.ts` with a 100 kB limit, bounding decompressed size per request. The only exception is `POST /api/v1/complaints`, which accepts a compressed photo and therefore gets a 2 MB limit (see `docs/adr/0004-complaint-image-storage.md`); the Vercel function is capped at 30 s and 1024 MB | 2027-01-31 |
+| `body-parser` | DoS via trailing bytes after a compressed body; fix (2.4.0) unpublished | Both parsers are mounted explicitly in `src/bootstrap.ts` with a 100 kB limit, bounding decompressed size per request. Photo-carrying complaint routes get 2 MB (`docs/adr/0004-complaint-image-storage.md`) and the notice draft/extraction routes get 4 MB (`docs/adr/0005-notice-attachments-and-extraction.md`); every other route keeps 100 kB, and the Vercel function is capped at 30 s and 1024 MB | 2027-01-31 |
 | `express` | Flagged only because it depends on the vulnerable `body-parser` | Same 100 kB parser limit and serverless timeout; no advisory names Express itself | 2027-01-31 |
 | `@nestjs/platform-express` | Aggregate finding through Express 5 / body-parser | 11.2.5 is the newest release outside the separately flagged ranges; 12.x would force TypeScript 6. Tracked through `body-parser` | 2027-01-31 |
 | `multer` | Multipart DoS advisories; the fix (2.5.0) is unpublished and Nest pins 2.2.0 | No upload endpoint exists in `apps/backend/src`, so the multipart parser is never reached | 2027-01-31 |
@@ -404,10 +404,16 @@ app.enableCors({
 ### Error handling
 
 `HttpExceptionFilter` catches everything. In production, any response with
-status 500 or above is rewritten to `Internal server error` /
-`INTERNAL_ERROR` with no `details`; the original message and stack go to the
-function log. 4xx responses keep their message so form validation remains
-usable.
+status 500 is rewritten to `Internal server error` / `INTERNAL_ERROR` with no
+`details`; the original message and stack go to the function log. 4xx responses
+keep their message so form validation remains usable.
+
+The gateway statuses are the exception: 502 Bad Gateway, 503 Service
+Unavailable and 504 Gateway Timeout keep the message the service wrote. They
+report an integration the operator has to act on ("notice text extraction is not
+connected yet", "the text extraction service could not be reached"), and those
+messages are fixed strings that name no driver, host or stack. Anything
+unexpected has already become a 500 and is scrubbed.
 
 ### Feedback abuse controls
 
