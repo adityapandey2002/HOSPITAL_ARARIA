@@ -66,9 +66,11 @@ compression done in the browser before submission.
 - There is no CDN or thumbnail variant: the same bytes are used for the card
   thumbnail and the full-screen viewer.
 - Rows written by the old form cannot be recovered; they read as "no photo".
-- Resolution photos add at most one more compressed image per complaint to the
-  detail view. The public tracking page only returns that one row, so it stays
-  small.
+- Resolution photos add at most one more compressed image per complaint. The
+  admin list returns it inline, so a resolved card can show the evidence without
+  a second request: a page of ten resolved complaints can reach ~3.6 MB in the
+  worst case and a few hundred kB typically. The public tracking endpoint returns
+  one complaint at a time, so that page stays small.
 - **Migration path:** `isDisplayableImageUrl()` and the DTO already accept
   `https://` URLs. Moving to object storage later means adding an upload endpoint
   that writes the file and returns its URL, then relaxing the size cap — no
