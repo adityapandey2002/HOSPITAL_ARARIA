@@ -3,8 +3,6 @@ import type { Queryable } from "../db/types";
 import {
   BLOOD_COMPONENTS,
   BLOOD_GROUPS,
-  COMPONENT_BY_CODE,
-  GROUP_BY_CODE,
 } from "../domain/catalog";
 
 export type CellStatus = "in_stock" | "nil" | "not_reported";
@@ -250,11 +248,4 @@ export async function getArariaAvailability(
   };
 }
 
-/** Exposed for tests and for the UI contract docs. */
-export function describeGroup(code: string): string | null {
-  return GROUP_BY_CODE.get(code)?.label ?? null;
-}
 
-export function describeComponent(code: string): string | null {
-  return COMPONENT_BY_CODE.get(code)?.name ?? null;
-}
