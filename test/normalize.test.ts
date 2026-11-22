@@ -29,12 +29,8 @@ describe("parseQtyPairs", () => {
     ]);
   });
 
-  it("treats missing or invalid quantities as zero", () => {
-    expect(parseQtyPairs("A+Ve : , B+Ve : nope, O+Ve : -3")).toEqual([
-      ["A+Ve", 0],
-      ["B+Ve", 0],
-      ["O+Ve", 0],
-    ]);
+  it("treats missing or invalid quantities as unreadable", () => {
+    expect(parseQtyPairs("A+Ve : , B+Ve : nope, O+Ve : -3")).toEqual([]);
   });
 
   it("returns nothing for empty input", () => {
