@@ -37,7 +37,7 @@ export class EraktkoshService implements OnModuleInit {
     }
   }
 
-  async sync(trigger: 'schedule' | 'manual' = 'manual') {
+  async sync(trigger: 'schedule' | 'manual' | 'backfill' = 'manual') {
     const client = await this.drizzle.pool.connect();
     try {
       return await runSync({
