@@ -71,6 +71,13 @@ Vercel / serverless: point a cron at a route that calls `runSync()` (see below).
 The worker is small enough for a serverless cron, but make sure only one runs at
 a time — use a Postgres advisory lock if you deploy more than one instance.
 
+Alternatively, run the built-in scheduler, which loops every
+`SYNC_INTERVAL_MINUTES` minutes and prunes history once a day:
+
+```bash
+npm run schedule
+```
+
 ---
 
 ## Schema
@@ -199,10 +206,28 @@ import { EraktkoshSource } from "@/blood-availability/src/provider/eraktkosh";
 
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 
+// app/api/blood/sync/route.ts
+import { Pool } from "pg";
+import { runSync } from "@/blood-availability/src/sync/run";
+import { EraktkoshSource } from "@/blood-availability/src/provider/eraktkosh";
+
+const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+
 export async function POST(request: Request) {
+  if (!process.env.ADMIN_TOKEN) {
+    return new Response("admin route disabled", { status: 503 });
+  }
   if (request.headers.get("authorization") !== `Bearer ${process.env.ADMIN_TOKEN}`) {
     return new Response("unauthorized", { status: 401 });
   }
+  const client = await pool.connect();
+  try {
+    const result = await runSync({ db: client, source: new EraktkoshSource(), trigger: "manual" });
+    return Response.json(result, { status: 202 });
+  } finally {
+    client.release();
+  }
+}
   const client = await pool.connect();
   try {
     const result = await runSync({ db: client, source: new EraktkoshSource(), trigger: "manual" });
