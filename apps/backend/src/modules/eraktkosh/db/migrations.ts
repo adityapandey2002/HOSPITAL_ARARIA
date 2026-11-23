@@ -1,8 +1,34 @@
+/**
+ * e-RaktKosh schema, embedded as TypeScript.
+ *
+ * Why not a `.sql` file read at runtime?
+ * The API runs as a Vercel serverless function. `nest build` only emits `.js`,
+ * and Vercel's output-file tracer cannot see a dynamic `readdir()` of a data
+ * directory, so the migration files were absent from the deployed bundle and
+ * every request failed at boot with:
+ *
+ *   ENOENT: no such file or directory, scandir '.../dist/modules/eraktkosh/db/migrations'
+ *
+ * Keeping the DDL in a compiled module removes all runtime filesystem access,
+ * so the same code works locally, in tests, and in the serverless bundle.
+ *
+ * The DDL is idempotent (`create table if not exists`, `create or replace
+ * view`), so running it on every cold start is safe.
+ */
+export interface Migration {
+  readonly id: string;
+  readonly sql: string;
+}
+
+export const MIGRATIONS: readonly Migration[] = [
+  {
+    id: "001_init",
+    sql: `
 -- e-RaktKosh blood availability — Araria district
 -- PostgreSQL 14+. Safe to re-run (idempotent DDL).
 --
 -- Scope: one district (Bihar / Araria). Three centres, one of which usually
--- reports. History is kept for 30 days; `ek_center_state` points at the
+-- reports. History is kept for 30 days; \`ek_center_state\` points at the
 -- current report so reads never scan history.
 
 create table if not exists ek_centers (
@@ -36,7 +62,7 @@ create table if not exists ek_sync_runs (
 create index if not exists ek_sync_runs_started_idx
   on ek_sync_runs (started_at desc);
 
--- One row per distinct report from a centre. `content_hash` covers the
+-- One row per distinct report from a centre. \`content_hash\` covers the
 -- centre's entry time plus every cell, so re-syncing unchanged data inserts
 -- nothing and only moves ek_center_state.last_fetched_at.
 create table if not exists ek_stock_snapshots (
@@ -129,3 +155,6 @@ select
 from ek_centers c
 join ek_center_state s on s.center_id = c.id
 left join ek_stock_snapshots snap on snap.id = s.last_snapshot_id;
+`,
+  },
+];

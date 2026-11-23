@@ -9,5 +9,11 @@
       "maxDuration": 30
     }
   },
-  "rewrites": [{ "source": "/(.*)", "destination": "/api/index" }]
+  "rewrites": [{ "source": "/(.*)", "destination": "/api/index" }],
+  "crons": [
+    {
+      "path": "/api/v1/blood/cron",
+      "schedule": "0 */4 * * *"
+    }
+  ]
 }

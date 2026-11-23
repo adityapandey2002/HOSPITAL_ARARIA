@@ -1,28 +1,33 @@
-import { readdir, readFile } from "node:fs/promises";
-import path from "node:path";
 import type { Queryable } from "./types";
+import { MIGRATIONS, type Migration } from "./migrations";
 
 export interface MigrationDb extends Queryable {
   exec?: (sql: string) => Promise<unknown>;
 }
 
-const MIGRATIONS_DIR = path.join(__dirname, "migrations");
-
+/**
+ * Apply the e-RaktKosh schema.
+ *
+ * The DDL lives in the compiled bundle (see ./migrations.ts), so this performs
+ * no filesystem access. That matters in two places:
+ *  - the Vercel serverless function, whose bundle only contains traced files;
+ *  - tests, which should not depend on the working directory.
+ *
+ * Every statement is idempotent, so this is safe to call on each cold start.
+ */
 export async function runMigrations(
   db: MigrationDb,
-  directory: string = MIGRATIONS_DIR
+  migrations: readonly Migration[] = MIGRATIONS
 ): Promise<string[]> {
-  const files = (await readdir(directory)).filter((f) => f.endsWith(".sql")).sort();
   const applied: string[] = [];
 
-  for (const file of files) {
-    const sql = await readFile(path.join(directory, file), "utf8");
+  for (const migration of migrations) {
     if (db.exec) {
-      await db.exec(sql);
+      await db.exec(migration.sql);
     } else {
-      await db.query(sql);
+      await db.query(migration.sql);
     }
-    applied.push(file);
+    applied.push(migration.id);
   }
 
   return applied;
