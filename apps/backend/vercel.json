@@ -13,7 +13,7 @@
   "crons": [
     {
       "path": "/api/v1/blood/cron",
-      "schedule": "0 */4 * * *"
+      "schedule": "0 0 * * *"
     }
   ]
 }

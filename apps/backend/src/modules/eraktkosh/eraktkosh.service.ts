@@ -13,6 +13,10 @@ import { getArariaAvailability } from './api/araria';
 import { runSync } from './sync/run';
 import { pruneHistory } from './sync/retention';
 import { EraktkoshSource } from './provider/eraktkosh';
+import type { ArariaAvailability } from './api/araria';
+
+/** Vercel enforces a 30s function timeout; leave headroom for the response. */
+const SEED_TIMEOUT_MS = 20_000;
 
 @Injectable()
 export class EraktkoshService implements OnModuleInit {
@@ -25,8 +29,11 @@ export class EraktkoshService implements OnModuleInit {
    */
   private schemaReady: Promise<string[]> | null = null;
 
-  /** Prevents a burst of first-visitor requests from all triggering a sync. */
+  /** Prevents a burst of first-visitor requests from all triggering a seed. */
   private bootstrapAttempted = false;
+
+  /** Prevents overlapping background refreshes within one warm instance. */
+  private refreshInFlight = false;
 
   constructor(private readonly drizzle: DrizzleService) {}
 
@@ -70,16 +77,30 @@ export class EraktkoshService implements OnModuleInit {
       let availability = await getArariaAvailability(client as any);
 
       // A freshly provisioned database has no centres at all. Seed it on the
-      // first read so the public page is useful immediately instead of waiting
-      // for the next scheduled refresh. The advisory lock inside runSync keeps
-      // concurrent cold starts from syncing twice.
+      // first read so the public page is immediately useful instead of waiting
+      // for the nightly refresh. Bounded so a slow provider cannot turn the
+      // first visitor's request into a timeout. The advisory lock inside
+      // runSync keeps concurrent cold starts from syncing twice.
       if (availability.centers.length === 0 && !this.bootstrapAttempted) {
         this.bootstrapAttempted = true;
         try {
-          await this.runSyncWith(client, 'backfill');
+          await withTimeout(this.runSyncWith(client, 'backfill'), SEED_TIMEOUT_MS);
           availability = await getArariaAvailability(client as any);
         } catch (error) {
           this.logger.error(`first-run seed failed: ${errorMessage(error)}`);
+        }
+      }
+
+      // If the data is older than the configured refresh interval, kick off a
+      // best-effort refresh for the next visitor. Not awaited: Vercel gives the
+      // function 30s, and serving slightly stale data with an honest timestamp
+      // is better than holding the request open.
+      if (availability.centers.length > 0 && isRefreshDue(availability)) {
+        if (!this.refreshInFlight) {
+          this.refreshInFlight = true;
+          void this.refreshInBackground().finally(() => {
+            this.refreshInFlight = false;
+          });
         }
       }
 
@@ -107,6 +128,23 @@ export class EraktkoshService implements OnModuleInit {
       requestedBy: trigger === 'manual' ? 'api' : null,
       logger: (message) => this.logger.warn(message),
     });
+  }
+
+  /**
+   * Stale data refresher. Uses its own pooled client because the request that
+   * detected the staleness has already released its own.
+   */
+  private async refreshInBackground(): Promise<void> {
+    let client: PoolClient | undefined;
+    try {
+      client = await this.drizzle.pool.connect();
+      await this.ensureSchema(client);
+      await this.runSyncWith(client, 'schedule');
+    } catch (error) {
+      this.logger.warn(`background refresh failed: ${errorMessage(error)}`);
+    } finally {
+      client?.release();
+    }
   }
 
   /**
@@ -148,4 +186,27 @@ export class EraktkoshService implements OnModuleInit {
 function errorMessage(error: unknown): string {
   if (error instanceof Error) return error.message;
   return String(error);
+}
+
+/** Reject after `ms` so a slow upstream cannot hold a request open. */
+function withTimeout<T>(work: Promise<T>, ms: number): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error(`timed out after ${ms}ms`)), ms);
+    work.then(
+      (value) => {
+        clearTimeout(timer);
+        resolve(value);
+      },
+      (error) => {
+        clearTimeout(timer);
+        reject(error);
+      }
+    );
+  });
+}
+
+function isRefreshDue(availability: ArariaAvailability): boolean {
+  if (!availability.asOf) return false;
+  const ageMs = Date.now() - new Date(availability.asOf).getTime();
+  return ageMs >= availability.refreshIntervalMinutes * 60_000;
 }
