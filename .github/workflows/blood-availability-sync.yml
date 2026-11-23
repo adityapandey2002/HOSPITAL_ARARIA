@@ -1,0 +1,33 @@
+name: Blood availability sync
+
+# Vercel Hobby only allows daily cron jobs, so this workflow drives the
+# 240-minute refresh. The endpoint is authenticated with CRON_SECRET, which
+# must be present in the repository's Actions secrets.
+#
+# Manual runs: Actions -> "Blood availability sync" -> Run workflow.
+
+on:
+  schedule:
+    - cron: '0 */4 * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: blood-availability-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Trigger e-RaktKosh sync
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          if [ -z "$CRON_SECRET" ]; then
+            echo "::error::CRON_SECRET repository secret is not set"
+            exit 1
+          fi
+          curl --fail --silent --show-error --max-time 90 \
+            -X POST "https://hospital-araria-adi-health.vercel.app/api/v1/blood/cron" \
+            -H "Authorization: Bearer $CRON_SECRET"

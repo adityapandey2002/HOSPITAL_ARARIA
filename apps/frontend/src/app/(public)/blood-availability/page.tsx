@@ -75,6 +75,19 @@ export default function BloodAvailabilityPage() {
         <Stat label="Groups with stock" value={data.counts.groupsWithStock} />
       </section>
 
+      {data.centers.length === 0 && (
+        <section className="mb-8 rounded-xl border border-dashed p-6 text-center text-gray-600">
+          <p className="font-medium text-gray-800">No centre data yet</p>
+          <p className="mt-1 text-sm">
+            The first e-RaktKosh sync has not finished. It runs automatically on the first visit and
+            every four hours — retry in a moment.
+          </p>
+          <button onClick={load} className="mt-3 rounded-lg border px-4 py-2 hover:bg-gray-50">
+            Retry
+          </button>
+        </section>
+      )}
+
       {data.centers.filter(c => c.reportStatus === 'reporting').map((c) => {
         const key = c.id;
         const groups = c.groups;
@@ -138,8 +151,9 @@ export default function BloodAvailabilityPage() {
         </section>
       )}
 
-      <section className="mb-8">
-        <h2 className="text-xl font-semibold mb-3">Coverage</h2>
+      {data.centers.length > 0 && (
+        <section className="mb-8">
+          <h2 className="text-xl font-semibold mb-3">Coverage</h2>
         <table className="w-full text-sm">
           <thead><tr className="text-left text-gray-500"><th className="py-1">Centre</th><th>Status</th><th>Units</th></tr></thead>
           <tbody>
@@ -152,7 +166,8 @@ export default function BloodAvailabilityPage() {
             ))}
           </tbody>
         </table>
-      </section>
+        </section>
+      )}
 
       <footer className="text-xs text-gray-500 border-t pt-4">
         Source: e-RaktKosh, Ministry of Health &amp; Family Welfare. Data is self-reported and may be out of date — call before travelling. Not medical advice.
