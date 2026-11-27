@@ -110,7 +110,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
 
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="sticky top-0 z-30 border-b border-outline-variant bg-card shadow-[0_1px_8px_rgba(0,0,0,0.04)]">
-          <div className="flex h-16 items-center justify-between gap-3 px-4 sm:px-6">
+          <div className="flex h-14 items-center justify-between gap-3 px-4 sm:px-6">
             <div className="flex min-w-0 items-center gap-2">
               <button
                 type="button"
@@ -141,7 +141,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
 
         <main
           id="main-content"
-          className="flex-1 px-4 pb-[calc(var(--bottom-nav-h)+env(safe-area-inset-bottom)+1rem)] pt-5 sm:px-6 lg:px-8 lg:pb-10"
+          className="flex-1 px-4 pb-[calc(var(--bottom-nav-h)+env(safe-area-inset-bottom)+1rem)] pt-3.5 sm:px-6 lg:px-8 lg:pb-10"
         >
           {!isLoading && !isAuthenticated && (
             <div className="mb-5 flex flex-col gap-2 rounded-xl border border-warning-200 bg-warning-50 p-4 sm:flex-row sm:items-center sm:justify-between">

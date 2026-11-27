@@ -50,8 +50,7 @@ export const PUBLIC_NAV: NavLink[] = [
   { href: '/services', label: 'Services', description: 'Departments, diagnostics and facilities', icon: Stethoscope },
   { href: '/doctors', label: 'Doctors', description: 'Specialists and their OPD days', icon: Users },
   { href: '/appointments', label: 'Appointments', description: 'Book or check an OPD slot', icon: CalendarCheck },
-  { href: '/blood-bank', label: 'Blood bank', description: 'Live group availability and donation', icon: Droplet },
-  { href: '/blood-availability', label: 'Blood availability', description: 'District-wide e-RaktKosh availability', icon: Droplet },
+  { href: '/blood-bank', label: 'Blood bank', description: 'Hospital stock & district e-RaktKosh availability', icon: Droplet },
   { href: '/notices', label: 'Notices', description: 'Orders, tenders and public notices', icon: Bell },
   // Complaint filing is open to everyone; it must not hide behind the drawer.
   // No login or account is involved, so the desktop bar links it directly.
@@ -83,7 +82,6 @@ export const FOOTER_GROUPS: NavGroup[] = [
       { href: '/doctors', label: 'Doctors' },
       { href: '/appointments', label: 'Appointments' },
       { href: '/blood-bank', label: 'Blood bank' },
-      { href: '/blood-availability', label: 'Blood availability' },
       { href: '/notices', label: 'Notices' },
       { href: '/contact', label: 'Contact us' },
     ],
@@ -191,9 +189,9 @@ export const ADMIN_NAV: Array<NavLink & { roles: UserRole[] }> = [
   {
     href: '/admin/quality-events',
     label: 'Quality events',
-    description: 'NQAS, KAYAKALP, MUSQAN progress',
+    description: 'NQAS, KAYAKALP, MUSQAN checklists & readiness',
     icon: Trophy,
-    roles: [UserRole.ADMIN],
+    roles: [UserRole.ADMIN, UserRole.STAFF],
   },
   {
     href: '/admin/staff',
@@ -254,10 +252,10 @@ export function adminNavForRole(role: UserRole | undefined): Array<NavLink & { r
  */
 const ADMIN_BOTTOM_BAR: Array<{ href: string; label?: string }> = [
   { href: '/admin/complaints' },
+  { href: '/admin/quality-events', label: 'Events' },
   { href: '/feedback/inbox', label: 'Feedback' },
   { href: '/admin/appointments' },
   { href: '/admin/notices' },
-  { href: '/admin/doctors' },
 ];
 
 /**

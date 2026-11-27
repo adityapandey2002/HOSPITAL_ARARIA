@@ -1,28 +1,24 @@
 import { Metadata } from 'next';
 import { BloodBankInventory } from '@/components/BloodBankInventory';
+import { PageBanner } from '@/components/layout/PageBanner';
 
 export const metadata: Metadata = {
-  title: 'Blood Bank',
+  title: 'Blood Bank & Availability',
   description:
-    'Check blood availability at District Hospital Araria Blood Bank. Updated by the hospital blood bank.',
+    'Check live blood availability at District Hospital Araria Blood Bank and blood centres across Araria district via e-RaktKosh.',
 };
 
 export default function BloodBankPage() {
   return (
-    <>
-      <div>
-        <section className="bg-danger-600 py-16 text-white">
-          <div className="container mx-auto px-4 text-center">
-            <h1 className="mb-4 text-4xl font-bold sm:text-5xl">Blood Bank Inventory</h1>
-            <p className="mx-auto max-w-3xl text-xl text-danger-100">
-              Blood stock availability. Updated by the hospital blood bank for accurate,
-              up-to-date information.
-            </p>
-          </div>
-        </section>
+    <div>
+      <PageBanner
+        eyebrow="Blood Services"
+        accent="danger"
+        title="Blood Bank & Availability"
+        description="Live blood stock from District Hospital Araria and Araria district blood centres (e-RaktKosh). Filter by facility, blood group, and component."
+      />
 
-        <BloodBankInventory />
-      </div>
-    </>
+      <BloodBankInventory />
+    </div>
   );
 }

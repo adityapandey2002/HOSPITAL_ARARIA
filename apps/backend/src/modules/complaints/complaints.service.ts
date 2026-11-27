@@ -255,8 +255,13 @@ export class ComplaintsService {
     userId?: string,
     userRole?: string
   ) {
-    const page = pagination.page ?? 1;
-    const limit = pagination.limit ?? 10;
+    const rawPage = Number(pagination.page ?? 1);
+    const page = Number.isFinite(rawPage) && rawPage >= 1 ? Math.floor(rawPage) : 1;
+    const rawLimit = Number(pagination.limit ?? 10);
+    const limit = Math.min(
+      25,
+      Math.max(1, Number.isFinite(rawLimit) && rawLimit >= 1 ? Math.floor(rawLimit) : 10)
+    );
     const offset = (page - 1) * limit;
 
     const conditions = await this.buildComplaintConditions(userId, userRole, filters);

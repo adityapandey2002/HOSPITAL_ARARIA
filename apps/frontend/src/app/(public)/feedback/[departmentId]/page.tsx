@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { MessageSquare } from 'lucide-react';
 import { FeedbackForm } from '@/components/feedback/FeedbackForm';
+import { PageBanner } from '@/components/layout/PageBanner';
 
 export const metadata: Metadata = {
   title: 'Department feedback',
@@ -19,18 +19,12 @@ export default async function DepartmentFeedbackPage({ params }: DepartmentFeedb
   return (
     <>
       <div>
-        <section className="bg-primary-700 py-12 text-white sm:py-16">
-          <div className="container mx-auto px-4 text-center">
-            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-white/10">
-              <MessageSquare className="h-7 w-7" aria-hidden="true" />
-            </div>
-            <h1 className="text-3xl font-bold sm:text-4xl">How was your visit?</h1>
-            <p className="mx-auto mt-3 max-w-2xl text-lg text-primary-100">
-              Share anonymous feedback about the department you visited. It only takes a minute and
-              helps us improve hospital services.
-            </p>
-          </div>
-        </section>
+        <PageBanner
+          eyebrow="Patient Feedback"
+          accent="primary"
+          title="How was your visit?"
+          description="Share anonymous feedback about the department you visited. It only takes a minute and helps us improve hospital services."
+        />
 
         <FeedbackForm initialDepartmentId={departmentId} />
 

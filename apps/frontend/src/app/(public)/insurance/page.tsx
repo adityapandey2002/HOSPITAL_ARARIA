@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { PageBanner } from '@/components/layout/PageBanner';
 
 export const metadata: Metadata = {
   title: 'Insurance & Schemes | District Hospital Araria',
@@ -9,16 +10,15 @@ export default function InsurancePage() {
   return (
     <>
       <div>
-        <section className="bg-primary-600 py-12 text-white sm:py-16">
-          <div className="container mx-auto px-4">
-            <h1 className="text-3xl font-bold sm:text-4xl">Insurance &amp; Schemes</h1>
-            <p className="mt-2 text-primary-100">
-              We accept various government and private health insurance schemes.
-            </p>
-          </div>
-        </section>
+        <PageBanner
+          eyebrow="Patient Guide"
+          align="left"
+          accent="primary"
+          title="Insurance & Schemes"
+          description="Government and empanelled health insurance schemes supported at District Hospital Araria."
+        />
 
-        <div className="bg-white py-12">
+        <div className="bg-white py-6 sm:py-8">
           <div className="container mx-auto px-4">
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
               {[

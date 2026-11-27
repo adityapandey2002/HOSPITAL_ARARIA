@@ -6,7 +6,13 @@ import Link from 'next/link';
 import { Button, Input, Select, Textarea } from '@dh-araria/ui/components';
 import type { Department } from '@dh-araria/shared/types';
 import { api, handleApiResponse } from '@/lib/api';
-import { compressImageToDataUrl, validateImageFile } from '@/lib/complaint-image';
+import {
+  COMPLAINT_PHOTO_PRESETS,
+  compressImageToDataUrl,
+  formatCompressionSummary,
+  validateImageFile,
+  type CompressionMode,
+} from '@/lib/complaint-image';
 import { getErrorMessage } from '@/lib/feedback';
 import { useAuth } from '@/context/AuthContext';
 
@@ -32,6 +38,8 @@ export function ComplaintForm({ initialDepartmentId }: ComplaintFormProps) {
    * URL would die with the tab, so it is never stored or sent.
    */
   const [imageDataUrl, setImageDataUrl] = useState<string | null>(null);
+  const [imageSummary, setImageSummary] = useState<string | null>(null);
+  const [compressionMode, setCompressionMode] = useState<CompressionMode>('balanced');
   const [imageProcessing, setImageProcessing] = useState(false);
   const [imageError, setImageError] = useState<string | null>(null);
 
@@ -44,6 +52,7 @@ export function ComplaintForm({ initialDepartmentId }: ComplaintFormProps) {
   const errorSummaryRef = useRef<HTMLDivElement>(null);
   const successHeadingRef = useRef<HTMLHeadingElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const sourceFileRef = useRef<File | null>(null);
   /** Guards against a slow compression overwriting a newer selection. */
   const imageRequestRef = useRef(0);
 
@@ -121,6 +130,33 @@ export function ComplaintForm({ initialDepartmentId }: ComplaintFormProps) {
     return errors;
   };
 
+  const compressAndAttachFile = useCallback(async (file: File, mode: CompressionMode) => {
+    const requestId = imageRequestRef.current + 1;
+    imageRequestRef.current = requestId;
+    setImageProcessing(true);
+    setImageError(null);
+
+    try {
+      // Shrink and re-encode in the browser: the compressed data URL is what
+      // travels in the JSON payload and what later renders in the admin panel.
+      const dataUrl = await compressImageToDataUrl(file, COMPLAINT_PHOTO_PRESETS[mode]);
+      if (imageRequestRef.current !== requestId) return;
+      setImageDataUrl(dataUrl);
+      setImageSummary(formatCompressionSummary(file.size, dataUrl));
+    } catch {
+      if (imageRequestRef.current !== requestId) return;
+      setImageDataUrl(null);
+      setImageSummary(null);
+      sourceFileRef.current = null;
+      // Deliberately not `getErrorMessage`: browser/canvas internals ("URL.createObjectURL
+      // is not a function") are not something a citizen can act on.
+      setImageError('We could not process that photo. Please try another image.');
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    } finally {
+      if (imageRequestRef.current === requestId) setImageProcessing(false);
+    }
+  }, []);
+
   const handleImageChange = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0] ?? null;
     setImageError(null);
@@ -134,32 +170,23 @@ export function ComplaintForm({ initialDepartmentId }: ComplaintFormProps) {
       return;
     }
 
-    const requestId = imageRequestRef.current + 1;
-    imageRequestRef.current = requestId;
-    setImageProcessing(true);
+    sourceFileRef.current = file;
+    await compressAndAttachFile(file, compressionMode);
+  };
 
-    try {
-      // Shrink and re-encode in the browser: the compressed data URL is what
-      // travels in the JSON payload and what later renders in the admin panel.
-      const dataUrl = await compressImageToDataUrl(file);
-      if (imageRequestRef.current !== requestId) return;
-      setImageDataUrl(dataUrl);
-    } catch (error) {
-      if (imageRequestRef.current !== requestId) return;
-      setImageDataUrl(null);
-      // Deliberately not `getErrorMessage`: browser/canvas internals ("URL.createObjectURL
-      // is not a function") are not something a citizen can act on.
-      setImageError('We could not process that photo. Please try another image.');
-      if (fileInputRef.current) fileInputRef.current.value = '';
-    } finally {
-      if (imageRequestRef.current === requestId) setImageProcessing(false);
+  const handleCompressionModeChange = (mode: CompressionMode) => {
+    setCompressionMode(mode);
+    if (sourceFileRef.current) {
+      void compressAndAttachFile(sourceFileRef.current, mode);
     }
   };
 
   const removeImage = () => {
     // Invalidate any compression still in flight.
     imageRequestRef.current += 1;
+    sourceFileRef.current = null;
     setImageDataUrl(null);
+    setImageSummary(null);
     setImageProcessing(false);
     setImageError(null);
     if (fileInputRef.current) fileInputRef.current.value = '';
@@ -205,7 +232,9 @@ export function ComplaintForm({ initialDepartmentId }: ComplaintFormProps) {
     setReferenceId(null);
     setComplaint('');
     imageRequestRef.current += 1;
+    sourceFileRef.current = null;
     setImageDataUrl(null);
+    setImageSummary(null);
     setImageProcessing(false);
     setImageError(null);
     setFieldErrors({});
@@ -224,7 +253,7 @@ export function ComplaintForm({ initialDepartmentId }: ComplaintFormProps) {
 
   if (submitted) {
     return (
-      <section className="bg-white py-12 sm:py-16">
+      <section className="bg-white py-6 sm:py-8">
         <div className="container mx-auto px-4">
           <div className="border-success-200 mx-auto max-w-2xl rounded-2xl border bg-success-50 p-6 text-center sm:p-10">
             <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-success-100">
@@ -273,7 +302,7 @@ export function ComplaintForm({ initialDepartmentId }: ComplaintFormProps) {
   }
 
   return (
-    <section className="bg-white py-12 sm:py-16">
+    <section className="bg-white py-6 sm:py-8">
       <div className="container mx-auto px-4">
         <div className="mx-auto max-w-3xl">
           {departmentsLoading ? (
@@ -416,40 +445,73 @@ export function ComplaintForm({ initialDepartmentId }: ComplaintFormProps) {
                   <Camera className="h-5 w-5 text-gray-600" aria-hidden="true" />
                   <h3 className="text-base font-semibold text-gray-900">Add a photo (optional)</h3>
                 </div>
-                <p className="mb-4 text-sm text-gray-600">
+                <p className="mb-3 text-sm text-gray-600">
                   You can take a picture with your camera or upload an image to support your
-                  complaint. JPEG, PNG or WebP, up to 5 MB. The photo is optimised before it is
-                  attached.
+                  complaint. JPEG, PNG or WebP, up to 5 MB. Photos are automatically compressed on
+                  your device for faster upload and smoother review.
                 </p>
 
+                <div className="mb-4 flex flex-wrap items-center gap-2" role="group" aria-label="Photo compression level">
+                  <span className="text-xs font-medium text-gray-600">Compression:</span>
+                  {(['balanced', 'compact'] as const).map((mode) => {
+                    const preset = COMPLAINT_PHOTO_PRESETS[mode];
+                    const active = compressionMode === mode;
+                    return (
+                      <button
+                        key={mode}
+                        type="button"
+                        aria-pressed={active}
+                        disabled={imageProcessing}
+                        onClick={() => handleCompressionModeChange(mode)}
+                        className={cn(
+                          'rounded-lg border px-2.5 py-1 text-xs font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-1',
+                          active
+                            ? 'border-primary-600 bg-primary-50 text-primary-800'
+                            : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-100'
+                        )}
+                        title={preset.description}
+                      >
+                        {preset.label}
+                      </button>
+                    );
+                  })}
+                </div>
+
                 {imageDataUrl ? (
-                  <div className="relative inline-block mb-3">
-                    <img
-                      src={imageDataUrl}
-                      alt="Complaint photo preview"
-                      className="rounded-lg border border-gray-300 max-w-[300px] max-h-[300px] object-cover"
-                    />
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={removeImage}
-                      className="absolute -top-2 -right-2"
-                    >
-                      <X className="h-4 w-4" /> Remove
-                    </Button>
+                  <div className="mb-3 space-y-1.5">
+                    <div className="relative inline-block">
+                      <img
+                        src={imageDataUrl}
+                        alt="Complaint photo preview"
+                        className="rounded-lg border border-gray-300 max-w-[300px] max-h-[300px] object-cover"
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={removeImage}
+                        className="absolute -top-2 -right-2 bg-white"
+                      >
+                        <X className="h-4 w-4" /> Remove
+                      </Button>
+                    </div>
+                    {imageSummary && (
+                      <p className="text-xs font-medium text-success-700" role="status">
+                        Compressed: {imageSummary}
+                      </p>
+                    )}
                   </div>
                 ) : null}
 
                 {imageProcessing && (
                   <p className="mb-3 text-sm text-gray-600" role="status">
-                    Optimising your photo…
+                    Compressing your photo for fast upload…
                   </p>
                 )}
 
                 {imageError && (
                   <p className="mb-3 text-sm text-danger-600" role="alert">
-                    <AlertCircle className="mr-1.5 h-4 w-4" aria-hidden="true" />
+                    <AlertCircle className="mr-1.5 inline h-4 w-4" aria-hidden="true" />
                     {imageError}
                   </p>
                 )}

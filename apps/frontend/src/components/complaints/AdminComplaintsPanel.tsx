@@ -25,14 +25,18 @@ import { Badge, Button, Dialog, Select, Textarea } from '@dh-araria/ui/component
 import { api, handleApiResponse } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
 import {
+  ADMIN_COMPLAINTS_PAGE_LIMITS,
+  COMPLAINT_PHOTO_PRESETS,
+  DEFAULT_ADMIN_COMPLAINTS_LIMIT,
+  clampComplaintPageLimit,
   compressImageToDataUrl,
+  formatCompressionSummary,
   isDisplayableImageUrl,
   validateImageFile,
+  type CompressionMode,
 } from '@/lib/complaint-image';
 import { getDepartmentTagTone } from '@/lib/department-tag';
 import { formatDateTime } from '@dh-araria/shared/utils';
-
-const PAGE_SIZE = 10;
 
 type BadgeVariant = ComponentProps<typeof Badge>['variant'];
 
@@ -131,11 +135,92 @@ interface ComplaintCardProps {
   actionsDisabled: boolean;
   photoUploading: boolean;
   photoDisabled: boolean;
+  lightweightMode: boolean;
   onStatusChange: (item: any, status: ComplaintStatus) => void;
   /** Opens the resolve dialog so a note and photo can be attached. */
   onResolve: (item: any) => void;
   onPhotoOpen: (src: string, alt: string, trigger: HTMLElement) => void;
   onPhotoUpload: (item: any, file: File) => void;
+}
+
+function StatusHistoryDisclosure({
+  history,
+  lightweightMode,
+  onPhotoOpen,
+}: {
+  history: ComplaintHistoryEntry[];
+  lightweightMode: boolean;
+  onPhotoOpen: (src: string, alt: string, trigger: HTMLElement) => void;
+}) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <details open={open} className="group mt-2">
+      <summary
+        onClick={(event) => {
+          event.preventDefault();
+          setOpen((current) => !current);
+        }}
+        className="cursor-pointer list-none text-[11px] font-semibold text-primary-700 hover:text-primary-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-1"
+      >
+        Status history ({history.length})
+      </summary>
+      {open && (
+        <ol className="mt-2 space-y-2 border-l-2 border-primary-100 pl-3">
+          {history.map((entry) => (
+            <li key={entry.id} className="break-words text-[11px] leading-snug">
+              <p className="font-semibold text-gray-800">
+                {entry.fromStatus
+                  ? `${statusLabel(entry.fromStatus)} → ${statusLabel(entry.toStatus)}`
+                  : statusLabel(entry.toStatus)}
+              </p>
+              <p className="text-gray-500">
+                {entry.changedByName}
+                {entry.changedByRole ? ` · ${entry.changedByRole}` : ''} ·{' '}
+                {formatStamp(entry.createdAt)}
+              </p>
+              {entry.resolution && (
+                <p className="mt-1 whitespace-pre-line text-gray-600">{entry.resolution}</p>
+              )}
+              {isDisplayableImageUrl(entry.resolutionImageUrl) && (
+                <button
+                  type="button"
+                  onClick={(event) =>
+                    onPhotoOpen(
+                      entry.resolutionImageUrl as string,
+                      `Resolution photo added by ${entry.changedByName}`,
+                      event.currentTarget
+                    )
+                  }
+                  className={cn(
+                    'mt-1 block w-full overflow-hidden rounded-md border border-outline-variant focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-1',
+                    lightweightMode &&
+                      'inline-flex w-auto items-center gap-1.5 bg-white px-2.5 py-1 text-[11px] font-medium text-primary-700 hover:bg-primary-50'
+                  )}
+                  aria-label={`View resolution photo added by ${entry.changedByName}`}
+                >
+                  {lightweightMode ? (
+                    <>
+                      <ImageIcon className="h-3.5 w-3.5" />
+                      View resolution photo
+                    </>
+                  ) : (
+                    <img
+                      src={entry.resolutionImageUrl as string}
+                      alt={`Resolution photo added by ${entry.changedByName}`}
+                      loading="lazy"
+                      decoding="async"
+                      className="h-16 w-full object-cover"
+                    />
+                  )}
+                </button>
+              )}
+            </li>
+          ))}
+        </ol>
+      )}
+    </details>
+  );
 }
 
 function ComplaintCard({
@@ -144,6 +229,7 @@ function ComplaintCard({
   actionsDisabled,
   photoUploading,
   photoDisabled,
+  lightweightMode,
   onStatusChange,
   onResolve,
   onPhotoOpen,
@@ -195,32 +281,49 @@ function ComplaintCard({
         {item.complaint ?? item.description}
       </p>
 
-      {hasImage && (
-        <button
-          type="button"
-          onClick={(event) =>
-            onPhotoOpen(
-              item.imageUrl,
-              `Photo attached to complaint by ${item.name}`,
-              event.currentTarget
-            )
-          }
-          className="group relative mt-3 block w-full overflow-hidden rounded-xl border border-gray-200 bg-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
-          aria-label={`View photo attached to complaint by ${item.name}`}
-        >
-          <img
-            src={item.imageUrl}
-            alt={`Photo attached to complaint by ${item.name}`}
-            loading="lazy"
-            decoding="async"
-            className="h-32 w-full object-cover transition-transform duration-300 group-hover:scale-105"
-          />
-          <span className="pointer-events-none absolute inset-x-0 bottom-0 flex items-center justify-center gap-1 bg-gradient-to-t from-gray-950/75 via-gray-950/30 to-transparent px-2 pb-2 pt-6 text-[11px] font-medium text-white">
-            <ImageIcon className="h-3.5 w-3.5" />
-            View photo
-          </span>
-        </button>
-      )}
+      {hasImage &&
+        (lightweightMode ? (
+          <button
+            type="button"
+            onClick={(event) =>
+              onPhotoOpen(
+                item.imageUrl,
+                `Photo attached to complaint by ${item.name}`,
+                event.currentTarget
+              )
+            }
+            className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-xs font-medium text-primary-700 transition-colors hover:bg-primary-50 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-1"
+            aria-label={`View photo attached to complaint by ${item.name}`}
+          >
+            <ImageIcon className="h-4 w-4" />
+            View attached photo
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={(event) =>
+              onPhotoOpen(
+                item.imageUrl,
+                `Photo attached to complaint by ${item.name}`,
+                event.currentTarget
+              )
+            }
+            className="group relative mt-3 block w-full overflow-hidden rounded-xl border border-gray-200 bg-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
+            aria-label={`View photo attached to complaint by ${item.name}`}
+          >
+            <img
+              src={item.imageUrl}
+              alt={`Photo attached to complaint by ${item.name}`}
+              loading="lazy"
+              decoding="async"
+              className="h-32 w-full object-cover transition-transform duration-300 group-hover:scale-105"
+            />
+            <span className="pointer-events-none absolute inset-x-0 bottom-0 flex items-center justify-center gap-1 bg-gradient-to-t from-gray-950/75 via-gray-950/30 to-transparent px-2 pb-2 pt-6 text-[11px] font-medium text-white">
+              <ImageIcon className="h-3.5 w-3.5" />
+              View photo
+            </span>
+          </button>
+        ))}
 
       {hasContact && (
         <p className="mt-2 flex items-center gap-1.5 text-xs text-gray-500">
@@ -274,32 +377,49 @@ function ComplaintCard({
               {item.resolution}
             </p>
           )}
-          {hasResolutionImage && (
-            <button
-              type="button"
-              onClick={(event) =>
-                onPhotoOpen(
-                  item.resolutionImageUrl,
-                  `Resolution photo for the complaint from ${item.name}`,
-                  event.currentTarget
-                )
-              }
-              className="group relative mt-2 block w-full overflow-hidden rounded-lg border border-success-200 bg-card focus:outline-none focus:ring-2 focus:ring-success-500 focus:ring-offset-1"
-              aria-label={`View resolution photo for the complaint from ${item.name}`}
-            >
-              <img
-                src={item.resolutionImageUrl}
-                alt={`Resolution photo for the complaint from ${item.name}`}
-                loading="lazy"
-                decoding="async"
-                className="h-24 w-full object-cover transition-transform duration-300 group-hover:scale-105"
-              />
-              <span className="pointer-events-none absolute inset-x-0 bottom-0 flex items-center justify-center gap-1 bg-gradient-to-t from-black/75 via-black/30 to-transparent px-2 pb-1.5 pt-5 text-label-sm font-medium text-white">
-                <ImageIcon className="h-3 w-3" />
+          {hasResolutionImage &&
+            (lightweightMode ? (
+              <button
+                type="button"
+                onClick={(event) =>
+                  onPhotoOpen(
+                    item.resolutionImageUrl,
+                    `Resolution photo for the complaint from ${item.name}`,
+                    event.currentTarget
+                  )
+                }
+                className="mt-2 inline-flex w-full items-center justify-center gap-1.5 rounded-lg border border-success-200 bg-white px-2.5 py-1.5 text-xs font-medium text-success-800 transition-colors hover:bg-success-100 focus:outline-none focus:ring-2 focus:ring-success-500 focus:ring-offset-1"
+                aria-label={`View resolution photo for the complaint from ${item.name}`}
+              >
+                <ImageIcon className="h-3.5 w-3.5" />
                 View resolution photo
-              </span>
-            </button>
-          )}
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={(event) =>
+                  onPhotoOpen(
+                    item.resolutionImageUrl,
+                    `Resolution photo for the complaint from ${item.name}`,
+                    event.currentTarget
+                  )
+                }
+                className="group relative mt-2 block w-full overflow-hidden rounded-lg border border-success-200 bg-card focus:outline-none focus:ring-2 focus:ring-success-500 focus:ring-offset-1"
+                aria-label={`View resolution photo for the complaint from ${item.name}`}
+              >
+                <img
+                  src={item.resolutionImageUrl}
+                  alt={`Resolution photo for the complaint from ${item.name}`}
+                  loading="lazy"
+                  decoding="async"
+                  className="h-24 w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                />
+                <span className="pointer-events-none absolute inset-x-0 bottom-0 flex items-center justify-center gap-1 bg-gradient-to-t from-black/75 via-black/30 to-transparent px-2 pb-1.5 pt-5 text-label-sm font-medium text-white">
+                  <ImageIcon className="h-3 w-3" />
+                  View resolution photo
+                </span>
+              </button>
+            ))}
         </div>
       )}
 
@@ -312,52 +432,11 @@ function ComplaintCard({
           </p>
 
           {history.length > 0 && (
-            <details className="group mt-2">
-              <summary className="cursor-pointer list-none text-[11px] font-semibold text-primary-700 hover:text-primary-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-1">
-                Status history ({history.length})
-              </summary>
-              <ol className="mt-2 space-y-2 border-l-2 border-primary-100 pl-3">
-                {history.map((entry) => (
-                  <li key={entry.id} className="break-words text-[11px] leading-snug">
-                    <p className="font-semibold text-gray-800">
-                      {entry.fromStatus
-                        ? `${statusLabel(entry.fromStatus)} → ${statusLabel(entry.toStatus)}`
-                        : statusLabel(entry.toStatus)}
-                    </p>
-                    <p className="text-gray-500">
-                      {entry.changedByName}
-                      {entry.changedByRole ? ` · ${entry.changedByRole}` : ''} ·{' '}
-                      {formatStamp(entry.createdAt)}
-                    </p>
-                    {entry.resolution && (
-                      <p className="mt-1 whitespace-pre-line text-gray-600">{entry.resolution}</p>
-                    )}
-                    {isDisplayableImageUrl(entry.resolutionImageUrl) && (
-                      <button
-                        type="button"
-                        onClick={(event) =>
-                          onPhotoOpen(
-                            entry.resolutionImageUrl as string,
-                            `Resolution photo added by ${entry.changedByName}`,
-                            event.currentTarget
-                          )
-                        }
-                        className="mt-1 block w-full overflow-hidden rounded-md border border-outline-variant focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-1"
-                        aria-label={`View resolution photo added by ${entry.changedByName}`}
-                      >
-                        <img
-                          src={entry.resolutionImageUrl as string}
-                          alt={`Resolution photo added by ${entry.changedByName}`}
-                          loading="lazy"
-                          decoding="async"
-                          className="h-16 w-full object-cover"
-                        />
-                      </button>
-                    )}
-                  </li>
-                ))}
-              </ol>
-            </details>
+            <StatusHistoryDisclosure
+              history={history}
+              lightweightMode={lightweightMode}
+              onPhotoOpen={onPhotoOpen}
+            />
           )}
         </div>
       )}
@@ -480,6 +559,9 @@ export function AdminComplaintsPanel() {
   const [departmentFilter, setDepartmentFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState<ComplaintStatus | ''>('');
   const [page, setPage] = useState(1);
+  const [pageLimit, setPageLimit] = useState<number>(DEFAULT_ADMIN_COMPLAINTS_LIMIT);
+  const [lightweightMode, setLightweightMode] = useState(false);
+  const [compressionMode, setCompressionMode] = useState<CompressionMode>('balanced');
   const [departments, setDepartments] = useState<Department[]>([]);
   const [departmentsLoading, setDepartmentsLoading] = useState(true);
 
@@ -493,8 +575,10 @@ export function AdminComplaintsPanel() {
   const [resolveTarget, setResolveTarget] = useState<any | null>(null);
   const [resolveNote, setResolveNote] = useState('');
   const [resolvePhoto, setResolvePhoto] = useState<string | null>(null);
+  const [resolvePhotoSummary, setResolvePhotoSummary] = useState<string | null>(null);
   const [resolvePhotoBusy, setResolvePhotoBusy] = useState(false);
   const [resolveError, setResolveError] = useState<string | null>(null);
+  const resolveSourceFileRef = useRef<File | null>(null);
 
   const [photo, setPhoto] = useState<{ src: string; alt: string } | null>(null);
   const photoCloseRef = useRef<HTMLButtonElement>(null);
@@ -576,9 +660,10 @@ export function AdminComplaintsPanel() {
     setListLoading(true);
     setListError(null);
     try {
+      const safeLimit = clampComplaintPageLimit(pageLimit);
       const params: Record<string, unknown> = {
         page,
-        limit: PAGE_SIZE,
+        limit: safeLimit,
       };
       if (departmentFilter) params.departmentId = departmentFilter;
       if (statusFilter) params.status = statusFilter;
@@ -594,7 +679,7 @@ export function AdminComplaintsPanel() {
     } finally {
       setListLoading(false);
     }
-  }, [page, departmentFilter, statusFilter]);
+  }, [page, pageLimit, departmentFilter, statusFilter]);
 
   useEffect(() => {
     if (!isAuthenticated || !isStaff) return;
@@ -665,19 +750,38 @@ export function AdminComplaintsPanel() {
   };
 
   const openResolve = (item: any) => {
+    resolveSourceFileRef.current = null;
     setResolveTarget(item);
     setResolveNote('');
     setResolvePhoto(null);
+    setResolvePhotoSummary(null);
     setResolveError(null);
   };
 
   const closeResolve = () => {
     // Do not lose a submission that is still in flight.
     if (updating?.status === ComplaintStatus.RESOLVED) return;
+    resolveSourceFileRef.current = null;
     setResolveTarget(null);
     setResolveNote('');
     setResolvePhoto(null);
+    setResolvePhotoSummary(null);
     setResolveError(null);
+  };
+
+  const compressResolvePhoto = async (file: File, mode: CompressionMode) => {
+    setResolvePhotoBusy(true);
+    setResolveError(null);
+
+    try {
+      const dataUrl = await compressImageToDataUrl(file, COMPLAINT_PHOTO_PRESETS[mode]);
+      setResolvePhoto(dataUrl);
+      setResolvePhotoSummary(formatCompressionSummary(file.size, dataUrl));
+    } catch (error) {
+      setResolveError(getErrorMessage(error, 'We could not read that photo.'));
+    } finally {
+      setResolvePhotoBusy(false);
+    }
   };
 
   const pickResolvePhoto = async (file: File) => {
@@ -687,15 +791,14 @@ export function AdminComplaintsPanel() {
       return;
     }
 
-    setResolvePhotoBusy(true);
-    setResolveError(null);
+    resolveSourceFileRef.current = file;
+    await compressResolvePhoto(file, compressionMode);
+  };
 
-    try {
-      setResolvePhoto(await compressImageToDataUrl(file));
-    } catch (error) {
-      setResolveError(getErrorMessage(error, 'We could not read that photo.'));
-    } finally {
-      setResolvePhotoBusy(false);
+  const handleResolveCompressionChange = (mode: CompressionMode) => {
+    setCompressionMode(mode);
+    if (resolveSourceFileRef.current) {
+      void compressResolvePhoto(resolveSourceFileRef.current, mode);
     }
   };
 
@@ -713,9 +816,11 @@ export function AdminComplaintsPanel() {
       return;
     }
 
+    resolveSourceFileRef.current = null;
     setResolveTarget(null);
     setResolveNote('');
     setResolvePhoto(null);
+    setResolvePhotoSummary(null);
     setResolveError(null);
   };
 
@@ -736,7 +841,8 @@ export function AdminComplaintsPanel() {
     setActionMessage('');
 
     try {
-      const imageUrl = await compressImageToDataUrl(file);
+      const imageUrl = await compressImageToDataUrl(file, COMPLAINT_PHOTO_PRESETS[compressionMode]);
+      const summary = formatCompressionSummary(file.size, imageUrl);
       const response = await api.patch<any>(`/complaints/${item.id}/photo`, { imageUrl });
       const updated = handleApiResponse<any>(response);
 
@@ -747,7 +853,7 @@ export function AdminComplaintsPanel() {
             : complaint
         )
       );
-      setActionMessage(`Photo attached to the complaint from ${item.name}.`);
+      setActionMessage(`Photo attached to the complaint from ${item.name} (${summary}).`);
     } catch (error) {
       setActionError(getErrorMessage(error, 'We could not attach that photo.'));
     } finally {
@@ -938,15 +1044,40 @@ export function AdminComplaintsPanel() {
               }
               options={statusOptions}
             />
+            <Select
+              id="complaint-page-limit"
+              label="Per page (load limit)"
+              value={String(pageLimit)}
+              onChange={(event) =>
+                resetPageAnd(() => setPageLimit(clampComplaintPageLimit(Number(event.target.value))))
+              }
+              options={ADMIN_COMPLAINTS_PAGE_LIMITS.map((limitOption) => ({
+                value: String(limitOption),
+                label:
+                  limitOption === DEFAULT_ADMIN_COMPLAINTS_LIMIT
+                    ? `${limitOption} per page (fastest)`
+                    : `${limitOption} per page`,
+              }))}
+            />
           </div>
 
-          {hasFilters && (
-            <div className="mt-3">
+          <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-gray-100 pt-3">
+            <label className="inline-flex cursor-pointer items-center gap-2 text-xs font-medium text-gray-700">
+              <input
+                type="checkbox"
+                checked={lightweightMode}
+                onChange={(event) => setLightweightMode(event.target.checked)}
+                className="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+              />
+              <span>Hide card thumbnails for faster loading (open photos on demand)</span>
+            </label>
+
+            {hasFilters && (
               <Button type="button" variant="ghost" size="sm" onClick={clearFilters}>
                 Clear filters
               </Button>
-            </div>
-          )}
+            )}
+          </div>
         </div>
 
         {actionMessage && (
@@ -1039,6 +1170,7 @@ export function AdminComplaintsPanel() {
                     actionsDisabled={updating !== null}
                     photoUploading={photoUploadingId === item.id}
                     photoDisabled={photoUploadingId !== null || updating !== null}
+                    lightweightMode={lightweightMode}
                     onStatusChange={(complaint, status) =>
                       void handleStatusChange(complaint, status)
                     }
@@ -1131,7 +1263,33 @@ export function AdminComplaintsPanel() {
           />
 
           <div>
-            <p className="mb-1.5 text-sm font-medium text-on-surface">Photo (optional)</p>
+            <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+              <p className="text-sm font-medium text-on-surface">Photo (optional)</p>
+              <div className="flex items-center gap-1.5" role="group" aria-label="Resolution photo compression level">
+                {(['balanced', 'compact'] as const).map((mode) => {
+                  const preset = COMPLAINT_PHOTO_PRESETS[mode];
+                  const active = compressionMode === mode;
+                  return (
+                    <button
+                      key={mode}
+                      type="button"
+                      aria-pressed={active}
+                      disabled={resolvePhotoBusy}
+                      onClick={() => handleResolveCompressionChange(mode)}
+                      className={cn(
+                        'rounded-md border px-2 py-0.5 text-[11px] font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-1',
+                        active
+                          ? 'border-primary-600 bg-primary-50 text-primary-800'
+                          : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-100'
+                      )}
+                      title={preset.description}
+                    >
+                      {preset.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
 
             {resolvePhoto ? (
               <div className="space-y-2">
@@ -1140,6 +1298,11 @@ export function AdminComplaintsPanel() {
                   alt="Resolution photo preview"
                   className="max-h-56 w-full rounded-xl border border-outline-variant object-contain"
                 />
+                {resolvePhotoSummary && (
+                  <p className="text-xs font-medium text-success-700" role="status">
+                    Compressed: {resolvePhotoSummary}
+                  </p>
+                )}
                 <div className="flex flex-wrap items-center gap-2">
                   <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-md px-2 py-1 text-sm font-medium text-primary-700 transition-colors hover:bg-primary-50 focus-within:ring-2 focus-within:ring-primary-500 focus-within:ring-offset-1">
                     <ImagePlus className="h-4 w-4" aria-hidden="true" />
@@ -1160,7 +1323,11 @@ export function AdminComplaintsPanel() {
                     type="button"
                     variant="ghost"
                     size="sm"
-                    onClick={() => setResolvePhoto(null)}
+                    onClick={() => {
+                      resolveSourceFileRef.current = null;
+                      setResolvePhoto(null);
+                      setResolvePhotoSummary(null);
+                    }}
                     disabled={resolvePhotoBusy}
                   >
                     Remove photo
@@ -1179,7 +1346,7 @@ export function AdminComplaintsPanel() {
                 ) : (
                   <ImagePlus className="h-4 w-4" aria-hidden="true" />
                 )}
-                {resolvePhotoBusy ? 'Preparing photo…' : 'Add resolution photo'}
+                {resolvePhotoBusy ? 'Compressing photo…' : 'Add resolution photo'}
                 <input
                   type="file"
                   accept="image/jpeg,image/png,image/webp"
@@ -1195,7 +1362,8 @@ export function AdminComplaintsPanel() {
             )}
 
             <p className="mt-1.5 text-xs text-on-surface-variant">
-              JPEG, PNG or WebP up to 5 MB. The photo is compressed before it is saved.
+              JPEG, PNG or WebP up to 5 MB. Photos are automatically compressed on your device
+              for faster upload and lighter admin loading.
             </p>
           </div>
 

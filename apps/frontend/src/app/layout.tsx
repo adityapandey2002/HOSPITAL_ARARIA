@@ -1,11 +1,12 @@
 import type { Metadata, Viewport } from 'next';
-import { Atkinson_Hyperlegible_Next, Plus_Jakarta_Sans } from 'next/font/google';
+import { Atkinson_Hyperlegible, Plus_Jakarta_Sans } from 'next/font/google';
 import '../styles/globals.css';
 import { Toaster } from 'sonner';
 import { Providers } from '@/components/Providers';
 
-const heading = Atkinson_Hyperlegible_Next({
+const heading = Atkinson_Hyperlegible({
   subsets: ['latin'],
+  weight: ['400', '700'],
   variable: '--font-heading',
   display: 'swap',
 });

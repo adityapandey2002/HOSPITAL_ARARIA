@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { api, handleApiResponse } from '@/lib/api';
 import { isDisplayableImageUrl } from '@/lib/complaint-image';
 import { cn } from '@dh-araria/shared/utils';
+import { PageBanner } from '@/components/layout/PageBanner';
 
 interface NoticeDetail {
   id: string;
@@ -88,33 +89,29 @@ export default async function NoticePage({ params }: NoticePageProps) {
   return (
     <>
       <div>
-        <section className="bg-primary-600 py-12 text-white sm:py-16">
-          <div className="container mx-auto px-4">
-            <div className="mb-4 flex items-center gap-2">
+        <PageBanner
+          align="left"
+          accent={notice.priority === 'CRITICAL' ? 'danger' : notice.priority === 'HIGH' ? 'warning' : 'primary'}
+          meta={
+            <div className="flex flex-wrap items-center gap-2">
               <span
                 className={cn(
-                  'inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-medium uppercase',
+                  'inline-flex items-center gap-1 rounded-full px-3 py-0.5 text-xs font-medium uppercase',
                   PRIORITY_COLORS[notice.priority] ?? 'bg-surface-container text-on-surface'
                 )}
               >
                 {notice.priority}
               </span>
-              <span
-                className={cn(
-                  'inline-flex items-center gap-1 rounded-full bg-primary-50 px-3 py-1 text-xs font-medium uppercase text-primary-700'
-                )}
-              >
+              <span className="inline-flex items-center gap-1 rounded-full bg-white/15 px-3 py-0.5 text-xs font-medium uppercase text-white">
                 {CATEGORY_LABELS[notice.category] ?? notice.category}
               </span>
             </div>
-            <h1 className="mb-4 text-3xl font-bold sm:text-4xl">{notice.title}</h1>
-            <p className="text-primary-100">
-              Published on {new Date(notice.publishedAt).toLocaleDateString('en-IN')}
-            </p>
-          </div>
-        </section>
+          }
+          title={notice.title}
+          description={`Published on ${new Date(notice.publishedAt).toLocaleDateString('en-IN')}`}
+        />
 
-        <div className="bg-surface py-12">
+        <div className="bg-surface py-6 sm:py-8">
           <div className="container mx-auto px-4">
             <article className="prose prose-lg mx-auto max-w-3xl text-on-surface-variant">
               <div className="whitespace-pre-line">{notice.content}</div>

@@ -1,5 +1,6 @@
 import { Metadata } from 'next';
 import { GrievanceForm } from '@/components/GrievanceForm';
+import { PageBanner } from '@/components/layout/PageBanner';
 
 export const metadata: Metadata = {
   title: 'Grievance Redressal',
@@ -9,20 +10,15 @@ export const metadata: Metadata = {
 
 export default function GrievancesPage() {
   return (
-    <>
-      <div>
-        <section className="bg-warning-600 py-16 text-white">
-          <div className="container mx-auto px-4 text-center">
-            <h1 className="mb-4 text-4xl font-bold sm:text-5xl">Grievance Redressal</h1>
-            <p className="mx-auto max-w-3xl text-xl text-warning-100">
-              File complaints, track status, and get timely resolution. Handled by the hospital
-              transparent 30-day resolution timeline.
-            </p>
-          </div>
-        </section>
+    <div>
+      <PageBanner
+        eyebrow="Citizen Redressal"
+        accent="warning"
+        title="Grievance Redressal"
+        description="File complaints, track status, and get timely resolution through the hospital's transparent 30-day redressal timeline."
+      />
 
-        <GrievanceForm />
-      </div>
-    </>
+      <GrievanceForm />
+    </div>
   );
 }

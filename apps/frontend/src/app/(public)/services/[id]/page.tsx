@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import { api, handleApiResponse } from '@/lib/api';
 import { cn } from '@dh-araria/shared/utils';
 import Link from 'next/link';
+import { PageBanner } from '@/components/layout/PageBanner';
 import {
   Stethoscope,
   Baby,
@@ -113,22 +114,14 @@ export default async function ServicePage({ params }: ServicePageProps) {
   return (
     <>
       <div>
-        <section className="bg-primary-600 py-16 text-white sm:py-20">
-          <div className="container mx-auto px-4 text-center">
-            <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-white/20">
-              <DepartmentIcon
-                name={department.name}
-                className="h-8 w-8 rounded bg-white p-1 text-primary-600"
-              />
-            </div>
-            <h1 className="mb-4 text-4xl font-bold sm:text-5xl">{department.name}</h1>
-            <p className="mx-auto max-w-3xl text-xl text-primary-100">
-              {department.description}
-            </p>
-          </div>
-        </section>
+        <PageBanner
+          eyebrow="Department"
+          accent="primary"
+          title={department.name}
+          description={department.description}
+        />
 
-        <div className="bg-white py-12">
+        <div className="bg-white py-6 sm:py-8">
           <div className="container mx-auto px-4">
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
               {/* Department Info Card */}

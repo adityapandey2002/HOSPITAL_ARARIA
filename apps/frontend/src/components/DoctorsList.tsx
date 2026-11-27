@@ -91,28 +91,35 @@ function toDoctorCard(doctor: ApiDoctor): DoctorCard {
 export function DoctorsList() {
   const [doctors, setDoctors] = useState<DoctorCard[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedDepartment, setSelectedDepartment] = useState('All Departments');
   const [sortBy, setSortBy] = useState<'rating' | 'experience' | 'fee'>('rating');
 
-  useEffect(() => {
-    let cancelled = false;
-
+  const fetchDoctors = () => {
+    setIsLoading(true);
+    setLoadError(false);
     api
       .get<ApiDoctor[]>('/doctors', { limit: 100 })
       .then((response) => {
-        if (!cancelled && response.success) setDoctors((response.data ?? []).map(toDoctorCard));
+        if (response.success) {
+          setDoctors((response.data ?? []).map(toDoctorCard));
+        } else {
+          setLoadError(true);
+          setDoctors([]);
+        }
       })
       .catch(() => {
-        if (!cancelled) setDoctors([]);
+        setLoadError(true);
+        setDoctors([]);
       })
       .finally(() => {
-        if (!cancelled) setIsLoading(false);
+        setIsLoading(false);
       });
+  };
 
-    return () => {
-      cancelled = true;
-    };
+  useEffect(() => {
+    fetchDoctors();
   }, []);
 
   const departments = [
@@ -140,7 +147,7 @@ export function DoctorsList() {
     });
 
   return (
-    <section className="bg-white py-20">
+    <section className="bg-white py-6 sm:py-8">
       <div className="container mx-auto px-4">
         {/* Search & Filters */}
         <div className="mb-10">
@@ -191,16 +198,38 @@ export function DoctorsList() {
 
         {/* Doctors Grid */}
         {isLoading ? (
-          <div className="py-16 text-center">
-            <p className="text-gray-500">Loading doctors…</p>
+          <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+            {Array.from({ length: 6 }).map((_, idx) => (
+              <div
+                key={idx}
+                className="h-56 animate-pulse rounded-xl border border-gray-200 bg-gray-50 p-5"
+              />
+            ))}
+          </div>
+        ) : loadError ? (
+          <div className="rounded-xl border border-gray-200 bg-gray-50 p-8 text-center">
+            <Search className="mx-auto mb-3 h-10 w-10 text-primary-500" aria-hidden="true" />
+            <h3 className="text-base font-semibold text-gray-900">
+              Doctor directory is temporarily unreachable
+            </h3>
+            <p className="mx-auto mt-1 max-w-md text-sm text-gray-600">
+              We could not fetch the live doctor roster right now. Please try again or contact the
+              reception desk at +91-6453-222123 for OPD timings.
+            </p>
+            <button
+              type="button"
+              onClick={fetchDoctors}
+              className="mt-4 inline-flex items-center gap-2 rounded-lg bg-primary-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-primary-700"
+            >
+              Try again
+            </button>
           </div>
         ) : filteredDoctors.length > 0 ? (
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {filteredDoctors.map((doctor, index) => (
+            {filteredDoctors.map((doctor) => (
               <article
                 key={doctor.id}
-                className="group animate-slide-up rounded-2xl border border-gray-100 bg-gray-50 p-6 transition-all duration-300 hover:border-primary-200 hover:shadow-xl"
-                style={{ animationDelay: `${index * 50}ms` }}
+                className="group rounded-xl border border-gray-200 bg-white p-5 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary-300 hover:shadow-md"
               >
                 <div className="mb-4 flex items-start gap-4">
                   <Avatar
@@ -276,10 +305,10 @@ export function DoctorsList() {
             ))}
           </div>
         ) : (
-          <div className="py-16 text-center">
-            <Search className="mx-auto mb-4 h-16 w-16 text-gray-300" />
-            <h3 className="mb-2 text-xl font-semibold text-gray-900">No doctors found</h3>
-            <p className="text-gray-500">Try adjusting your search or filter criteria</p>
+          <div className="rounded-xl border border-gray-200 bg-gray-50 py-12 text-center">
+            <Search className="mx-auto mb-3 h-10 w-10 text-gray-300" aria-hidden="true" />
+            <h3 className="mb-1 text-base font-semibold text-gray-900">No doctors match your filters</h3>
+            <p className="text-sm text-gray-500">Try adjusting your search query or department filter.</p>
           </div>
         )}
       </div>

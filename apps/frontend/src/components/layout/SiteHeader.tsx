@@ -24,7 +24,7 @@ function BrandLockup({ onNavigate }: { onNavigate?: () => void }) {
     <Link
       href="/"
       onClick={onNavigate}
-      className="group flex min-w-0 items-center gap-3 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-600 focus-visible:ring-offset-2"
+      className="group flex shrink-0 items-center gap-2.5 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-600 focus-visible:ring-offset-2"
       aria-label={`${HOSPITAL.name} home`}
     >
       <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary-600 text-white">
@@ -39,10 +39,10 @@ function BrandLockup({ onNavigate }: { onNavigate?: () => void }) {
         </svg>
       </span>
       <span className="min-w-0">
-        <span className="block truncate font-heading text-[0.95rem] font-bold leading-tight text-on-surface sm:text-lg">
+        <span className="block whitespace-nowrap font-heading text-[0.95rem] font-bold leading-tight text-on-surface sm:text-base">
           District Hospital Araria
         </span>
-        <span className="block text-label-sm text-on-surface-variant">{HOSPITAL.authority}</span>
+        <span className="block whitespace-nowrap text-label-sm text-on-surface-variant">{HOSPITAL.authority}</span>
       </span>
     </Link>
   );
@@ -91,58 +91,56 @@ export function SiteHeader() {
 
   return (
     <header className="sticky top-0 z-40 border-b border-outline-variant bg-card shadow-[0_1px_8px_rgba(0,0,0,0.04)]">
-      {/* Utility bar: location, reception, emergency and account. */}
-      <div className="hidden bg-primary-800 text-white md:block">
-        <Container size="wide" className="flex h-10 items-center justify-between gap-4 text-label-sm">
+      {/* Utility bar: location, emergency helplines, and staff portal shortcut. */}
+      <div className="hidden bg-primary-900 text-white md:block">
+        <Container size="wide" className="flex h-9 items-center justify-between gap-4 text-xs">
           <div className="flex min-w-0 items-center gap-5">
             <span className="inline-flex items-center gap-1.5 text-white/85">
-              <MapPin className="h-3.5 w-3.5" aria-hidden="true" />
+              <MapPin className="h-3.5 w-3.5 text-primary-300" aria-hidden="true" />
               {shortAddress()}
             </span>
-            <Link
-              href="/contact"
-              className="inline-flex items-center gap-1.5 rounded text-white/85 transition-colors hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-primary-800"
+            <a
+              href={telHref('108')}
+              className="inline-flex items-center gap-1.5 rounded font-medium text-white transition-colors hover:text-primary-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-primary-900"
             >
-              Emergency contacts
-            </Link>
+              <Siren className="h-3.5 w-3.5 text-danger-400" aria-hidden="true" />
+              Emergency 108
+            </a>
+            <a
+              href={telHref(HOSPITAL.receptionPhone)}
+              className="hidden items-center gap-1.5 rounded text-white/80 transition-colors hover:text-white lg:inline-flex"
+            >
+              <Phone className="h-3.5 w-3.5 text-primary-300" aria-hidden="true" />
+              Reception {HOSPITAL.receptionPhone}
+            </a>
           </div>
 
           <div className="flex shrink-0 items-center gap-4">
             <Link
-              href={PRIMARY_ACTION.href}
-              className="rounded text-white/90 transition-colors hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-primary-800"
+              href="/contact"
+              className="rounded text-white/80 transition-colors hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-primary-900"
             >
-              Book appointment
+              Helplines &amp; Directions
             </Link>
-            {isLoading ? (
-              <span className="h-6 w-28 animate-pulse rounded bg-white/20" aria-hidden="true" />
-            ) : isAuthenticated ? (
+            {isAuthenticated && (
               <button
                 type="button"
                 onClick={handleLogout}
-                className="inline-flex items-center gap-1.5 rounded border border-white/30 px-3 py-1 text-label-sm text-white transition-colors hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-primary-800"
+                className="inline-flex items-center gap-1.5 rounded text-white/85 transition-colors hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-primary-900"
               >
                 <LogOut className="h-3.5 w-3.5" aria-hidden="true" />
                 Sign out
               </button>
-            ) : (
-              <Link
-                href="/login"
-                className="inline-flex items-center gap-1.5 rounded border border-white/30 px-3 py-1 text-label-sm text-white transition-colors hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-primary-800"
-              >
-                <User className="h-3.5 w-3.5" aria-hidden="true" />
-                Login / Register
-              </Link>
             )}
           </div>
         </Container>
       </div>
 
       {/* Primary bar. */}
-      <Container size="wide" className="flex h-16 items-center justify-between gap-3 md:h-[4.5rem]">
+      <Container size="wide" className="flex h-16 items-center justify-between gap-2 md:h-[4.25rem]">
         <BrandLockup onNavigate={() => setMenuOpen(false)} />
 
-        <nav aria-label="Main navigation" className="hidden items-center gap-0.5 xl:flex">
+        <nav aria-label="Main navigation" className="hidden min-w-0 items-center gap-0.5 xl:flex">
           {PUBLIC_NAV.map((item) => {
             const active = isActivePath(pathname, item.href);
             return (
@@ -151,7 +149,7 @@ export function SiteHeader() {
                 href={item.href}
                 aria-current={active ? 'page' : undefined}
                 className={cn(
-                  'whitespace-nowrap rounded-lg px-3 py-2 text-label transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-600 focus-visible:ring-offset-2',
+                  'whitespace-nowrap rounded-lg px-2 py-2 text-[0.8125rem] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-600 focus-visible:ring-offset-2 xl:px-2.5',
                   active
                     ? 'bg-primary-50 text-primary-700'
                     : 'text-on-surface-variant hover:bg-surface-low hover:text-on-surface'
@@ -161,23 +159,43 @@ export function SiteHeader() {
               </Link>
             );
           })}
-          {isStaff && (
-            <Link
-              href={adminHref}
-              className="whitespace-nowrap rounded-lg px-3 py-2 text-label text-primary-700 transition-colors hover:bg-primary-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-600 focus-visible:ring-offset-2"
-            >
-              {user?.role === 'ADMIN' ? 'Admin panel' : 'Complaint desk'}
-            </Link>
-          )}
         </nav>
 
         <div className="flex shrink-0 items-center gap-2">
+          {isLoading ? (
+            <span className="h-9 w-20 animate-pulse rounded-lg bg-surface-low" aria-hidden="true" />
+          ) : isStaff ? (
+            <Link
+              href={adminHref}
+              className="inline-flex min-h-9 items-center gap-1.5 whitespace-nowrap rounded-lg border border-primary-200 bg-primary-50 px-2.5 py-1.5 text-xs font-semibold text-primary-800 transition-colors hover:bg-primary-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-600 focus-visible:ring-offset-2 sm:px-3 sm:text-[0.8125rem]"
+            >
+              <User className="h-4 w-4 shrink-0" aria-hidden="true" />
+              {user?.role === 'ADMIN' ? 'Admin panel' : 'Staff desk'}
+            </Link>
+          ) : isAuthenticated ? (
+            <Link
+              href="/account"
+              className="inline-flex min-h-9 items-center gap-1.5 whitespace-nowrap rounded-lg border border-outline-variant bg-card px-2.5 py-1.5 text-xs font-medium text-on-surface transition-colors hover:bg-surface-low focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-600 focus-visible:ring-offset-2 sm:px-3 sm:text-[0.8125rem]"
+            >
+              <User className="h-4 w-4 shrink-0 text-primary-700" aria-hidden="true" />
+              Account
+            </Link>
+          ) : (
+            <Link
+              href="/login"
+              className="inline-flex min-h-9 items-center gap-1.5 whitespace-nowrap rounded-lg border border-outline-variant bg-card px-2.5 py-1.5 text-xs font-semibold text-on-surface transition-colors hover:border-primary-300 hover:bg-primary-50/60 hover:text-primary-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-600 focus-visible:ring-offset-2 sm:px-3 sm:text-[0.8125rem]"
+            >
+              <User className="h-4 w-4 shrink-0 text-primary-700" aria-hidden="true" />
+              <span>Login</span>
+            </Link>
+          )}
+
           <Link
             href={PRIMARY_ACTION.href}
-            className="hidden min-h-10 items-center gap-2 rounded-lg bg-primary-600 px-4 py-2 text-label text-white transition-colors hover:bg-primary-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-600 focus-visible:ring-offset-2 lg:inline-flex"
+            className="hidden min-h-9 items-center gap-1.5 whitespace-nowrap rounded-lg bg-primary-600 px-3 py-2 text-[0.8125rem] font-medium text-white transition-colors hover:bg-primary-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-600 focus-visible:ring-offset-2 md:inline-flex"
           >
-            <CalendarCheck className="h-4 w-4" aria-hidden="true" />
-            Book appointment
+            <CalendarCheck className="h-4 w-4 shrink-0" aria-hidden="true" />
+            Book OPD
           </Link>
 
           <button
@@ -187,7 +205,7 @@ export function SiteHeader() {
             aria-expanded={menuOpen}
             aria-controls="site-menu"
             aria-label={menuOpen ? 'Close menu' : 'Open menu'}
-            className="inline-flex h-11 w-11 items-center justify-center rounded-lg text-on-surface transition-colors hover:bg-surface-low focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-600 focus-visible:ring-offset-2 xl:hidden"
+            className="inline-flex h-10 w-10 items-center justify-center rounded-lg text-on-surface transition-colors hover:bg-surface-low focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-600 focus-visible:ring-offset-2 xl:hidden"
           >
             {menuOpen ? <X className="h-6 w-6" aria-hidden="true" /> : <Menu className="h-6 w-6" aria-hidden="true" />}
           </button>

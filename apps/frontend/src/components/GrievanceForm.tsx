@@ -91,7 +91,7 @@ export function GrievanceForm() {
 
   if (submitted) {
     return (
-      <section className="bg-white py-20">
+      <section className="bg-white py-6 sm:py-8">
         <div className="container mx-auto px-4">
           <div className="mx-auto max-w-2xl text-center">
             <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-success-100">
@@ -155,7 +155,7 @@ export function GrievanceForm() {
   }
 
   return (
-    <section className="bg-white py-20">
+    <section className="bg-white py-6 sm:py-8">
       <div className="container mx-auto px-4">
         <div className="mx-auto max-w-3xl">
           {/* Info Cards */}

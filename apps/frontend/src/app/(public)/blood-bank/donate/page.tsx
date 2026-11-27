@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { Button } from '@dh-araria/ui/components';
+import { PageBanner } from '@/components/layout/PageBanner';
 
 export const metadata: Metadata = {
   title: 'Blood Donation | District Hospital Araria',
@@ -11,31 +12,14 @@ export default function BloodDonatePage() {
   return (
     <>
       <div>
-        <section className="bg-danger-600 py-16 text-white sm:py-20">
-          <div className="container mx-auto px-4 text-center">
-            <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-white/20">
-              <svg
-                className="h-8 w-8 text-danger-600 bg-white p-1 rounded-full"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
-                />
-              </svg>
-            </div>
-            <h1 className="mb-4 text-4xl font-bold sm:text-5xl">Blood Donation</h1>
-            <p className="mx-auto max-w-3xl text-xl text-danger-100">
-              Your blood donation can save up to three lives. Visit our blood bank to donate.
-            </p>
-          </div>
-        </section>
+        <PageBanner
+          eyebrow="Blood Services"
+          accent="danger"
+          title="Blood Donation"
+          description="Your blood donation can save up to three lives. Visit our blood bank to donate."
+        />
 
-        <div className="bg-white py-12">
+        <div className="bg-white py-6 sm:py-8">
           <div className="container mx-auto px-4">
             <div className="grid gap-8 md:grid-cols-2">
               <div className="rounded-2xl border border-gray-100 bg-white p-8 shadow-sm">

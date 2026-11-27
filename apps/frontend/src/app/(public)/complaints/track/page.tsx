@@ -17,6 +17,7 @@ import { isDisplayableImageUrl } from '@/lib/complaint-image';
 import { cn } from '@dh-araria/shared/utils';
 import { COMPLAINT_STATUS_LABELS, COMPLAINT_STATUS_COLORS } from '@dh-araria/shared/constants';
 import { ComplaintStatus } from '@dh-araria/shared';
+import { PageBanner } from '@/components/layout/PageBanner';
 
 function StatusIcon({ status, className }: { status: ComplaintStatus; className?: string }): JSX.Element {
   const IconMap: Record<ComplaintStatus, LucideIcon> = {
@@ -61,19 +62,14 @@ export default function ComplaintTrackPage() {
   return (
     <>
       <div>
-        <section className="bg-primary-700 py-12 text-white sm:py-16">
-          <div className="container mx-auto px-4 text-center">
-            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-white/10">
-              <Search className="h-7 w-7" aria-hidden="true" />
-            </div>
-            <h1 className="text-3xl font-bold sm:text-4xl">Track Your Complaint</h1>
-            <p className="mx-auto mt-3 max-w-2xl text-lg text-primary-100">
-              Enter your complaint reference ID to check its current status.
-            </p>
-          </div>
-        </section>
+        <PageBanner
+          eyebrow="Citizen Redressal"
+          accent="primary"
+          title="Track Your Complaint"
+          description="Enter your complaint reference ID to check its current status and resolution details."
+        />
 
-        <div className="bg-white pb-12">
+        <div className="bg-white py-6 sm:py-8">
           <div className="container mx-auto px-4">
             <form
               onSubmit={handleSearch}

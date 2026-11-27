@@ -95,4 +95,24 @@ export const DEPARTMENTS: readonly DepartmentSeed[] = [
     description: 'Rehabilitation, electrotherapy, exercise therapy, and sports injury',
     icon: 'activity',
   },
+  {
+    name: 'Labor Room',
+    description: '24/7 maternity delivery suite, ANCOS monitoring, and maternal-newborn care',
+    icon: 'heart',
+  },
+  {
+    name: 'OT (Operation Theatre)',
+    description: 'Major surgical operation theatre with sterile protocols and infection control',
+    icon: 'scalpel',
+  },
+  {
+    name: 'MOT (Minor OT)',
+    description: 'Minor surgical procedures, dressing, suturing, and biomedical waste compliance',
+    icon: 'stethoscope',
+  },
+  {
+    name: 'ICU',
+    description: 'Intensive care unit for critically ill patients with round-the-clock monitoring',
+    icon: 'activity',
+  },
 ];

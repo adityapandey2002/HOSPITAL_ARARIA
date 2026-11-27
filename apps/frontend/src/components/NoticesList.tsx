@@ -118,7 +118,7 @@ export function NoticesList() {
   });
 
   return (
-    <section className="bg-white py-20">
+    <section className="bg-white py-6 sm:py-8">
       <div className="container mx-auto px-4">
         {/* Filters */}
         <div className="mb-8 flex flex-col gap-4 md:flex-row">

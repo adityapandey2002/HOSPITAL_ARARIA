@@ -10,6 +10,7 @@
     "test": "echo \"No tests in @dh-araria/ui\" && exit 0"
   },
   "dependencies": {
+    "@dh-araria/shared": "*",
     "clsx": "^2.1.1",
     "tailwind-merge": "^2.3.0",
     "lucide-react": "^0.378.0",

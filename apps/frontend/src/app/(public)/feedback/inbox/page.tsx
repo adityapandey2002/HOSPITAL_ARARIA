@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { FeedbackInbox } from '@/components/feedback/FeedbackInbox';
+import { PageBanner } from '@/components/layout/PageBanner';
 
 export const metadata: Metadata = {
   title: 'Feedback inbox',
@@ -9,20 +10,16 @@ export const metadata: Metadata = {
 
 export default function FeedbackInboxPage() {
   return (
-    <>
-      <div>
-        <section className="bg-primary-700 py-10 text-white sm:py-12">
-          <div className="container mx-auto px-4">
-            <h1 className="text-3xl font-bold sm:text-4xl">Feedback inbox</h1>
-            <p className="mt-2 max-w-3xl text-primary-100">
-              Review responses from citizens, update their status, and manage which departments each
-              staff member can see.
-            </p>
-          </div>
-        </section>
+    <div>
+      <PageBanner
+        eyebrow="Staff Feedback"
+        align="left"
+        accent="primary"
+        title="Feedback inbox"
+        description="Review responses from citizens, update their status, and manage which departments each staff member can see."
+      />
 
-        <FeedbackInbox />
-      </div>
-    </>
+      <FeedbackInbox />
+    </div>
   );
 }

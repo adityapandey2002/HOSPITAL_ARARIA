@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { PageBanner } from '@/components/layout/PageBanner';
 
 interface FAQItem {
   q: string;
@@ -39,16 +40,15 @@ export function FAQsContent() {
 
   return (
     <>
-      <section className="bg-primary-600 py-12 text-white sm:py-16">
-        <div className="container mx-auto px-4">
-          <h1 className="text-3xl font-bold sm:text-4xl">Frequently Asked Questions</h1>
-          <p className="mt-2 text-primary-100">
-            Find answers to common questions about our hospital services.
-          </p>
-        </div>
-      </section>
+      <PageBanner
+        eyebrow="Patient Guide"
+        align="left"
+        accent="primary"
+        title="Frequently Asked Questions"
+        description="Find answers to common questions about OPD timings, appointments, blood bank, and hospital services."
+      />
 
-      <div className="bg-white py-12">
+      <div className="bg-white py-6 sm:py-8">
         <div className="container mx-auto px-4">
           <div className="max-w-2xl mx-auto space-y-3">
             {faqs.map((faq, index) => (

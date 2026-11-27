@@ -1,5 +1,6 @@
 import { Metadata } from 'next';
 import { ContactPage } from '@/components/ContactPage';
+import { PageBanner } from '@/components/layout/PageBanner';
 
 export const metadata: Metadata = {
   title: 'Contact Us',
@@ -9,20 +10,15 @@ export const metadata: Metadata = {
 
 export default function ContactPageWrapper() {
   return (
-    <>
-      <div>
-        <section className="bg-primary-600 py-16 text-white">
-          <div className="container mx-auto px-4 text-center">
-            <h1 className="mb-4 text-4xl font-bold sm:text-5xl">Contact Us</h1>
-            <p className="mx-auto max-w-3xl text-xl text-primary-100">
-              We&rsquo;re here to help. Reach out to us for appointments, inquiries, or emergency
-              assistance.
-            </p>
-          </div>
-        </section>
+    <div>
+      <PageBanner
+        eyebrow="Helpdesk & Location"
+        accent="primary"
+        title="Contact Us"
+        description="Reach out to District Hospital Araria for appointments, hospital inquiries, directions, or emergency assistance."
+      />
 
-        <ContactPage />
-      </div>
-    </>
+      <ContactPage />
+    </div>
   );
 }

@@ -13,13 +13,13 @@ export function SiteFooter() {
   return (
     <footer className="mt-auto bg-primary-950 text-white/80">
       <Container size="wide" className="pb-[calc(var(--bottom-nav-h)+env(safe-area-inset-bottom))] pt-12 lg:pb-8">
-        <div className="grid gap-10 border-b border-white/15 pb-10 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+        <div className="grid gap-10 border-b border-white/15 pb-10 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-[1.65fr_repeat(4,minmax(0,1fr))]">
           <div className="sm:col-span-2 lg:col-span-3 xl:col-span-1">
             <Link
               href="/"
               className="inline-flex items-center gap-3 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-primary-950"
             >
-              <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/10">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white/10">
                 <svg viewBox="0 0 24 24" className="h-6 w-6 text-white" fill="none" aria-hidden="true">
                   <path
                     d="M12 3.5 4.5 7v5.2c0 4.3 3 7.4 7.5 8.3 4.5-.9 7.5-4 7.5-8.3V7L12 3.5Z"
@@ -30,8 +30,8 @@ export function SiteFooter() {
                   <path d="M12 8.2v6.4M8.8 11.4h6.4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
                 </svg>
               </span>
-              <span>
-                <span className="block font-heading text-base font-bold text-white">{HOSPITAL.name}</span>
+              <span className="min-w-0">
+                <span className="block whitespace-nowrap font-heading text-base font-bold text-white">{HOSPITAL.name}</span>
                 <span className="block text-label-sm text-white/70">{HOSPITAL.authority}</span>
               </span>
             </Link>
@@ -120,6 +120,9 @@ export function SiteFooter() {
             © {year} {HOSPITAL.name}. Content published by the {HOSPITAL.department}.
           </p>
           <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-body-sm">
+            <Link href="/login?redirect=/admin/complaints" className="rounded text-body-sm font-medium text-primary-200 transition-colors hover:text-white">
+              Staff &amp; Admin Portal
+            </Link>
             <Link href="/privacy" className={linkClass}>
               Privacy
             </Link>

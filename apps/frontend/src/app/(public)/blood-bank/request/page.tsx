@@ -6,6 +6,7 @@ import { CheckCircle, Phone } from 'lucide-react';
 import { api, handleApiResponse } from '@/lib/api';
 import { Button, Card, Input, Select, Textarea } from '@dh-araria/ui/components';
 import { toast } from 'sonner';
+import { PageBanner } from '@/components/layout/PageBanner';
 
 interface Submitted {
   reference: string;
@@ -123,20 +124,14 @@ export default function BloodRequestPage() {
 
   return (
     <>
-      <section className="bg-danger-600 py-16 text-white sm:py-20">
-        <div className="container mx-auto px-4 text-center">
-          <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-white/20">
-            <Phone className="h-8 w-8 text-danger-600 bg-white p-1 rounded-full" aria-hidden="true" />
-          </div>
-          <h1 className="mb-4 text-4xl font-bold sm:text-5xl">Request Blood</h1>
-          <p className="mx-auto max-w-3xl text-xl text-danger-100">
-            Need blood for a patient? Submit the request below and the hospital blood bank team
-            will follow up with compatibility and collection instructions.
-          </p>
-        </div>
-      </section>
+      <PageBanner
+        eyebrow="Blood Services"
+        accent="danger"
+        title="Request Blood"
+        description="Need blood for a patient? Submit the request below and the hospital blood bank team will follow up with compatibility and collection instructions."
+      />
 
-      <div className="bg-white py-12">
+      <div className="bg-white py-6 sm:py-8">
         <div className="container mx-auto px-4">
           <div className="mx-auto max-w-2xl">
             <div className="rounded-2xl border border-gray-100 bg-white p-8 shadow-sm">

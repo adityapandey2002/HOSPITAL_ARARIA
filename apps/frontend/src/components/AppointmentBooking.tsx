@@ -210,7 +210,7 @@ export function AppointmentBooking() {
   ];
 
   return (
-    <section className="bg-white py-20">
+    <section className="bg-white py-6 sm:py-8">
       <div className="container mx-auto px-4">
         {/* Progress Steps */}
         <div className="mx-auto mb-10 max-w-3xl">

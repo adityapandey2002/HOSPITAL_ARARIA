@@ -109,16 +109,19 @@ function LoginForm() {
     <div className="w-full">
       <div className="space-y-6">
         <div>
-          <h1 className="text-balance font-heading text-h2 text-on-surface sm:text-h1">
+          <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-primary-700">
+            Patient &amp; Staff Portal
+          </p>
+          <h1 className="text-balance font-heading text-2xl font-bold text-on-surface sm:text-3xl">
             Sign in to your account
           </h1>
-          <p className="mt-2 text-body text-on-surface-variant">
-            Or{' '}
+          <p className="mt-1.5 text-sm text-on-surface-variant">
+            Hospital Managers and Department In-charges are directed straight to the Admin Panel. New patient?{' '}
             <Link
               href="/register"
               className="font-semibold text-primary-700 underline underline-offset-2 hover:text-primary-800"
             >
-              create a new account
+              Create an account
             </Link>
           </p>
         </div>

@@ -7,18 +7,18 @@ import { HOSPITAL, telHref } from '@/config/hospital';
 const BENEFITS = [
   {
     icon: CalendarCheck,
-    title: 'Track your appointments',
-    body: 'See booked OPD slots and the token issued for your visit.',
+    title: 'Patients: track appointments & complaints',
+    body: 'See booked OPD slots, token numbers, and live updates on submitted complaints.',
   },
   {
     icon: MessageSquare,
-    title: 'Follow your complaint',
-    body: 'Keep every update and the final reply against one reference number.',
+    title: 'Hospital Staff & Department In-charges',
+    body: 'Sign in with your hospital account to manage complaints and NQAS readiness checklists.',
   },
   {
     icon: ShieldCheck,
-    title: 'Private by design',
-    body: 'Your details are visible only to you and the desk handling your request.',
+    title: 'Hospital Manager / Admin Panel',
+    body: 'Admin accounts automatically open the Operations & Quality Events dashboard.',
   },
 ];
 
@@ -89,15 +89,15 @@ export function AuthShell({ children }: { children: ReactNode }) {
 
       <main id="main-content" className="flex flex-1 items-start justify-center px-4 py-8 sm:px-6 lg:items-center lg:px-10 lg:py-12">
         <Container size="content" className="w-full px-0 sm:px-0 lg:px-0">
-          <div className="mb-6 flex items-center justify-between gap-3 lg:hidden">
+          <div className="mb-6 flex items-center justify-between gap-3">
             <Link
               href="/"
               className="inline-flex items-center gap-2 rounded-lg text-label text-on-surface-variant transition-colors hover:text-on-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-600 focus-visible:ring-offset-2"
             >
               <ArrowLeft className="h-4 w-4" aria-hidden="true" />
-              Back to portal
+              Back to hospital portal
             </Link>
-            <span className="text-label-sm text-on-surface-variant">{HOSPITAL.shortName}</span>
+            <span className="text-label-sm text-on-surface-variant lg:hidden">{HOSPITAL.shortName}</span>
           </div>
           <div className="w-full max-w-md">{children}</div>
         </Container>

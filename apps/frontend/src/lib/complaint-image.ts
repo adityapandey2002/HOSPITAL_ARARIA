@@ -16,7 +16,7 @@ export const MAX_SOURCE_IMAGE_BYTES = 5 * 1024 * 1024;
 
 export const ACCEPTED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 
-/** Longest edge of the stored image. Enough to read a prescription or a bill. */
+/** Longest edge of the stored image by default. Enough to read a prescription or a bill. */
 const MAX_EDGE = 1280;
 
 /**
@@ -31,8 +31,58 @@ export interface CompressImageOptions {
    * smaller value so the whole JSON body still fits the route's limit.
    */
   maxLength?: number;
+  /** Maximum width or height in pixels after resizing. Defaults to 1280. */
+  maxEdge?: number;
+  /** Starting JPEG quality (0–1). Defaults to 0.72. */
+  initialQuality?: number;
+  /** Lowest JPEG quality before stepping down dimensions. Defaults to 0.4. */
+  minQuality?: number;
 }
 
+export type CompressionMode = 'balanced' | 'compact';
+
+export interface CompressionPreset extends Required<CompressImageOptions> {
+  label: string;
+  description: string;
+}
+
+/**
+ * Fast-upload compression profiles for complaint filing and admin resolution.
+ * Smaller base64 payloads upload faster on mobile networks and keep the admin
+ * complaints dashboard light when rendering multiple cards at once.
+ */
+export const COMPLAINT_PHOTO_PRESETS: Record<CompressionMode, CompressionPreset> = {
+  balanced: {
+    label: 'Standard (~200 KB)',
+    description: 'Clear text for prescriptions & bills',
+    maxEdge: 1024,
+    maxLength: 320_000,
+    initialQuality: 0.68,
+    minQuality: 0.36,
+  },
+  compact: {
+    label: 'Compact (~100 KB)',
+    description: 'Fastest upload & lightest dashboard load',
+    maxEdge: 800,
+    maxLength: 160_000,
+    initialQuality: 0.56,
+    minQuality: 0.32,
+  },
+};
+
+/** Admin complaints panel pagination options and safe ceiling to prevent heavy page loads. */
+export const ADMIN_COMPLAINTS_PAGE_LIMITS = [6, 10, 15, 20] as const;
+export const DEFAULT_ADMIN_COMPLAINTS_LIMIT = 6;
+export const MAX_ADMIN_COMPLAINTS_LIMIT = 20;
+
+export function clampComplaintPageLimit(limit: number): number {
+  if (!Number.isFinite(limit) || limit < 1) {
+    return DEFAULT_ADMIN_COMPLAINTS_LIMIT;
+  }
+  return Math.min(MAX_ADMIN_COMPLAINTS_LIMIT, Math.floor(limit));
+}
+
+const DEFAULT_INITIAL_QUALITY = 0.72;
 const MIN_QUALITY = 0.4;
 
 /** Only these can be rendered later, by this tab or any other device. */
@@ -47,6 +97,42 @@ const DISPLAYABLE_IMAGE_PATTERN = /^(?:https?:\/\/|data:image\/(?:jpeg|png|webp)
  */
 export function isDisplayableImageUrl(value?: string | null): value is string {
   return typeof value === 'string' && DISPLAYABLE_IMAGE_PATTERN.test(value);
+}
+
+/**
+ * Estimates the binary byte size of a base64 data URL (or raw string length if
+ * not a base64 data URL). Used to display compression savings to users.
+ */
+export function estimateDataUrlBytes(dataUrl: string): number {
+  const commaIndex = dataUrl.indexOf(',');
+  if (commaIndex === -1) return dataUrl.length;
+  const header = dataUrl.slice(0, commaIndex);
+  const payload = dataUrl.slice(commaIndex + 1);
+  if (!/;base64$/i.test(header)) return payload.length;
+  const padding = payload.endsWith('==') ? 2 : payload.endsWith('=') ? 1 : 0;
+  return Math.max(0, Math.floor((payload.length * 3) / 4) - padding);
+}
+
+export function formatBytes(bytes: number): string {
+  if (!Number.isFinite(bytes) || bytes <= 0) return '0 B';
+  if (bytes < 1024) return `${Math.round(bytes)} B`;
+  const kb = bytes / 1024;
+  if (kb < 1024) return `${Math.round(kb)} KB`;
+  return `${(kb / 1024).toFixed(1)} MB`;
+}
+
+export function formatCompressionSummary(originalBytes: number, dataUrl: string): string {
+  const compressedBytes = estimateDataUrlBytes(dataUrl);
+  const compressedLabel = formatBytes(compressedBytes);
+  if (!Number.isFinite(originalBytes) || originalBytes <= 0) {
+    return `Optimised to ${compressedLabel}`;
+  }
+  const originalLabel = formatBytes(originalBytes);
+  if (compressedBytes >= originalBytes) {
+    return `Optimised (${compressedLabel})`;
+  }
+  const savedPercent = Math.max(1, Math.round(((originalBytes - compressedBytes) / originalBytes) * 100));
+  return `${originalLabel} → ${compressedLabel} (${savedPercent}% smaller)`;
 }
 
 /**
@@ -104,6 +190,8 @@ export async function compressImageToDataUrl(
   options: CompressImageOptions = {}
 ): Promise<string> {
   const maxLength = options.maxLength ?? MAX_DATA_URL_LENGTH;
+  const maxEdge = options.maxEdge ?? MAX_EDGE;
+  const minQuality = options.minQuality ?? MIN_QUALITY;
   const drawable = await loadDrawable(file);
   const sourceWidth = drawable.width;
   const sourceHeight = drawable.height;
@@ -113,11 +201,11 @@ export async function compressImageToDataUrl(
     throw new Error('Could not read that image.');
   }
 
-  let scale = Math.min(1, MAX_EDGE / Math.max(sourceWidth, sourceHeight));
-  let quality = 0.72;
+  let scale = Math.min(1, maxEdge / Math.max(sourceWidth, sourceHeight));
+  let quality = options.initialQuality ?? DEFAULT_INITIAL_QUALITY;
 
   try {
-    for (let attempt = 0; attempt < 6; attempt += 1) {
+    for (let attempt = 0; attempt < 8; attempt += 1) {
       const width = Math.max(1, Math.round(sourceWidth * scale));
       const height = Math.max(1, Math.round(sourceHeight * scale));
 
@@ -139,8 +227,8 @@ export async function compressImageToDataUrl(
         return dataUrl;
       }
 
-      if (quality > MIN_QUALITY) {
-        quality = Math.max(MIN_QUALITY, quality - 0.12);
+      if (quality > minQuality) {
+        quality = Math.max(minQuality, Number((quality - 0.12).toFixed(2)));
       } else {
         scale *= 0.75;
       }

@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { PageBanner } from '@/components/layout/PageBanner';
 
 export const metadata: Metadata = {
   title: 'Terms of Service | District Hospital Araria',
@@ -9,16 +10,15 @@ export default function TermsPage() {
   return (
     <>
       <div>
-        <section className="bg-primary-600 py-12 text-white sm:py-16">
-          <div className="container mx-auto px-4">
-            <h1 className="text-3xl font-bold sm:text-4xl">Terms of Service</h1>
-            <p className="mt-2 text-primary-100">
-              Please read these terms carefully before using our website and services.
-            </p>
-          </div>
-        </section>
+        <PageBanner
+          eyebrow="Portal Policies"
+          align="left"
+          accent="primary"
+          title="Terms of Service"
+          description="Terms governing use of the District Hospital Araria website and digital services."
+        />
 
-        <div className="bg-white py-12">
+        <div className="bg-white py-6 sm:py-8">
           <div className="container mx-auto px-4">
             <div className="max-w-3xl mx-auto prose prose-lg text-gray-700">
               <h2 className="text-xl font-bold text-gray-900 mt-8">1. Acceptance of Terms</h2>

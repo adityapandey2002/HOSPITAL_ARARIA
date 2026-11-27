@@ -1,14 +1,58 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { MediaFrame } from '@/components/layout/MediaFrame';
+import Image from 'next/image';
+import { MapPin, Phone } from 'lucide-react';
 import { api, handleApiResponse } from '@/lib/api';
+import { HOSPITAL, shortAddress, telHref } from '@/config/hospital';
 
 interface Slide {
   id: string;
   url: string;
   alt?: string | null;
   caption?: string | null;
+}
+
+function DefaultCampusVisual() {
+  return (
+    <div className="relative aspect-[4/3] w-full max-w-xl overflow-hidden rounded-2xl border border-outline-variant bg-primary-950 shadow-md lg:justify-self-end">
+      <Image
+        src="/media/hospital-hero.jpg"
+        alt="District Hospital Araria outpatient building and landscaped courtyard"
+        fill
+        priority
+        sizes="(min-width: 1024px) 46vw, 100vw"
+        className="object-cover"
+      />
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 bg-gradient-to-t from-primary-950/85 via-primary-950/15 to-transparent"
+      />
+
+      <div className="absolute inset-x-0 bottom-0 flex flex-wrap items-end justify-between gap-2 p-4 sm:p-5">
+        <div className="min-w-0">
+          <p className="text-[0.7rem] font-semibold uppercase tracking-wider text-primary-200">
+            Outpatient &amp; Emergency Block
+          </p>
+          <p className="mt-0.5 flex items-center gap-1.5 text-sm font-medium text-white">
+            <MapPin className="h-3.5 w-3.5 shrink-0 text-primary-200" aria-hidden="true" />
+            <span className="truncate">
+              {HOSPITAL.address.line2}, {shortAddress()}
+            </span>
+          </p>
+        </div>
+
+        {/* Shown on sm+ only so mobile does not duplicate the top EmergencyStrip */}
+        <a
+          href={telHref(HOSPITAL.receptionPhone)}
+          className="hidden items-center gap-1.5 rounded-lg border border-white/25 bg-primary-950/70 px-3 py-1.5 text-xs font-medium text-white backdrop-blur-sm transition-colors hover:bg-primary-900 sm:inline-flex"
+        >
+          <Phone className="h-3.5 w-3.5 text-primary-200" aria-hidden="true" />
+          Reception desk
+        </a>
+      </div>
+    </div>
+  );
 }
 
 export function HomeSlideshow() {
@@ -20,11 +64,11 @@ export function HomeSlideshow() {
     let cancelled = false;
     (async () => {
       try {
-        const res = await api.get<any[]>('/slideshow');
+        const res = await api.get<Slide[]>('/slideshow');
         const data = handleApiResponse(res) ?? [];
-        if (!cancelled) setSlides(data as Slide[]);
+        if (!cancelled && Array.isArray(data)) setSlides(data);
       } catch {
-        // fall back to branded frame
+        // Fall back to curated campus photograph
       } finally {
         if (!cancelled) setLoaded(true);
       }
@@ -40,31 +84,27 @@ export function HomeSlideshow() {
     return () => clearInterval(t);
   }, [slides.length]);
 
-  if (!loaded) {
-    return <MediaFrame priority className="w-full max-w-xl lg:justify-self-end" />;
-  }
-
-  if (slides.length === 0) {
-    return <MediaFrame priority className="w-full max-w-xl lg:justify-self-end" />;
+  if (!loaded || slides.length === 0) {
+    return <DefaultCampusVisual />;
   }
 
   const slide = slides[index];
 
   return (
-    <div className="relative w-full max-w-xl overflow-hidden rounded-2xl lg:justify-self-end">
+    <div className="relative w-full max-w-xl overflow-hidden rounded-2xl border border-outline-variant bg-primary-950 shadow-md lg:justify-self-end">
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={slide.url}
-        alt={slide.alt || 'Hospital slideshow image'}
+        alt={slide.alt || 'District Hospital Araria campus'}
         className="aspect-[4/3] w-full object-cover"
       />
       {slide.caption && (
-        <div className="absolute inset-x-0 bottom-0 bg-black/40 px-4 py-2 text-sm text-white">
+        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-primary-950/85 to-transparent px-4 pb-3 pt-8 text-sm text-white">
           {slide.caption}
         </div>
       )}
       {slides.length > 1 && (
-        <div className="absolute bottom-2 right-3 flex gap-1.5">
+        <div className="absolute bottom-3 right-3 flex gap-1.5">
           {slides.map((s, i) => (
             <button
               key={s.id}
@@ -72,7 +112,7 @@ export function HomeSlideshow() {
               aria-label={`Show image ${i + 1}`}
               aria-current={i === index}
               onClick={() => setIndex(i)}
-              className={`h-2 w-2 rounded-full ${i === index ? 'bg-white' : 'bg-white/50'}`}
+              className={`h-2 w-2 rounded-full transition-colors ${i === index ? 'bg-white' : 'bg-white/45'}`}
             />
           ))}
         </div>

@@ -4,6 +4,7 @@ import { api, handleApiResponse } from '@/lib/api';
 import { cn } from '@dh-araria/shared/utils';
 import { Button } from '@dh-araria/ui/components';
 import Link from 'next/link';
+import { PageBanner } from '@/components/layout/PageBanner';
 import {
   Stethoscope,
   Star,
@@ -105,16 +106,14 @@ export default async function DoctorPage({ params }: DoctorPageProps) {
   return (
     <>
       <div>
-        <section className="bg-primary-600 py-16 text-white sm:py-20">
-          <div className="container mx-auto px-4 text-center">
-            <h1 className="mb-4 text-4xl font-bold sm:text-5xl">Dr. {doctor.name}</h1>
-            <p className="mx-auto max-w-3xl text-xl text-primary-100">
-              {doctor.specialization} &bull; {doctor.department.name}
-            </p>
-          </div>
-        </section>
+        <PageBanner
+          eyebrow="Specialist Profile"
+          accent="primary"
+          title={`Dr. ${doctor.name}`}
+          description={`${doctor.specialization} · ${doctor.department.name}`}
+        />
 
-        <div className="bg-white py-12">
+        <div className="bg-white py-6 sm:py-8">
           <div className="container mx-auto px-4">
             <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
               {/* Doctor Profile */}

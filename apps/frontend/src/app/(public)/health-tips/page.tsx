@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { PageBanner } from '@/components/layout/PageBanner';
 
 export const metadata: Metadata = {
   title: 'Health Tips | District Hospital Araria',
@@ -36,16 +37,15 @@ export default function HealthTipsPage() {
   return (
     <>
       <div>
-        <section className="bg-primary-600 py-12 text-white sm:py-16">
-          <div className="container mx-auto px-4">
-            <h1 className="text-3xl font-bold sm:text-4xl">Health Tips</h1>
-            <p className="mt-2 text-primary-100">
-              Simple wellness advice to keep you and your family healthy.
-            </p>
-          </div>
-        </section>
+        <PageBanner
+          eyebrow="Public Health"
+          align="left"
+          accent="primary"
+          title="Health Tips"
+          description="Simple everyday wellness guidance to help keep you and your family healthy."
+        />
 
-        <div className="bg-white py-12">
+        <div className="bg-white py-6 sm:py-8">
           <div className="container mx-auto px-4">
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
               {tips.map((tip) => (
