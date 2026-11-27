@@ -20,10 +20,10 @@ export interface ContainerProps extends React.HTMLAttributes<HTMLElement> {
 }
 
 const CONTAINER_SIZES: Record<ContainerSize, string> = {
-  prose: 'max-w-[72ch]',
-  content: 'max-w-3xl',
-  wide: 'max-w-7xl 2xl:max-w-[90rem]',
-  admin: 'max-w-[100rem]',
+  prose: 'max-w-[78ch]',
+  content: 'max-w-4xl',
+  wide: 'max-w-none',
+  admin: 'max-w-none',
   full: 'max-w-none',
 };
 
@@ -33,7 +33,7 @@ const Container = React.forwardRef<HTMLElement, ContainerProps>(
       // The generic ref is narrowed by the caller; the DOM node is correct at runtime.
       ref={ref as React.Ref<never>}
       className={cn(
-        'mx-auto w-full px-4 sm:px-6 lg:px-8',
+        'mx-auto w-full px-[clamp(1rem,2.5vw,2.75rem)]',
         CONTAINER_SIZES[size],
         size !== 'full' && 'min-w-0',
         className

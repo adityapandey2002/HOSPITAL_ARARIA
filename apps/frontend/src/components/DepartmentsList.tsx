@@ -150,7 +150,7 @@ export function DepartmentsList() {
         </div>
 
         {isLoading ? (
-          <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
             {Array.from({ length: 8 }).map((_, idx) => (
               <div
                 key={idx}
@@ -194,7 +194,7 @@ export function DepartmentsList() {
             </p>
           </div>
         ) : (
-          <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
             {departments.map((dept) => {
               const Icon = dept.icon;
               return (

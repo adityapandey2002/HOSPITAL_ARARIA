@@ -76,14 +76,30 @@ export function BloodBankInventory() {
   const [selectedCenterGroups, setSelectedCenterGroups] = useState<Record<string, string>>({});
   const [lastRefresh, setLastRefresh] = useState<Date | null>(null);
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (forceRefresh = false) => {
     setLoading(true);
     setError(null);
     setDistrictError(null);
 
+    const districtEndpoint = forceRefresh
+      ? '/api/blood/araria?refresh=1'
+      : '/api/blood/araria';
+
     const [localResult, districtResult] = await Promise.allSettled([
       api.get<LocalBloodStockItem[]>('/blood-bank', { limit: 100 }),
-      api.get<EraktkoshDistrictData>('/blood/araria'),
+      fetch(districtEndpoint, { cache: 'no-store' }).then(async (res) => {
+        const json = (await res.json()) as {
+          success?: boolean;
+          data?: EraktkoshDistrictData;
+          error?: { message?: string };
+        };
+        if (!res.ok || !json?.data) {
+          throw new Error(
+            json?.error?.message || 'District e-RaktKosh data is currently unavailable.'
+          );
+        }
+        return json.data;
+      }),
     ]);
 
     let localOk = false;
@@ -108,8 +124,7 @@ export function BloodBankInventory() {
     }
 
     if (districtResult.status === 'fulfilled') {
-      const res = districtResult.value as unknown as { data?: EraktkoshDistrictData } & Partial<EraktkoshDistrictData>;
-      const payload = res?.data ?? (res?.centers ? (res as EraktkoshDistrictData) : null);
+      const payload = districtResult.value;
       if (payload && Array.isArray(payload.centers)) {
         setDistrictData(payload);
         districtOk = true;
@@ -134,7 +149,7 @@ export function BloodBankInventory() {
   }, []);
 
   useEffect(() => {
-    void load();
+    void load(false);
   }, [load]);
 
   const { facilities, rows } = useMemo(
@@ -159,7 +174,12 @@ export function BloodBankInventory() {
         bloodGroup: selectedGroup,
         componentType: selectedComponent,
         searchQuery,
-      }),
+      }).sort(
+        (a, b) =>
+          b.unitsAvailable - a.unitsAvailable ||
+          a.facilityName.localeCompare(b.facilityName) ||
+          a.groupLabel.localeCompare(b.groupLabel)
+      ),
     [rows, selectedFacility, selectedGroup, selectedComponent, searchQuery]
   );
 
@@ -211,18 +231,18 @@ export function BloodBankInventory() {
           </div>
           <div className="flex flex-wrap items-center gap-3">
             {districtData?.freshness && (
-              <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-medium capitalize text-gray-700">
-                e-RaktKosh: {districtData.freshness}
+              <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-700">
+                e-RaktKosh: <span className="capitalize">{districtData.freshness}</span>
               </span>
             )}
             <button
               type="button"
-              onClick={() => void load()}
+              onClick={() => void load(true)}
               disabled={loading}
               className="flex items-center gap-2 rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium transition-colors hover:bg-gray-50 disabled:opacity-50"
             >
               <RefreshCw className={cn('h-4 w-4', loading && 'animate-spin')} aria-hidden="true" />
-              <span>Refresh</span>
+              <span>Refresh Live</span>
             </button>
             {lastRefresh && (
               <span className="hidden text-xs text-gray-500 sm:block">
@@ -406,7 +426,7 @@ export function BloodBankInventory() {
               <div className="mt-4 flex flex-wrap items-center justify-center gap-3">
                 <button
                   type="button"
-                  onClick={() => void load()}
+                  onClick={() => void load(true)}
                   className="inline-flex items-center gap-1.5 rounded-lg bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700"
                 >
                   <RefreshCw className="h-4 w-4" aria-hidden="true" />
@@ -453,7 +473,8 @@ export function BloodBankInventory() {
                     </Badge>
                   </div>
                   <p className="text-2xl font-bold text-gray-900">
-                    {numberFormatter.format(item.totalUnits)} units
+                    {numberFormatter.format(item.totalUnits)}{' '}
+                    {item.totalUnits === 1 ? 'unit' : 'units'}
                   </p>
                   <p className="mt-1 text-xs text-gray-600">
                     {item.count > 0
@@ -481,7 +502,7 @@ export function BloodBankInventory() {
               <p className="mb-4 text-sm text-gray-700">{error}</p>
               <button
                 type="button"
-                onClick={() => void load()}
+                onClick={() => void load(true)}
                 className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium hover:bg-gray-50"
               >
                 Try again
@@ -625,7 +646,7 @@ export function BloodBankInventory() {
               {districtError ?? 'District e-RaktKosh availability is currently unavailable.'}{' '}
               <button
                 type="button"
-                onClick={() => void load()}
+                onClick={() => void load(true)}
                 className="font-medium text-primary-700 underline"
               >
                 Retry

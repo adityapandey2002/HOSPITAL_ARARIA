@@ -198,7 +198,7 @@ export function DoctorsList() {
 
         {/* Doctors Grid */}
         {isLoading ? (
-          <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
             {Array.from({ length: 6 }).map((_, idx) => (
               <div
                 key={idx}
@@ -225,7 +225,7 @@ export function DoctorsList() {
             </button>
           </div>
         ) : filteredDoctors.length > 0 ? (
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
             {filteredDoctors.map((doctor) => (
               <article
                 key={doctor.id}

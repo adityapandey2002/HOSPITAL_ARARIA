@@ -140,7 +140,7 @@ export function SiteHeader() {
       <Container size="wide" className="flex h-16 items-center justify-between gap-2 md:h-[4.25rem]">
         <BrandLockup onNavigate={() => setMenuOpen(false)} />
 
-        <nav aria-label="Main navigation" className="hidden min-w-0 items-center gap-0.5 xl:flex">
+        <nav aria-label="Main navigation" className="hidden min-w-0 items-center gap-0.5 xl:flex 2xl:gap-1.5">
           {PUBLIC_NAV.map((item) => {
             const active = isActivePath(pathname, item.href);
             return (
@@ -149,7 +149,7 @@ export function SiteHeader() {
                 href={item.href}
                 aria-current={active ? 'page' : undefined}
                 className={cn(
-                  'whitespace-nowrap rounded-lg px-2 py-2 text-[0.8125rem] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-600 focus-visible:ring-offset-2 xl:px-2.5',
+                  'whitespace-nowrap rounded-lg px-2 py-2 text-[0.8125rem] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-600 focus-visible:ring-offset-2 xl:px-2.5 2xl:px-3.5 2xl:text-sm',
                   active
                     ? 'bg-primary-50 text-primary-700'
                     : 'text-on-surface-variant hover:bg-surface-low hover:text-on-surface'

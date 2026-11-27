@@ -50,7 +50,7 @@ export function HomeHero() {
 
       <Container
         size="wide"
-        className="relative grid gap-6 py-4 sm:py-6 lg:grid-cols-[1.05fr_0.95fr] lg:items-center lg:gap-10 lg:py-8"
+        className="relative grid gap-6 py-4 sm:py-6 lg:grid-cols-[1.05fr_0.95fr] lg:items-center lg:gap-10 xl:gap-14 lg:py-8"
       >
         <div className="min-w-0">
           <p className="inline-flex items-center gap-2 rounded-full border border-primary-200 bg-card px-2.5 py-0.5 text-xs font-medium text-primary-800">
@@ -58,11 +58,11 @@ export function HomeHero() {
             Government of Bihar · Department of Health
           </p>
 
-          <h1 className="mt-2.5 text-balance font-heading text-[clamp(1.6rem,3.4vw,2.35rem)] font-bold leading-[1.12] tracking-tight text-on-surface">
+          <h1 className="mt-2.5 text-balance font-heading text-[clamp(1.65rem,3vw,2.6rem)] font-bold leading-[1.12] tracking-tight text-on-surface">
             District Hospital <span className="text-primary-700">Araria</span>
           </h1>
 
-          <p className="mt-2.5 max-w-xl text-sm leading-relaxed text-on-surface-variant sm:text-base">
+          <p className="mt-2.5 max-w-2xl text-sm leading-relaxed text-on-surface-variant sm:text-base">
             Book an OPD appointment, find specialist doctors, check live district blood
             availability, or raise a complaint — all public healthcare services in one place.
           </p>

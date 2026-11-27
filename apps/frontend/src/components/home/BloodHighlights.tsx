@@ -13,10 +13,20 @@ import {
 } from '@dh-araria/ui/components';
 import { BLOOD_GROUP_LABELS, BloodGroup } from '@dh-araria/shared/types';
 import { api } from '@/lib/api';
+import {
+  mapEraktkoshGroup,
+  type EraktkoshDistrictData,
+} from '@/lib/blood-availability';
 import { HOSPITAL, telHref } from '@/config/hospital';
 
 const LOW_STOCK_THRESHOLD = 20;
 const CRITICAL_STOCK_THRESHOLD = 10;
+
+const istFormatter = new Intl.DateTimeFormat('en-IN', {
+  timeZone: 'Asia/Kolkata',
+  dateStyle: 'medium',
+  timeStyle: 'short',
+});
 
 type CellStatus = 'available' | 'low' | 'critical' | 'unknown';
 
@@ -48,20 +58,90 @@ function statusFor(units: number | null): CellStatus {
   return 'available';
 }
 
+function summarizeEraktkoshToMap(
+  district: EraktkoshDistrictData
+): Record<string, Record<string, number>> {
+  const result: Record<string, Record<string, number>> = {};
+  for (const center of district.centers) {
+    if (center.reportStatus !== 'reporting') continue;
+    for (const group of center.groups) {
+      const mappedGroup = mapEraktkoshGroup(group.code);
+      if (!mappedGroup) continue;
+      if (!result[mappedGroup]) result[mappedGroup] = {};
+      for (const comp of group.components) {
+        if (comp.status === 'not_reported' || comp.units === null) continue;
+        result[mappedGroup][comp.code] = (result[mappedGroup][comp.code] ?? 0) + comp.units;
+      }
+    }
+  }
+  return result;
+}
+
 export function BloodHighlights() {
   const [summary, setSummary] = useState<Record<string, Record<string, number>> | null>(null);
+  const [sourceNote, setSourceNote] = useState<string>(
+    'Live availability across District Hospital Araria and Araria district blood centres (e-RaktKosh). Call before travelling.'
+  );
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading');
 
   const load = useCallback(async () => {
     setStatus('loading');
-    try {
-      const response = await api.get<Record<string, Record<string, number>>>('/blood-bank/summary');
-      setSummary(response.success ? (response.data ?? {}) : {});
+    const [localResult, liveResult] = await Promise.allSettled([
+      api.get<Record<string, Record<string, number>>>('/blood-bank/summary'),
+      fetch('/api/blood/araria', { cache: 'no-store' }).then(async (res) => {
+        const json = (await res.json()) as { data?: EraktkoshDistrictData };
+        if (!res.ok || !json?.data) {
+          throw new Error('Live e-RaktKosh feed unavailable');
+        }
+        return json.data;
+      }),
+    ]);
+
+    const localData =
+      localResult.status === 'fulfilled' && localResult.value?.success
+        ? localResult.value.data ?? null
+        : null;
+    const hasLocal = Boolean(localData && Object.keys(localData).length > 0);
+
+    const liveData = liveResult.status === 'fulfilled' ? liveResult.value : null;
+    const liveSummary = liveData ? summarizeEraktkoshToMap(liveData) : null;
+    const hasLive = Boolean(liveSummary && Object.keys(liveSummary).length > 0);
+
+    if (hasLocal && localData) {
+      setSummary(localData);
+      setSourceNote(
+        'Units recorded at District Hospital Araria blood bank. Availability is indicative — call before travelling.'
+      );
       setStatus('ready');
-    } catch {
-      setSummary(null);
-      setStatus('error');
+      return;
     }
+
+    if (hasLive && liveSummary && liveData) {
+      setSummary(liveSummary);
+      const sourceTime = liveData.sourceAsOf
+        ? `Centre updated ${istFormatter.format(new Date(liveData.sourceAsOf))}`
+        : null;
+      const checkedTime = liveData.asOf
+        ? `Checked ${istFormatter.format(new Date(liveData.asOf))}`
+        : null;
+      const reporting = `${liveData.counts.centersReporting} of ${liveData.counts.centersListed} Araria e-RaktKosh centres reporting`;
+      setSourceNote(
+        [reporting, sourceTime, checkedTime, 'Call before travelling.']
+          .filter(Boolean)
+          .join(' · ')
+      );
+      setStatus('ready');
+      return;
+    }
+
+    if (localResult.status === 'fulfilled' || liveResult.status === 'fulfilled') {
+      setSummary({});
+      setStatus('ready');
+      return;
+    }
+
+    setSummary(null);
+    setStatus('error');
   }, []);
 
   useEffect(() => {
@@ -94,7 +174,7 @@ export function BloodHighlights() {
       spacing="md"
       eyebrow="Blood bank"
       title="Group-wise availability"
-      description="Units recorded at the hospital blood bank. Availability is indicative — call before travelling."
+      description={sourceNote}
       action={
         <Link
           href="/blood-bank"
@@ -168,7 +248,9 @@ export function BloodHighlights() {
                   {cell.label}
                 </span>
                 <span className="mt-1 block text-label-sm font-normal">
-                  {cell.units === null ? '—' : `${cell.units} units`}
+                  {cell.units === null
+                    ? '—'
+                    : `${cell.units} ${cell.units === 1 ? 'unit' : 'units'}`}
                 </span>
                 <span className="mt-1 block text-label-sm font-semibold">
                   {STATUS_LABELS[cell.status]}

@@ -4,6 +4,9 @@ module.exports = {
     './src/**/*.{js,ts,jsx,tsx,mdx}',
     '../../packages/ui/src/**/*.{js,ts,jsx,tsx,mdx}',
   ],
+  corePlugins: {
+    container: false,
+  },
   theme: {
     extend: {
       colors: {
@@ -136,16 +139,6 @@ module.exports = {
         // Deprecated alias: the design contract caps radius at 0.75rem.
         '2xl': '0.75rem',
         full: '9999px',
-      },
-      container: {
-        center: true,
-        padding: {
-          DEFAULT: '1rem',
-          sm: '2rem',
-          lg: '4rem',
-          xl: '5rem',
-          '2xl': '6rem',
-        },
       },
       animation: {
         'fade-in': 'fadeIn 0.5s ease-out',

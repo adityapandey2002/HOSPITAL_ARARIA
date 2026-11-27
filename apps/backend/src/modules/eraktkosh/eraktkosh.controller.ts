@@ -1,4 +1,12 @@
-import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Headers,
+  Post,
+  Query,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 
 import { Roles } from '../../common/decorators/roles.decorator';
@@ -14,11 +22,30 @@ export class EraktkoshController {
 
   @Get('araria')
   @Public()
-  @Public()
   @ApiOperation({ summary: 'Current blood availability for Araria district' })
   @ApiResponse({ status: 200, description: 'Availability retrieved' })
-  async getAraria() {
-    return this.service.getAvailability();
+  async getAraria(@Query('refresh') refresh?: string) {
+    const forceRefresh = refresh === '1' || refresh === 'true';
+    return this.service.getAvailability({ refresh: forceRefresh });
+  }
+
+  @Get('cron-sync')
+  @Public()
+  @ApiOperation({ summary: 'Scheduled Vercel Cron hook for e-RaktKosh sync' })
+  async cronSync(
+    @Headers('authorization') authHeader?: string,
+    @Headers('x-cron-secret') cronSecretHeader?: string
+  ) {
+    const expectedSecret = process.env.CRON_SECRET?.trim();
+    if (!expectedSecret) {
+      throw new UnauthorizedException('CRON_SECRET is not configured');
+    }
+    const bearerToken = authHeader?.startsWith('Bearer ') ? authHeader.slice(7).trim() : '';
+    const provided = cronSecretHeader?.trim() || bearerToken;
+    if (!provided || provided !== expectedSecret) {
+      throw new UnauthorizedException('Invalid cron secret');
+    }
+    return this.service.sync('schedule');
   }
 
   @Post('sync')

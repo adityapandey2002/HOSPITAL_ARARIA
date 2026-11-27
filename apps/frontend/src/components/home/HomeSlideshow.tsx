@@ -15,13 +15,13 @@ interface Slide {
 
 function DefaultCampusVisual() {
   return (
-    <div className="relative aspect-[4/3] w-full max-w-xl overflow-hidden rounded-2xl border border-outline-variant bg-primary-950 shadow-md lg:justify-self-end">
+    <div className="relative aspect-[16/10] max-h-[460px] w-full overflow-hidden rounded-2xl border border-outline-variant bg-primary-950 shadow-md">
       <Image
         src="/media/hospital-hero.jpg"
         alt="District Hospital Araria outpatient building and landscaped courtyard"
         fill
         priority
-        sizes="(min-width: 1024px) 46vw, 100vw"
+        sizes="(min-width: 1024px) 48vw, 100vw"
         className="object-cover"
       />
       <div
@@ -91,12 +91,12 @@ export function HomeSlideshow() {
   const slide = slides[index];
 
   return (
-    <div className="relative w-full max-w-xl overflow-hidden rounded-2xl border border-outline-variant bg-primary-950 shadow-md lg:justify-self-end">
+    <div className="relative w-full overflow-hidden rounded-2xl border border-outline-variant bg-primary-950 shadow-md">
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={slide.url}
         alt={slide.alt || 'District Hospital Araria campus'}
-        className="aspect-[4/3] w-full object-cover"
+        className="aspect-[16/10] max-h-[460px] w-full object-cover"
       />
       {slide.caption && (
         <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-primary-950/85 to-transparent px-4 pb-3 pt-8 text-sm text-white">
