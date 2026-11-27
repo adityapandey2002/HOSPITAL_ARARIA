@@ -12,7 +12,7 @@
   "crons": [
     {
       "path": "/api/v1/blood/cron-sync",
-      "schedule": "0 */2 * * *"
+      "schedule": "0 3 * * *"
     }
   ],
   "rewrites": [{ "source": "/(.*)", "destination": "/api/index" }]

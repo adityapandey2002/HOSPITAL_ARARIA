@@ -24,16 +24,25 @@ export class EraktkoshService implements OnModuleInit {
   ) {}
 
   async onModuleInit(): Promise<void> {
-    const client = await this.drizzle.pool.connect();
     try {
-      const applied = await runMigrations(client as any);
-      if (applied.length) this.logger.log(`migrations applied: ${applied.join(', ')}`);
-    } finally {
-      client.release();
+      const client = await this.drizzle.pool.connect();
+      try {
+        const applied = await runMigrations(client as any);
+        if (applied.length) this.logger.log(`migrations applied: ${applied.join(', ')}`);
+      } finally {
+        client.release();
+      }
+    } catch (error) {
+      this.logger.error(
+        `e-RaktKosh migration check failed during init: ${
+          error instanceof Error ? error.message : String(error)
+        }`
+      );
     }
 
-    // Trigger a non-blocking freshness check after boot so fresh deployments aren't empty
-    if (process.env.NODE_ENV !== 'test') {
+    // Trigger a non-blocking freshness check after boot on long-lived servers
+    // (skip eager background work on serverless cold starts where requests invoke on-demand refresh)
+    if (process.env.NODE_ENV !== 'test' && !process.env.VERCEL) {
       void this.ensureFreshAvailability(false).catch((error) => {
         this.logger.warn(
           `Initial e-RaktKosh sync check failed: ${error instanceof Error ? error.message : String(error)}`
