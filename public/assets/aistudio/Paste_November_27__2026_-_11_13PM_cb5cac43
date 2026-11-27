@@ -1,0 +1,400 @@
+23:04:51.435 Running build in Washington, D.C., USA (East) – iad1
+23:04:51.435 Build machine configuration: 2 cores, 8 GB
+23:04:51.600 Cloning github.com/adityapandey2002/HOSPITAL_ARARIA (Branch: main, Commit: fd6f63a)
+23:04:52.247 Cloning completed: 647.000ms
+23:04:53.221 Restored build cache from previous deployment (5CAA7e1zNcfWGrTZk7bYZ6eGNHpA)
+23:04:54.180 Running "vercel build"
+23:04:54.189 Vercel CLI 66.6.0
+23:04:55.011 Running "install" command: `cd ../.. && (npm ci --include=dev --no-audit --no-fund || npm install --include=dev --no-audit --no-fund)`...
+23:04:55.606 npm warn Unknown env config "cache-dir". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+23:05:01.905 npm error code EUSAGE
+23:05:01.925 npm error
+23:05:01.926 npm error `npm ci` can only install packages when your package.json and package-lock.json or npm-shrinkwrap.json are in sync. Please update your lock file with `npm install` before continuing.
+23:05:01.926 npm error
+23:05:01.926 npm error Missing: blood-availability-araria@1.0.0 from lock file
+23:05:01.926 npm error Missing: blood-availability-araria@1.0.0 from lock file
+23:05:01.927 npm error Missing: @electric-sql/pglite@0.2.17 from lock file
+23:05:01.927 npm error Missing: @types/node@22.20.7 from lock file
+23:05:01.927 npm error Missing: vitest@2.1.9 from lock file
+23:05:01.927 npm error Missing: @vitest/expect@2.1.9 from lock file
+23:05:01.927 npm error Missing: @vitest/mocker@2.1.9 from lock file
+23:05:01.927 npm error Missing: @vitest/pretty-format@2.1.9 from lock file
+23:05:01.927 npm error Missing: @vitest/runner@2.1.9 from lock file
+23:05:01.927 npm error Missing: @vitest/snapshot@2.1.9 from lock file
+23:05:01.927 npm error Missing: @vitest/spy@2.1.9 from lock file
+23:05:01.927 npm error Missing: @vitest/utils@2.1.9 from lock file
+23:05:01.927 npm error Missing: chai@5.3.3 from lock file
+23:05:01.927 npm error Missing: expect-type@1.4.0 from lock file
+23:05:01.929 npm error Missing: magic-string@0.30.21 from lock file
+23:05:01.929 npm error Missing: pathe@1.1.2 from lock file
+23:05:01.929 npm error Missing: std-env@3.10.0 from lock file
+23:05:01.929 npm error Missing: tinybench@2.9.0 from lock file
+23:05:01.929 npm error Missing: tinyexec@0.3.2 from lock file
+23:05:01.929 npm error Missing: tinypool@1.1.1 from lock file
+23:05:01.929 npm error Missing: tinyrainbow@1.2.0 from lock file
+23:05:01.929 npm error Missing: vite@5.4.21 from lock file
+23:05:01.930 npm error Missing: vite-node@2.1.9 from lock file
+23:05:01.930 npm error Missing: why-is-node-running@2.3.0 from lock file
+23:05:01.930 npm error Missing: estree-walker@3.0.3 from lock file
+23:05:01.930 npm error Missing: magic-string@0.30.21 from lock file
+23:05:01.930 npm error Missing: magic-string@0.30.21 from lock file
+23:05:01.930 npm error Missing: tinyspy@3.0.2 from lock file
+23:05:01.930 npm error Missing: loupe@3.2.1 from lock file
+23:05:01.930 npm error Missing: assertion-error@2.0.1 from lock file
+23:05:01.930 npm error Missing: check-error@2.1.3 from lock file
+23:05:01.930 npm error Missing: deep-eql@5.0.2 from lock file
+23:05:01.930 npm error Missing: pathval@2.0.1 from lock file
+23:05:01.930 npm error Missing: esbuild@0.21.5 from lock file
+23:05:01.931 npm error Missing: fsevents@2.3.3 from lock file
+23:05:01.931 npm error Missing: rollup@4.68.9 from lock file
+23:05:01.931 npm error Missing: @esbuild/aix-ppc64@0.21.5 from lock file
+23:05:01.931 npm error Missing: @esbuild/android-arm@0.21.5 from lock file
+23:05:01.931 npm error Missing: @esbuild/android-arm64@0.21.5 from lock file
+23:05:01.931 npm error Missing: @esbuild/android-x64@0.21.5 from lock file
+23:05:01.931 npm error Missing: @esbuild/darwin-arm64@0.21.5 from lock file
+23:05:01.931 npm error Missing: @esbuild/darwin-x64@0.21.5 from lock file
+23:05:01.931 npm error Missing: @esbuild/freebsd-arm64@0.21.5 from lock file
+23:05:01.931 npm error Missing: @esbuild/freebsd-x64@0.21.5 from lock file
+23:05:01.931 npm error Missing: @esbuild/linux-arm@0.21.5 from lock file
+23:05:01.931 npm error Missing: @esbuild/linux-arm64@0.21.5 from lock file
+23:05:01.932 npm error Missing: @esbuild/linux-ia32@0.21.5 from lock file
+23:05:01.932 npm error Missing: @esbuild/linux-loong64@0.21.5 from lock file
+23:05:01.932 npm error Missing: @esbuild/linux-mips64el@0.21.5 from lock file
+23:05:01.932 npm error Missing: @esbuild/linux-ppc64@0.21.5 from lock file
+23:05:01.932 npm error Missing: @esbuild/linux-riscv64@0.21.5 from lock file
+23:05:01.932 npm error Missing: @esbuild/linux-s390x@0.21.5 from lock file
+23:05:01.932 npm error Missing: @esbuild/linux-x64@0.21.5 from lock file
+23:05:01.932 npm error Missing: @esbuild/netbsd-x64@0.21.5 from lock file
+23:05:01.932 npm error Missing: @esbuild/openbsd-x64@0.21.5 from lock file
+23:05:01.932 npm error Missing: @esbuild/sunos-x64@0.21.5 from lock file
+23:05:01.932 npm error Missing: @esbuild/win32-arm64@0.21.5 from lock file
+23:05:01.932 npm error Missing: @esbuild/win32-ia32@0.21.5 from lock file
+23:05:01.932 npm error Missing: @esbuild/win32-x64@0.21.5 from lock file
+23:05:01.932 npm error Missing: @esbuild/aix-ppc64@0.25.12 from lock file
+23:05:01.932 npm error Missing: @esbuild/android-arm@0.25.12 from lock file
+23:05:01.932 npm error Missing: @esbuild/android-arm64@0.25.12 from lock file
+23:05:01.932 npm error Missing: @esbuild/android-x64@0.25.12 from lock file
+23:05:01.932 npm error Missing: @esbuild/darwin-arm64@0.25.12 from lock file
+23:05:01.933 npm error Missing: @esbuild/darwin-x64@0.25.12 from lock file
+23:05:01.933 npm error Missing: @esbuild/freebsd-arm64@0.25.12 from lock file
+23:05:01.933 npm error Missing: @esbuild/freebsd-x64@0.25.12 from lock file
+23:05:01.933 npm error Missing: @esbuild/linux-arm@0.25.12 from lock file
+23:05:01.933 npm error Missing: @esbuild/linux-arm64@0.25.12 from lock file
+23:05:01.933 npm error Missing: @esbuild/linux-ia32@0.25.12 from lock file
+23:05:01.933 npm error Missing: @esbuild/linux-loong64@0.25.12 from lock file
+23:05:01.933 npm error Missing: @esbuild/linux-mips64el@0.25.12 from lock file
+23:05:01.933 npm error Missing: @esbuild/linux-ppc64@0.25.12 from lock file
+23:05:01.933 npm error Missing: @esbuild/linux-riscv64@0.25.12 from lock file
+23:05:01.933 npm error Missing: @esbuild/linux-s390x@0.25.12 from lock file
+23:05:01.933 npm error Missing: @esbuild/linux-x64@0.25.12 from lock file
+23:05:01.933 npm error Missing: @esbuild/netbsd-arm64@0.25.12 from lock file
+23:05:01.933 npm error Missing: @esbuild/netbsd-x64@0.25.12 from lock file
+23:05:01.933 npm error Missing: @esbuild/openbsd-arm64@0.25.12 from lock file
+23:05:01.933 npm error Missing: @esbuild/openbsd-x64@0.25.12 from lock file
+23:05:01.933 npm error Missing: @esbuild/openharmony-arm64@0.25.12 from lock file
+23:05:01.933 npm error Missing: @esbuild/sunos-x64@0.25.12 from lock file
+23:05:01.933 npm error Missing: @esbuild/win32-arm64@0.25.12 from lock file
+23:05:01.933 npm error Missing: @esbuild/win32-ia32@0.25.12 from lock file
+23:05:01.933 npm error Missing: @rollup/rollup-android-arm-eabi@4.68.9 from lock file
+23:05:01.933 npm error Missing: @rollup/rollup-android-arm64@4.68.9 from lock file
+23:05:01.933 npm error Missing: @rollup/rollup-android-x64@4.68.9 from lock file
+23:05:01.933 npm error Missing: @rollup/rollup-darwin-arm64@4.68.9 from lock file
+23:05:01.933 npm error Missing: @rollup/rollup-darwin-x64@4.68.9 from lock file
+23:05:01.933 npm error Missing: @rollup/rollup-freebsd-arm64@4.68.9 from lock file
+23:05:01.933 npm error Missing: @rollup/rollup-freebsd-x64@4.68.9 from lock file
+23:05:01.933 npm error Missing: @rollup/rollup-linux-arm-gnueabihf@4.68.9 from lock file
+23:05:01.933 npm error Missing: @rollup/rollup-linux-arm-musleabihf@4.68.9 from lock file
+23:05:01.933 npm error Missing: @rollup/rollup-linux-arm64-gnu@4.68.9 from lock file
+23:05:01.933 npm error Missing: @rollup/rollup-linux-arm64-musl@4.68.9 from lock file
+23:05:01.933 npm error Missing: @rollup/rollup-linux-loong64-gnu@4.68.9 from lock file
+23:05:01.934 npm error Missing: @rollup/rollup-linux-loong64-musl@4.68.9 from lock file
+23:05:01.934 npm error Missing: @rollup/rollup-linux-ppc64-gnu@4.68.9 from lock file
+23:05:01.934 npm error Missing: @rollup/rollup-linux-ppc64-musl@4.68.9 from lock file
+23:05:01.934 npm error Missing: @rollup/rollup-linux-riscv64-gnu@4.68.9 from lock file
+23:05:01.934 npm error Missing: @rollup/rollup-linux-riscv64-musl@4.68.9 from lock file
+23:05:01.934 npm error Missing: @rollup/rollup-linux-s390x-gnu@4.68.9 from lock file
+23:05:01.934 npm error Missing: @rollup/rollup-linux-x64-gnu@4.68.9 from lock file
+23:05:01.934 npm error Missing: @rollup/rollup-linux-x64-musl@4.68.9 from lock file
+23:05:01.934 npm error Missing: @rollup/rollup-openbsd-x64@4.68.9 from lock file
+23:05:01.934 npm error Missing: @rollup/rollup-openharmony-arm64@4.68.9 from lock file
+23:05:01.934 npm error Missing: @rollup/rollup-win32-arm64-msvc@4.68.9 from lock file
+23:05:01.934 npm error Missing: @rollup/rollup-win32-ia32-msvc@4.68.9 from lock file
+23:05:01.934 npm error Missing: @rollup/rollup-win32-x64-gnu@4.68.9 from lock file
+23:05:01.934 npm error Missing: @rollup/rollup-win32-x64-msvc@4.68.9 from lock file
+23:05:01.934 npm error Invalid: lock file's @types/estree@1.0.9 does not satisfy @types/estree@1.0.11
+23:05:01.934 npm error Missing: cac@6.7.14 from lock file
+23:05:01.934 npm error Missing: siginfo@2.0.0 from lock file
+23:05:01.934 npm error Missing: stackback@0.0.2 from lock file
+23:05:01.934 npm error Missing: @esbuild/android-arm@0.18.20 from lock file
+23:05:01.934 npm error Missing: @esbuild/android-arm64@0.18.20 from lock file
+23:05:01.934 npm error Missing: @esbuild/android-x64@0.18.20 from lock file
+23:05:01.934 npm error Missing: @esbuild/darwin-arm64@0.18.20 from lock file
+23:05:01.934 npm error Missing: @esbuild/darwin-x64@0.18.20 from lock file
+23:05:01.934 npm error Missing: @esbuild/freebsd-arm64@0.18.20 from lock file
+23:05:01.934 npm error Missing: @esbuild/freebsd-x64@0.18.20 from lock file
+23:05:01.934 npm error Missing: @esbuild/linux-arm@0.18.20 from lock file
+23:05:01.934 npm error Missing: @esbuild/linux-arm64@0.18.20 from lock file
+23:05:01.934 npm error Missing: @esbuild/linux-ia32@0.18.20 from lock file
+23:05:01.934 npm error Missing: @esbuild/linux-loong64@0.18.20 from lock file
+23:05:01.934 npm error Missing: @esbuild/linux-mips64el@0.18.20 from lock file
+23:05:01.934 npm error Missing: @esbuild/linux-ppc64@0.18.20 from lock file
+23:05:01.934 npm error Missing: @esbuild/linux-riscv64@0.18.20 from lock file
+23:05:01.934 npm error Missing: @esbuild/linux-s390x@0.18.20 from lock file
+23:05:01.935 npm error Missing: @esbuild/linux-x64@0.18.20 from lock file
+23:05:01.935 npm error Missing: @esbuild/netbsd-x64@0.18.20 from lock file
+23:05:01.935 npm error Missing: @esbuild/openbsd-x64@0.18.20 from lock file
+23:05:01.935 npm error Missing: @esbuild/sunos-x64@0.18.20 from lock file
+23:05:01.935 npm error Missing: @esbuild/win32-arm64@0.18.20 from lock file
+23:05:01.935 npm error Missing: @esbuild/win32-ia32@0.18.20 from lock file
+23:05:01.935 npm error Missing: @esbuild/aix-ppc64@0.28.2 from lock file
+23:05:01.935 npm error Missing: @esbuild/android-arm@0.28.2 from lock file
+23:05:01.935 npm error Missing: @esbuild/android-arm64@0.28.2 from lock file
+23:05:01.935 npm error Missing: @esbuild/android-x64@0.28.2 from lock file
+23:05:01.935 npm error Missing: @esbuild/darwin-arm64@0.28.2 from lock file
+23:05:01.935 npm error Missing: @esbuild/darwin-x64@0.28.2 from lock file
+23:05:01.935 npm error Missing: @esbuild/freebsd-arm64@0.28.2 from lock file
+23:05:01.935 npm error Missing: @esbuild/freebsd-x64@0.28.2 from lock file
+23:05:01.935 npm error Missing: @esbuild/linux-arm@0.28.2 from lock file
+23:05:01.935 npm error Missing: @esbuild/linux-arm64@0.28.2 from lock file
+23:05:01.935 npm error Missing: @esbuild/linux-ia32@0.28.2 from lock file
+23:05:01.935 npm error Missing: @esbuild/linux-loong64@0.28.2 from lock file
+23:05:01.935 npm error Missing: @esbuild/linux-mips64el@0.28.2 from lock file
+23:05:01.935 npm error Missing: @esbuild/linux-ppc64@0.28.2 from lock file
+23:05:01.935 npm error Missing: @esbuild/linux-riscv64@0.28.2 from lock file
+23:05:01.935 npm error Missing: @esbuild/linux-s390x@0.28.2 from lock file
+23:05:01.935 npm error Missing: @esbuild/linux-x64@0.28.2 from lock file
+23:05:01.935 npm error Missing: @esbuild/netbsd-arm64@0.28.2 from lock file
+23:05:01.935 npm error Missing: @esbuild/netbsd-x64@0.28.2 from lock file
+23:05:01.935 npm error Missing: @esbuild/openbsd-arm64@0.28.2 from lock file
+23:05:01.935 npm error Missing: @esbuild/openbsd-x64@0.28.2 from lock file
+23:05:01.935 npm error Missing: @esbuild/openharmony-arm64@0.28.2 from lock file
+23:05:01.935 npm error Missing: @esbuild/sunos-x64@0.28.2 from lock file
+23:05:01.935 npm error Missing: @esbuild/win32-arm64@0.28.2 from lock file
+23:05:01.935 npm error Missing: @esbuild/win32-ia32@0.28.2 from lock file
+23:05:01.935 npm error
+23:05:01.935 npm error Clean install a project
+23:05:01.935 npm error
+23:05:01.935 npm error Usage:
+23:05:01.935 npm error npm ci
+23:05:01.935 npm error
+23:05:01.935 npm error Options:
+23:05:01.935 npm error [--install-strategy <hoisted|nested|shallow|linked>] [--legacy-bundling]
+23:05:01.935 npm error [--global-style] [--omit <dev|optional|peer> [--omit <dev|optional|peer> ...]]
+23:05:01.935 npm error [--include <prod|dev|optional|peer> [--include <prod|dev|optional|peer> ...]]
+23:05:01.935 npm error [--strict-peer-deps] [--foreground-scripts] [--ignore-scripts]
+23:05:01.935 npm error [--allow-directory <all|none|root>] [--allow-file <all|none|root>]
+23:05:01.935 npm error [--allow-git <all|none|root>] [--allow-remote <all|none|root>]
+23:05:01.935 npm error [--allow-scripts <package-list> [--allow-scripts <package-list> ...]]
+23:05:01.935 npm error [--strict-allow-scripts] [--dangerously-allow-all-scripts] [--no-audit]
+23:05:01.936 npm error [--no-bin-links] [--no-fund] [--dry-run]
+23:05:01.936 npm error [-w|--workspace <workspace-name> [-w|--workspace <workspace-name> ...]]
+23:05:01.936 npm error [--workspaces] [--include-workspace-root] [--install-links]
+23:05:01.936 npm error
+23:05:01.936 npm error   --install-strategy
+23:05:01.936 npm error     Sets the strategy for installing packages in node_modules.
+23:05:01.936 npm error
+23:05:01.937 npm error   --legacy-bundling
+23:05:01.937 npm error     Instead of hoisting package installs in `node_modules`, install packages
+23:05:01.937 npm error
+23:05:01.937 npm error   --global-style
+23:05:01.937 npm error     Only install direct dependencies in the top level `node_modules`,
+23:05:01.937 npm error
+23:05:01.937 npm error   --omit
+23:05:01.937 npm error     Dependency types to omit from the installation tree on disk.
+23:05:01.937 npm error
+23:05:01.937 npm error   --include
+23:05:01.937 npm error     Option that allows for defining which types of dependencies to install.
+23:05:01.939 npm error
+23:05:01.939 npm error   --strict-peer-deps
+23:05:01.939 npm error     If set to `true`, and `--legacy-peer-deps` is not set, then _any_
+23:05:01.939 npm error
+23:05:01.939 npm error   --foreground-scripts
+23:05:01.939 npm error     Run all build scripts (ie, `preinstall`, `install`, and
+23:05:01.939 npm error
+23:05:01.939 npm error   --ignore-scripts
+23:05:01.939 npm error     If true, npm does not run scripts specified in package.json files.
+23:05:01.939 npm error
+23:05:01.939 npm error   --allow-directory
+23:05:01.939 npm error     Limits the ability for npm to install dependencies from directories.
+23:05:01.939 npm error
+23:05:01.939 npm error   --allow-file
+23:05:01.939 npm error     Limits the ability for npm to install dependencies from tarball files.
+23:05:01.940 npm error
+23:05:01.940 npm error   --allow-git
+23:05:01.940 npm error     Limits the ability for npm to fetch dependencies from git references.
+23:05:01.940 npm error
+23:05:01.940 npm error   --allow-remote
+23:05:01.940 npm error     Limits the ability for npm to fetch dependencies from urls.
+23:05:01.940 npm error
+23:05:01.940 npm error   --allow-scripts
+23:05:01.940 npm error     Comma-separated list of packages whose install-time lifecycle scripts
+23:05:01.941 npm error
+23:05:01.941 npm error   --strict-allow-scripts
+23:05:01.941 npm error     If `true`, turn the install-script policy from a warning into a hard
+23:05:01.941 npm error
+23:05:01.941 npm error   --dangerously-allow-all-scripts
+23:05:01.941 npm error     If `true`, bypass the `allowScripts` policy entirely and run every
+23:05:01.941 npm error
+23:05:01.941 npm error   --audit
+23:05:01.941 npm error     When "true" submit audit reports alongside the current npm command to the
+23:05:01.941 npm error
+23:05:01.941 npm error   --bin-links
+23:05:01.941 npm error     Tells npm to create symlinks (or `.cmd` shims on Windows) for package
+23:05:01.941 npm error
+23:05:01.941 npm error   --fund
+23:05:01.941 npm error     When "true" displays the message at the end of each `npm install`
+23:05:01.941 npm error
+23:05:01.941 npm error   --dry-run
+23:05:01.943 npm error     Indicates that you don't want npm to make any changes and that it should
+23:05:01.943 npm error
+23:05:01.943 npm error   -w|--workspace
+23:05:01.943 npm error     Enable running a command in the context of the configured workspaces of the
+23:05:01.943 npm error
+23:05:01.943 npm error   --workspaces
+23:05:01.943 npm error     Set to true to run the command in the context of **all** configured
+23:05:01.943 npm error
+23:05:01.943 npm error   --include-workspace-root
+23:05:01.943 npm error     Include the workspace root when workspaces are enabled for a command.
+23:05:01.943 npm error
+23:05:01.943 npm error   --install-links
+23:05:01.943 npm error     When set file: protocol dependencies will be packed and installed as
+23:05:01.943 npm error
+23:05:01.943 npm error
+23:05:01.943 npm error aliases: clean-install, ic, install-clean, isntall-clean
+23:05:01.943 npm error
+23:05:01.943 npm error Run "npm help ci" for more info
+23:05:01.944 npm error A complete log of this run can be found in: /vercel/.npm/_logs/2026-11-27T17_34_55_156Z-debug-0.log
+23:05:02.302 npm warn Unknown env config "cache-dir". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+23:05:05.201 npm warn reify invalid or damaged lockfile detected
+23:05:05.201 npm warn reify please re-try this operation once it completes
+23:05:05.201 npm warn reify so that the damage can be corrected, or perform
+23:05:05.201 npm warn reify a fresh install with no lockfile if the problem persists.
+23:05:05.202 npm warn reify invalid or damaged lockfile detected
+23:05:05.202 npm warn reify please re-try this operation once it completes
+23:05:05.202 npm warn reify so that the damage can be corrected, or perform
+23:05:05.203 npm warn reify a fresh install with no lockfile if the problem persists.
+23:05:05.203 npm warn reify invalid or damaged lockfile detected
+23:05:05.203 npm warn reify please re-try this operation once it completes
+23:05:05.203 npm warn reify so that the damage can be corrected, or perform
+23:05:05.203 npm warn reify a fresh install with no lockfile if the problem persists.
+23:05:05.204 npm warn reify invalid or damaged lockfile detected
+23:05:05.204 npm warn reify please re-try this operation once it completes
+23:05:05.204 npm warn reify so that the damage can be corrected, or perform
+23:05:05.204 npm warn reify a fresh install with no lockfile if the problem persists.
+23:05:05.205 npm warn reify invalid or damaged lockfile detected
+23:05:05.205 npm warn reify please re-try this operation once it completes
+23:05:05.205 npm warn reify so that the damage can be corrected, or perform
+23:05:05.205 npm warn reify a fresh install with no lockfile if the problem persists.
+23:05:05.206 npm warn reify invalid or damaged lockfile detected
+23:05:05.206 npm warn reify please re-try this operation once it completes
+23:05:05.206 npm warn reify so that the damage can be corrected, or perform
+23:05:05.206 npm warn reify a fresh install with no lockfile if the problem persists.
+23:05:05.207 npm warn reify invalid or damaged lockfile detected
+23:05:05.207 npm warn reify please re-try this operation once it completes
+23:05:05.207 npm warn reify so that the damage can be corrected, or perform
+23:05:05.207 npm warn reify a fresh install with no lockfile if the problem persists.
+23:05:05.208 npm warn reify invalid or damaged lockfile detected
+23:05:05.208 npm warn reify please re-try this operation once it completes
+23:05:05.208 npm warn reify so that the damage can be corrected, or perform
+23:05:05.208 npm warn reify a fresh install with no lockfile if the problem persists.
+23:05:05.212 npm warn reify invalid or damaged lockfile detected
+23:05:05.212 npm warn reify please re-try this operation once it completes
+23:05:05.213 npm warn reify so that the damage can be corrected, or perform
+23:05:05.213 npm warn reify a fresh install with no lockfile if the problem persists.
+23:05:05.213 npm warn reify invalid or damaged lockfile detected
+23:05:05.213 npm warn reify please re-try this operation once it completes
+23:05:05.213 npm warn reify so that the damage can be corrected, or perform
+23:05:05.213 npm warn reify a fresh install with no lockfile if the problem persists.
+23:05:05.213 npm warn reify invalid or damaged lockfile detected
+23:05:05.213 npm warn reify please re-try this operation once it completes
+23:05:05.213 npm warn reify so that the damage can be corrected, or perform
+23:05:05.213 npm warn reify a fresh install with no lockfile if the problem persists.
+23:05:05.213 npm warn reify invalid or damaged lockfile detected
+23:05:05.213 npm warn reify please re-try this operation once it completes
+23:05:05.213 npm warn reify so that the damage can be corrected, or perform
+23:05:05.213 npm warn reify a fresh install with no lockfile if the problem persists.
+23:05:05.214 npm warn reify invalid or damaged lockfile detected
+23:05:05.214 npm warn reify please re-try this operation once it completes
+23:05:05.214 npm warn reify so that the damage can be corrected, or perform
+23:05:05.214 npm warn reify a fresh install with no lockfile if the problem persists.
+23:05:05.214 npm warn reify invalid or damaged lockfile detected
+23:05:05.215 npm warn reify please re-try this operation once it completes
+23:05:05.215 npm warn reify so that the damage can be corrected, or perform
+23:05:05.215 npm warn reify a fresh install with no lockfile if the problem persists.
+23:05:05.215 npm warn reify invalid or damaged lockfile detected
+23:05:05.215 npm warn reify please re-try this operation once it completes
+23:05:05.215 npm warn reify so that the damage can be corrected, or perform
+23:05:05.215 npm warn reify a fresh install with no lockfile if the problem persists.
+23:05:05.216 npm warn reify invalid or damaged lockfile detected
+23:05:05.216 npm warn reify please re-try this operation once it completes
+23:05:05.216 npm warn reify so that the damage can be corrected, or perform
+23:05:05.216 npm warn reify a fresh install with no lockfile if the problem persists.
+23:05:05.217 npm warn reify invalid or damaged lockfile detected
+23:05:05.217 npm warn reify please re-try this operation once it completes
+23:05:05.217 npm warn reify so that the damage can be corrected, or perform
+23:05:05.218 npm warn reify a fresh install with no lockfile if the problem persists.
+23:05:05.218 npm warn reify invalid or damaged lockfile detected
+23:05:05.218 npm warn reify please re-try this operation once it completes
+23:05:05.218 npm warn reify so that the damage can be corrected, or perform
+23:05:05.218 npm warn reify a fresh install with no lockfile if the problem persists.
+23:05:05.220 npm warn reify invalid or damaged lockfile detected
+23:05:05.220 npm warn reify please re-try this operation once it completes
+23:05:05.220 npm warn reify so that the damage can be corrected, or perform
+23:05:05.220 npm warn reify a fresh install with no lockfile if the problem persists.
+23:05:05.220 npm warn reify invalid or damaged lockfile detected
+23:05:05.220 npm warn reify please re-try this operation once it completes
+23:05:05.220 npm warn reify so that the damage can be corrected, or perform
+23:05:05.220 npm warn reify a fresh install with no lockfile if the problem persists.
+23:05:05.221 npm warn reify invalid or damaged lockfile detected
+23:05:05.221 npm warn reify please re-try this operation once it completes
+23:05:05.221 npm warn reify so that the damage can be corrected, or perform
+23:05:05.221 npm warn reify a fresh install with no lockfile if the problem persists.
+23:05:08.794 
+23:05:08.794 added 3 packages, removed 2 packages, and changed 72 packages in 7s
+23:05:08.796 npm warn install-scripts 7 packages have install scripts not yet covered by allowScripts:
+23:05:08.797 npm warn install-scripts   bcrypt@6.0.0 (install: node-gyp rebuild)
+23:05:08.797 npm warn install-scripts   esbuild@0.25.12 (postinstall: node install.js)
+23:05:08.798 npm warn install-scripts   esbuild@0.18.20 (postinstall: node install.js)
+23:05:08.798 npm warn install-scripts   @scarf/scarf@1.4.0 (postinstall: node ./report.js)
+23:05:08.798 npm warn install-scripts   esbuild@0.28.2 (postinstall: node install.js)
+23:05:08.798 npm warn install-scripts   unrs-resolver@1.12.2 (postinstall: node postinstall.js)
+23:05:08.798 npm warn install-scripts   esbuild@0.21.5 (postinstall: node install.js)
+23:05:08.798 npm warn install-scripts
+23:05:08.798 npm warn install-scripts Run `npm install-scripts ls` to review, or `npm install-scripts approve <pkg>` to allow.
+23:05:09.120 npm warn Unknown env config "cache-dir". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+23:05:09.159 
+23:05:09.159 > @dh-araria/shared@1.0.0 build
+23:05:09.159 > tsc
+23:05:09.159 
+23:05:11.485 npm warn Unknown env config "cache-dir". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+23:05:11.508 
+23:05:11.509 > dh-araria@1.0.0 build:backend
+23:05:11.509 > npm run build --workspace=apps/backend
+23:05:11.510 
+23:05:11.599 npm warn Unknown env config "cache-dir". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+23:05:11.641 
+23:05:11.641 > @dh-araria/backend@1.0.0 build
+23:05:11.641 > nest build
+23:05:11.641 
+23:05:22.744 Installing dependencies...
+23:05:23.103 npm warn Unknown env config "cache-dir". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+23:05:24.890 
+23:05:24.890 up to date in 2s
+23:05:24.891 npm warn install-scripts 7 packages have install scripts not yet covered by allowScripts:
+23:05:24.891 npm warn install-scripts   bcrypt@6.0.0 (install: node-gyp rebuild)
+23:05:24.891 npm warn install-scripts   esbuild@0.25.12 (postinstall: node install.js)
+23:05:24.891 npm warn install-scripts   esbuild@0.18.20 (postinstall: node install.js)
+23:05:24.891 npm warn install-scripts   @scarf/scarf@1.4.0 (postinstall: node ./report.js)
+23:05:24.891 npm warn install-scripts   esbuild@0.28.2 (postinstall: node install.js)
+23:05:24.891 npm warn install-scripts   esbuild@0.21.5 (postinstall: node install.js)
+23:05:24.892 npm warn install-scripts   unrs-resolver@1.12.2 (postinstall: node postinstall.js)
+23:05:24.892 npm warn install-scripts
+23:05:24.892 npm warn install-scripts Run `npm install-scripts ls` to review, or `npm install-scripts approve <pkg>` to allow.
+23:05:33.428 Build Completed in /vercel/output [38s]
+23:05:33.470 Deploying outputs...
+23:05:33.790 Warning: Provided `memory` setting in `vercel.json` is ignored on Active CPU billing. You can safely remove this setting from your configuration. Learn more: https://vercel.com/docs/fluid-compute/pricing
+23:05:40.581 Deployment completed
+23:05:40.586 Creating build cache...
+23:06:35.420 Created build cache: 55s
+23:06:35.420 Uploading build cache [229.05 MB]
+23:06:38.070 Build cache uploaded: 2.650s
